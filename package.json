@@ -9,7 +9,7 @@
   },
   "main": "index.js",
   "dependencies": {
-    "typescript": "^5.0.4",
+    "typescript": "^5.3.3",
     "workbox-build": "^6.5.4"
   },
   "devDependencies": {},
