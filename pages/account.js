@@ -47,7 +47,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
             var _this = _super.call(this, container) || this;
             _this.refreshInterval = 500;
             _this.destruct = function () {
-                clearInterval(_this.intervalRefresh);
+                clearInterval(_this.intervalRefresh[Symbol.toPrimitive]());
                 return _super.prototype.destruct.call(_this);
             };
             _this.refresh = function () {
