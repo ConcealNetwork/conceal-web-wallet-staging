@@ -65,7 +65,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 });
             };
             _this.destruct = function () {
-                clearInterval(_this.intervalRefresh[Symbol.toPrimitive]());
+                clearInterval(_this.intervalRefresh);
                 _this.stopScan();
                 _this.stopNfcScan();
                 swal.close();

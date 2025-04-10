@@ -47,7 +47,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             _this.redirectUrlAfterSend = null;
             _this.ndefListener = null;
             _this.destruct = function () {
-                clearInterval(_this.intervalRefresh[Symbol.toPrimitive]());
+                clearInterval(_this.intervalRefresh);
                 return _super.prototype.destruct.call(_this);
             };
             _this.refresh = function () {
