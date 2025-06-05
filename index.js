@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Gnock
  * Copyright (c) 2018-2019 The Masari Project
  * Copyright (c) 2018-2020 The Karbo developers
- * Copyright (c) 2018-2023 Conceal Community, Conceal.Network & Conceal Devs
+ * Copyright (c) 2018-2025 Conceal Community, Conceal.Network & Conceal Devs
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -35,7 +35,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./lib/numbersLab/VueAnnotate", "./model/Storage", "./model/Translations"], function (require, exports, Router_1, Mnemonic_1, VueAnnotate_1, Storage_1, Translations_1) {
+define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./lib/numbersLab/VueAnnotate", "./model/Storage", "./model/Translations", "./lib/numbersLab/messageClick"], function (require, exports, Router_1, Mnemonic_1, VueAnnotate_1, Storage_1, Translations_1, messageClick_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     //========================================================
@@ -55,11 +55,14 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
     var browserUserLang = '' + (navigator.language || navigator.userLanguage);
     browserUserLang = browserUserLang.toLowerCase().split('-')[0];
     Storage_1.Storage.getItem('user-lang', browserUserLang).then(function (userLang) {
-        Translations_1.Translations.loadLangTranslation(userLang).catch(function (err) {
-            Translations_1.Translations.loadLangTranslation('en').catch(function (err) {
+        if (userLang) {
+            Translations_1.Translations.loadLangTranslation(userLang).catch(function (err) {
+                console.error("Failed to load '".concat(userLang, "' language"), err);
+                return Translations_1.Translations.loadLangTranslation('en');
+            }).catch(function (err) {
                 console.error("Failed to load 'en' language", err);
             });
-        });
+        }
     });
     //========================================================
     //====================Generic design======================
@@ -112,12 +115,11 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
     });
     //mobile swipe
     var pageWidth = window.innerWidth || document.body.clientWidth;
-    var treshold = Math.max(1, Math.floor(0.01 * (pageWidth)));
+    var treshold = Math.max(1, Math.floor(0.2 * (pageWidth)));
     var touchstartX = 0;
     var touchstartY = 0;
     var touchendX = 0;
     var touchendY = 0;
-    var limit = Math.tan(45 * 1.5 / 180 * Math.PI);
     var gestureZone = $('body')[0];
     gestureZone.addEventListener('touchstart', function (event) {
         touchstartX = event.changedTouches[0].screenX;
@@ -128,12 +130,13 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
         touchendY = event.changedTouches[0].screenY;
         handleGesture(event);
     }, false);
+    var limit = 0.8; // Add this constant before handleGesture function
     function handleGesture(e) {
         var x = touchendX - touchstartX;
         var y = touchendY - touchstartY;
         var xy = Math.abs(x / y);
         var yx = Math.abs(y / x);
-        if (Math.abs(x) > treshold || Math.abs(y) > treshold) {
+        if (Math.abs(x) > treshold) { // || Math.abs(y) > treshold      ----- >   do we care about y other than a big diagonal swipe already taken into account by xy and yx ?
             if (yx <= limit) {
                 if (x < 0) {
                     //left
@@ -159,6 +162,31 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
             //tap
         }
     }
+    //Collapse the menu after clicking on a menu item
+    function navigateToPage(page) {
+        window.location.hash = "!".concat(page);
+    }
+    function isMobileDevice() {
+        return window.innerWidth <= 600; // Adjust this breakpoint as needed
+    }
+    // Select all menu items
+    var menuItems = document.querySelectorAll('#menu a[href^="#!"]');
+    menuItems.forEach(function (item) {
+        item.addEventListener('click', function (event) {
+            // Prevent the default action
+            event.preventDefault();
+            var target = event.currentTarget.getAttribute('href');
+            if (target) {
+                // Remove the "#!" from the beginning of the href
+                var page = target.substring(2);
+                navigateToPage(page);
+                // Toggle the menu off only on mobile devices
+                if (isMobileDevice() && !menuView.isMenuHidden) {
+                    menuView.toggle();
+                }
+            }
+        });
+    });
     var CopyrightView = /** @class */ (function (_super) {
         __extends(CopyrightView, _super);
         function CopyrightView(containerName, vueData) {
@@ -225,6 +253,8 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
         window.onhashchange = function () {
             router.changePageFromHash();
         };
+        // Initialize message menu after the page is ready
+        (0, messageClick_1.initializeMessageMenu)();
     });
     //========================================================
     //==================Service worker for web================

@@ -4,8 +4,8 @@
  * Copyright (c) 2018-2020 The Karbo developers
  * Copyright (c) 2018-2023 Conceal Community, Conceal.Network & Conceal Devs
  * Copyright (c) 2022, The Karbo Developers
- * Copyright (c) 2022, Conceal Devs
- * Copyright (c) 2022, Conceal Network
+ * Copyright (c) 2022 - 2025, Conceal Devs
+ * Copyright (c) 2022 - 2025, Conceal Network
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -77,7 +77,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                     var amount = parseFloat(self.amountToSend);
                     if (self.destinationAddress !== null) {
                         //todo use BigInteger
-                        if (amount * Math.pow(10, config.coinUnitPlaces) > wallet.unlockedAmount(blockchainHeight)) {
+                        if (amount * Math.pow(10, config.coinUnitPlaces) > wallet.availableAmount(blockchainHeight)) {
                             swal({
                                 type: 'error',
                                 title: i18n.t('sendPage.notEnoughMoneyModal.title'),
@@ -100,7 +100,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                         TransactionsExplorer_1.TransactionsExplorer.createTx([{ address: destinationAddress_1, amount: amountToSend }], self.paymentId, wallet, blockchainHeight, function (amounts, numberOuts) {
                             return blockchainExplorer.getRandomOuts(amounts, numberOuts);
                         }, function (amount, feesAmount) {
-                            if (amount + feesAmount > wallet.unlockedAmount(blockchainHeight)) {
+                            if (amount + feesAmount > wallet.availableAmount(blockchainHeight)) {
                                 swal({
                                     type: 'error',
                                     title: i18n.t('sendPage.notEnoughMoneyModal.title'),
@@ -141,7 +141,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                     }).catch(reject);
                                 }, 1);
                             });
-                        }, mixinToSendWith, self.message, 0).then(function (rawTxData) {
+                        }, mixinToSendWith, self.message, 0, "regular", 0).then(function (rawTxData) {
                             blockchainExplorer.sendRawTx(rawTxData.raw.raw).then(function () {
                                 //save the tx private key
                                 wallet.addTxPrivateKeyWithTxHash(rawTxData.raw.hash, rawTxData.raw.prvkey);
@@ -174,7 +174,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                     });
                                 promise.then(function () {
                                     if (self.redirectUrlAfterSend !== null) {
-                                        window.location.href = self.redirectUrlAfterSend.replace('{TX_HASH}', rawTxData.raw.hash);
+                                        window.location.href = window.encodeURIComponent(self.redirectUrlAfterSend.replace('{TX_HASH}', rawTxData.raw.hash));
                                     }
                                 });
                             }).catch(function (data) {
@@ -224,8 +224,13 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                     logDebugMsg("optimizeInfo.numOutputs", optimizeInfo.numOutputs);
                     logDebugMsg('optimizeInfo.isNeeded', optimizeInfo.isNeeded);
                     _this.optimizeIsNeeded = optimizeInfo.isNeeded;
+                    _this.showOptimizePanel = optimizeInfo.isNeeded;
                     if (optimizeInfo.isNeeded) {
                         _this.optimizeOutputs = optimizeInfo.numOutputs;
+                        // Hide the panel after 20 seconds
+                        setTimeout(function () {
+                            _this.showOptimizePanel = false;
+                        }, 20000);
                     }
                 }).catch(function (err) {
                     console.error("Error in checkOptimization, calling getHeight", err);
@@ -234,7 +239,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             _this.optimizeWallet = function () {
                 _this.optimizeLoading = true; // set loading state to true
                 blockchainExplorer.getHeight().then(function (blockchainHeight) {
-                    wallet.optimize(blockchainHeight, config.optimizeThreshold, blockchainExplorer, function (amounts, numberOuts) {
+                    wallet.createFusionTransaction(blockchainHeight, config.optimizeThreshold, blockchainExplorer, function (amounts, numberOuts) {
                         return blockchainExplorer.getRandomOuts(amounts, numberOuts);
                     }).then(function (processedOuts) {
                         var watchdog = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(WalletWatchdog_1.WalletWatchdog.name);
@@ -457,6 +462,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }
         };
         SendView.prototype.amountToSendWatch = function () {
+            // Allow only numbers and at most one dot
+            this.amountToSend = this.amountToSend.replace(/[^0-9.]/g, '').replace(/(\\..*)\\./g, '$1');
             try {
                 this.amountToSendValid = !isNaN(parseFloat(this.amountToSend));
             }
@@ -492,6 +499,16 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             catch (e) {
                 this.mixinIsValid = false;
             }
+        };
+        SendView.prototype.onAmountFocus = function () {
+            this.amountPlaceholder = '';
+            if (this.amountToSend === '0')
+                this.amountToSend = '';
+        };
+        SendView.prototype.onAmountBlur = function () {
+            if (this.amountToSend === '')
+                this.amountToSend = '0';
+            this.amountPlaceholder = '0';
         };
         __decorate([
             (0, VueAnnotate_1.VueVar)('')
@@ -562,6 +579,12 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueVar)(0)
         ], SendView.prototype, "optimizeOutputs", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)('0')
+        ], SendView.prototype, "amountPlaceholder", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(null)
+        ], SendView.prototype, "showOptimizePanel", void 0);
         __decorate([
             (0, DependencyInjector_1.Autowire)(Nfc_1.Nfc.name)
         ], SendView.prototype, "nfc", void 0);

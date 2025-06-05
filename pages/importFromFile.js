@@ -61,9 +61,11 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             var self = this;
             var element = $('<input type="file">');
             self.invalidRawFile = true;
+            self.fileSelected = false;
             element.on('change', function (event) {
                 var files = event.target.files; // FileList object
                 if (files.length > 0) {
+                    self.fileName = files[0].name;
                     var fileReader_1 = new FileReader();
                     fileReader_1.onload = function () {
                         try {
@@ -71,9 +73,17 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                 self.rawFile = JSON.parse(fileReader_1.result);
                             }
                             self.invalidRawFile = false;
+                            self.fileSelected = true;
                         }
                         catch (e) {
                             self.invalidRawFile = true;
+                            self.fileSelected = false;
+                            swal({
+                                type: 'error',
+                                title: i18n.t('global.error'),
+                                text: i18n.t('importFromFilePage.walletBlock.invalidFile'),
+                                confirmButtonText: i18n.t('global.ok'),
+                            });
                         }
                     };
                     fileReader_1.readAsText(files[0]);
@@ -83,23 +93,31 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         ImportView.prototype.importWallet = function () {
             var self = this;
-            blockchainExplorer.getHeight().then(function (currentHeight) {
-                setTimeout(function () {
-                    var newWallet = WalletRepository_1.WalletRepository.decodeWithPassword(self.rawFile, self.password);
-                    if (newWallet !== null) {
-                        newWallet.recalculateIfNotViewOnly();
-                        AppState_1.AppState.openWallet(newWallet, self.password);
-                        window.location.href = '#account';
-                    }
-                    else {
-                        swal({
-                            type: 'error',
-                            title: i18n.t('global.invalidPasswordModal.title'),
-                            text: i18n.t('global.invalidPasswordModal.content'),
-                            confirmButtonText: i18n.t('global.invalidPasswordModal.confirmText'),
-                        });
-                    }
-                }, 1);
+            $("#appLoader").addClass("appLoaderVisible");
+            blockchainExplorer.initialize().then(function (success) {
+                blockchainExplorer.getHeight().then(function (currentHeight) {
+                    $("#appLoader").removeClass("appLoaderVisible");
+                    setTimeout(function () {
+                        var newWallet = WalletRepository_1.WalletRepository.decodeWithPassword(self.rawFile, self.password);
+                        if (newWallet !== null) {
+                            newWallet.recalculateIfNotViewOnly();
+                            AppState_1.AppState.openWallet(newWallet, self.password);
+                            window.location.href = '#account';
+                        }
+                        else {
+                            swal({
+                                type: 'error',
+                                title: i18n.t('global.invalidPasswordModal.title'),
+                                text: i18n.t('global.invalidPasswordModal.content'),
+                                confirmButtonText: i18n.t('global.invalidPasswordModal.confirmText'),
+                            });
+                        }
+                    }, 1);
+                }).catch(function (err) {
+                    console.log(err);
+                });
+            }).catch(function (err) {
+                console.log(err);
             });
         };
         ImportView.prototype.passwordWatch = function () {
@@ -125,6 +143,12 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
         ], ImportView.prototype, "forceInsecurePassword", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], ImportView.prototype, "fileSelected", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)('')
+        ], ImportView.prototype, "fileName", void 0);
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], ImportView.prototype, "passwordWatch", null);

@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Gnock
  * Copyright (c) 2018-2019 The Masari Project
  * Copyright (c) 2018-2020 The Karbo developers
- * Copyright (c) 2018-2023 Conceal Community, Conceal.Network & Conceal Devs
+ * Copyright (c) 2018-2025 Conceal Community, Conceal.Network & Conceal Devs
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -35,7 +35,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLab/DependencyInjector", "../model/Wallet", "../lib/numbersLab/DestructableView", "../model/Constants", "../model/AppState", "../model/WalletWatchdog"], function (require, exports, VueAnnotate_1, DependencyInjector_1, Wallet_1, DestructableView_1, Constants_1, AppState_1, WalletWatchdog_1) {
+define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLab/DependencyInjector", "../model/Wallet", "../lib/numbersLab/DestructableView", "../model/Constants", "../model/AppState", "../model/WalletWatchdog", "../model/Translations"], function (require, exports, VueAnnotate_1, DependencyInjector_1, Wallet_1, DestructableView_1, Constants_1, AppState_1, WalletWatchdog_1, Translations_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var wallet = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(Wallet_1.Wallet.name, 'default', false);
@@ -45,8 +45,19 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
         __extends(AccountView, _super);
         function AccountView(container) {
             var _this = _super.call(this, container) || this;
+            _this.isInitialized = false;
+            _this.messagesCountRecord = 0;
             _this.refreshInterval = 500;
+            _this.initMessagesCount = wallet.txsMem.concat(wallet.getTransactionsCopy()).filter(function (tx) { return tx.message; }).length;
+            _this.unsubscribeTicker = null;
+            _this.optimizePanelTimeout = null;
             _this.destruct = function () {
+                // Cleanup ticker subscription
+                if (_this.unsubscribeTicker) {
+                    _this.unsubscribeTicker();
+                }
+                if (_this.optimizePanelTimeout)
+                    clearTimeout(_this.optimizePanelTimeout);
                 clearInterval(_this.intervalRefresh);
                 return _super.prototype.destruct.call(_this);
             };
@@ -54,6 +65,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                 blockchainExplorer.getHeight().then(function (height) {
                     _this.blockchainHeight = height;
                     _this.refreshWallet();
+                    _this.updateMessageNotifications();
                 }).catch(function (err) {
                     _this.refreshWallet();
                 });
@@ -62,20 +74,42 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                 _this.refreshWallet();
             };
             _this.checkOptimization = function () {
-                blockchainExplorer.getHeight().then(function (blockchainHeight) {
-                    var optimizeInfo = wallet.optimizationNeeded(blockchainHeight, config.optimizeThreshold);
-                    _this.optimizeIsNeeded = optimizeInfo.isNeeded;
-                    if (optimizeInfo.isNeeded) {
-                        _this.optimizeOutputs = optimizeInfo.numOutputs;
+                blockchainExplorer.getHeight()
+                    .then(function (blockchainHeight) {
+                    try {
+                        var optimizeInfo = wallet.optimizationNeeded(blockchainHeight, config.optimizeThreshold);
+                        _this.optimizeIsNeeded = optimizeInfo.isNeeded;
+                        if (optimizeInfo.isNeeded) {
+                            _this.optimizeOutputs = optimizeInfo.numOutputs;
+                            _this.showOptimizePanel = true;
+                            if (_this.optimizePanelTimeout)
+                                clearTimeout(_this.optimizePanelTimeout);
+                            _this.optimizePanelTimeout = setTimeout(function () {
+                                _this.showOptimizePanel = false;
+                            }, 20000);
+                        }
+                        else {
+                            _this.showOptimizePanel = false;
+                            if (_this.optimizePanelTimeout)
+                                clearTimeout(_this.optimizePanelTimeout);
+                        }
                     }
-                }).catch(function (err) {
-                    console.error("Error in checkOptimization", err);
+                    catch (innerError) {
+                        if (innerError === null)
+                            return;
+                        throw innerError;
+                    }
+                })
+                    .catch(function (err) {
+                    if (err === null)
+                        return;
+                    console.error("Error in checkOptimization:", err);
                 });
             };
             _this.optimizeWallet = function () {
                 _this.optimizeLoading = true; // set loading state to true
                 blockchainExplorer.getHeight().then(function (blockchainHeight) {
-                    wallet.optimize(blockchainHeight, config.optimizeThreshold, blockchainExplorer, function (amounts, numberOuts) {
+                    wallet.createFusionTransaction(blockchainHeight, config.optimizeThreshold, blockchainExplorer, function (amounts, numberOuts) {
                         return blockchainExplorer.getRandomOuts(amounts, numberOuts);
                     }).then(function (processedOuts) {
                         var watchdog = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(WalletWatchdog_1.WalletWatchdog.name);
@@ -125,7 +159,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                 swal({
                     title: i18n.t('accountPage.txDetails.title'),
                     customClass: 'swal-wide',
-                    html: "\n        <div class=\"tl\" >\n          <div><span class=\"txDetailsLabel\">" + i18n.t('accountPage.txDetails.txHash') + "</span>:<span class=\"txDetailsValue\"><a href=\"" + explorerUrlHash.replace('{ID}', transaction.hash) + "\" target=\"_blank\">" + transaction.hash + "</a></span></div>\n          " + paymentId + "\n          " + feesHtml + "\n          " + txPrivKeyMessage + "\n          <div><span class=\"txDetailsLabel\">" + i18n.t('accountPage.txDetails.blockHeight') + "</span>:<span class=\"txDetailsValue\"><a href=\"" + explorerUrlBlock.replace('{ID}', '' + transaction.blockHeight) + "\" target=\"_blank\">" + transaction.blockHeight + "</a></span></div>\n          " + messageText + "          \n        </div>"
+                    html: "\n        <div class=\"tl\" >\n          <div><span class=\"txDetailsLabel\">" + i18n.t('accountPage.txDetails.txHash') + "</span>:<span class=\"txDetailsValue\"><a href=\"" + explorerUrlHash.replace('{ID}', transaction.hash) + "\" target=\"_blank\">" + transaction.hash + "</a></span></div>\n          " + paymentId + "\n          " + feesHtml + "\n          " + txPrivKeyMessage + "\n          <div><span class=\"txDetailsLabel\">" + i18n.t('accountPage.txDetails.blockHeight') + "</span>:<span class=\"txDetailsValue\"><a href=\"" + explorerUrlBlock.replace('{ID}', '' + transaction.blockHeight) + "\" target=\"_blank\">" + transaction.blockHeight + "</a></span></div>\n          " + (transaction.fusion ? '<div><span class="txDetailsLabel">Fusion:</span><span class="txDetailsValue">true</span></div>' : '') + "\n          " + messageText + "          \n        </div>"
                 });
             };
             _this.refreshWallet = function (forceRedraw) {
@@ -150,8 +184,12 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                 if ((((_this.refreshTimestamp < wallet.modifiedTimestamp()) || (_this.lastPending > 0)) && (timeDiff > _this.refreshInterval)) || forceRedraw || filterChanged) {
                     logDebugMsg("refreshWallet", _this.currentScanBlock);
                     _this.walletAmount = wallet.amount;
-                    _this.unlockedWalletAmount = wallet.unlockedAmount(_this.currentScanBlock);
+                    _this.unlockedWalletAmount = wallet.availableAmount(_this.currentScanBlock);
+                    _this.depositedWalletAmount = wallet.lockedDeposits(_this.currentScanBlock);
+                    _this.withdrawableWalletAmount = wallet.unlockedDeposits(_this.currentScanBlock);
                     _this.lastPending = _this.walletAmount - _this.unlockedWalletAmount;
+                    _this.futureLockedInterest = wallet.futureDepositInterest(_this.currentScanBlock).locked;
+                    _this.futureUnlockedInterest = wallet.futureDepositInterest(_this.currentScanBlock).unlocked;
                     if ((_this.refreshTimestamp < wallet.modifiedTimestamp()) || forceRedraw || filterChanged) {
                         var allTransactions = wallet.txsMem.concat(wallet.getTransactionsCopy().reverse());
                         if (_this.txFilter) {
@@ -171,21 +209,71 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                     _this.refreshTimestamp = new Date();
                 }
             };
+            _this.download = function () {
+                // credit: https://www.bitdegree.org/learn/javascript-download
+                var text = JSON.stringify(_this.transactions);
+                var filename = 'cats.json';
+                var element = document.createElement('a');
+                element.setAttribute('href', 'data:application/json;charset=utf-8,' + encodeURIComponent(text));
+                element.setAttribute('download', filename);
+                element.style.display = 'none';
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+            };
             _this.refreshTimestamp = new Date(0);
-            _this.ticker = config.coinSymbol;
             _this.lastPending = 0;
             _this.pagesCount = 1;
             _this.txPerPage = 200;
             _this.oldTxFilter = '';
             _this.txFilter = '';
+            // Initialize ticker from store
+            Translations_1.tickerStore.initialize().then(function () {
+                _this.useShortTicker = Translations_1.tickerStore.useShortTicker;
+                _this.ticker = Translations_1.tickerStore.currentTicker;
+                // Subscribe to ticker changes
+                _this.unsubscribeTicker = Translations_1.tickerStore.subscribe(function (useShortTicker) {
+                    _this.useShortTicker = useShortTicker;
+                    _this.ticker = Translations_1.tickerStore.currentTicker;
+                });
+            });
             _this.checkOptimization();
             AppState_1.AppState.enableLeftMenu();
             _this.intervalRefresh = setInterval(function () {
                 _this.refresh();
             }, 1 * 1000);
             _this.refresh();
+            _this.showOptimizePanel = false;
+            window.accountView = _this;
             return _this;
         }
+        AccountView.prototype.updateMessageNotifications = function () {
+            if (!this.isInitialized) {
+                this.initMessagesCount = wallet.txsMem.concat(wallet.getTransactionsCopy()).filter(function (tx) { return tx.message; }).length;
+                this.isInitialized = true;
+            }
+            else {
+                var previousMessagesCount = this.initMessagesCount;
+                var currentMessagesCount = wallet.txsMem.concat(wallet.getTransactionsCopy()).filter(function (tx) { return tx.message; }).length;
+                var newMessagesCount = currentMessagesCount - previousMessagesCount;
+                if (newMessagesCount > this.messagesCountRecord) {
+                    var messageItem = document.querySelector('#menu a[href="#!messages"]');
+                    if (messageItem) {
+                        var messageText = messageItem.querySelector('span:last-child');
+                        if (messageText && messageText.textContent) {
+                            messageItem.classList.add('font-bold');
+                            if (messageText.textContent.includes('(+')) {
+                                messageText.textContent = messageText.textContent.split('(')[0] + "(+".concat(newMessagesCount, ")");
+                            }
+                            else {
+                                messageText.textContent += " (+".concat(newMessagesCount, ")");
+                            }
+                        }
+                        this.messagesCountRecord = newMessagesCount;
+                    }
+                }
+            }
+        };
         __decorate([
             (0, VueAnnotate_1.VueVar)([])
         ], AccountView.prototype, "transactions", void 0);
@@ -209,6 +297,18 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
         ], AccountView.prototype, "unlockedWalletAmount", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(0)
+        ], AccountView.prototype, "depositedWalletAmount", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(0)
+        ], AccountView.prototype, "withdrawableWalletAmount", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(0)
+        ], AccountView.prototype, "futureLockedInterest", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(0)
+        ], AccountView.prototype, "futureUnlockedInterest", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(0)
         ], AccountView.prototype, "allTransactionsCount", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(0)
@@ -217,8 +317,11 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
             (0, VueAnnotate_1.VueVar)(0)
         ], AccountView.prototype, "txPerPage", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)(0)
+            (0, VueAnnotate_1.VueVar)('')
         ], AccountView.prototype, "ticker", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], AccountView.prototype, "useShortTicker", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(0)
         ], AccountView.prototype, "currentScanBlock", void 0);
@@ -243,6 +346,21 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
         __decorate([
             (0, VueAnnotate_1.VueVar)(0)
         ], AccountView.prototype, "optimizeOutputs", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], AccountView.prototype, "showDepositsFuture", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], AccountView.prototype, "showWithdrawableFuture", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], AccountView.prototype, "isInitialized", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(0)
+        ], AccountView.prototype, "messagesCountRecord", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], AccountView.prototype, "showOptimizePanel", void 0);
         return AccountView;
     }(DestructableView_1.DestructableView));
     if (wallet !== null && blockchainExplorer !== null)

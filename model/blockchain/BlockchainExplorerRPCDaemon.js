@@ -83,6 +83,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                         _this._isWorking = false;
                         resolve(raw);
                     }).fail(function (data, textStatus) {
+                        console.log("makeRequest failed", textStatus);
                         _this._isWorking = false;
                         _this.increaseErrors();
                         reject(data);
@@ -206,7 +207,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                 return new Promise(function (resolve, reject) {
                     (function (self) {
                         return __awaiter(this, void 0, void 0, function () {
-                            var waitCounter, currWorker, resultData, resultData_1, data_1;
+                            var waitCounter, currWorker, resultData, data_1;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
@@ -231,10 +232,11 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                                         _a.trys.push([5, 7, , 8]);
                                         return [4 /*yield*/, currWorker.makeRequest(method, path, body)];
                                     case 6:
-                                        resultData_1 = _a.sent();
+                                        // Fix: Remove 'let' to use outer resultData variable
+                                        resultData = _a.sent();
                                         currWorker = null;
                                         // return the data
-                                        resolve(resultData_1);
+                                        resolve(resultData);
                                         return [3 /*break*/, 8];
                                     case 7:
                                         data_1 = _a.sent();
@@ -263,7 +265,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                 return new Promise(function (resolve, reject) {
                     (function (self) {
                         return __awaiter(this, void 0, void 0, function () {
-                            var waitCounter, currWorker, resultData, resultData_2, data_2;
+                            var waitCounter, currWorker, resultData, data_2;
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
                                     case 0:
@@ -288,10 +290,11 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                                         _a.trys.push([5, 7, , 8]);
                                         return [4 /*yield*/, currWorker.makeRpcRequest(method, params)];
                                     case 6:
-                                        resultData_2 = _a.sent();
+                                        // Fix: Remove 'let' to use outer resultData variable
+                                        resultData = _a.sent();
                                         currWorker = null;
                                         // return the data
-                                        resolve(resultData_2);
+                                        resolve(resultData);
                                         return [3 /*break*/, 8];
                                     case 7:
                                         data_2 = _a.sent();
@@ -333,6 +336,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
     var BlockchainExplorerRpcDaemon = /** @class */ (function () {
         function BlockchainExplorerRpcDaemon() {
             var _this = this;
+            this.initialized = false;
             this.lastTimeRetrieveHeight = 0;
             this.lastTimeRetrieveInfo = 0;
             this.scannedHeight = 0;
@@ -365,21 +369,77 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
             this.resetNodes = function () {
                 Storage_1.Storage.getItem('customNodeUrl', null).then(function (customNodeUrl) {
                     _this.nodeWorkers.stop();
+                    function shuffle(array) {
+                        var _a;
+                        var currentIndex = array.length;
+                        // While there remain elements to shuffle...
+                        while (currentIndex != 0) {
+                            // Pick a remaining element...
+                            var randomIndex = Math.floor(Math.random() * currentIndex);
+                            currentIndex--;
+                            // And swap it with the current element.
+                            _a = [
+                                array[randomIndex], array[currentIndex]
+                            ], array[currentIndex] = _a[0], array[randomIndex] = _a[1];
+                        }
+                    }
                     if (customNodeUrl) {
                         _this.nodeWorkers.start([customNodeUrl]);
                     }
                     else {
+                        shuffle(config.nodeList);
                         _this.nodeWorkers.start(config.nodeList);
                     }
+                }).catch(function (err) {
+                    console.log("resetNodes failed", err);
                 });
+            };
+            this.isInitialized = function () {
+                return _this.initialized;
+            };
+            this.initialize = function () {
+                var doesMatch = function (toCheck) {
+                    return function (element) {
+                        return element.toLowerCase() === toCheck.toLowerCase();
+                    };
+                };
+                if (_this.initialized) {
+                    return Promise.resolve(true);
+                }
+                else {
+                    if (config.publicNodes) {
+                        return $.ajax({
+                            method: 'GET',
+                            timeout: 10 * 1000,
+                            url: config.publicNodes + '/list?hasSSL=true'
+                        }).done(function (result) {
+                            if (result.success && (result.list.length > 0)) {
+                                for (var i = 0; i < result.list.length; ++i) {
+                                    var finalUrl = "https://" + result.list[i].url.host + "/";
+                                    if (config.nodeList.findIndex(doesMatch(finalUrl)) == -1) {
+                                        config.nodeList.push(finalUrl);
+                                    }
+                                }
+                            }
+                            _this.initialized = true;
+                            _this.resetNodes();
+                            return true;
+                        }).fail(function (data, textStatus) {
+                            return false;
+                        });
+                    }
+                    else {
+                        return Promise.resolve(true);
+                    }
+                }
             };
             this.start = function (wallet) {
                 var watchdog = new WalletWatchdog_1.WalletWatchdog(wallet, _this);
                 watchdog.start();
                 return watchdog;
             };
+            console.log('BlockchainExplorerRpcDaemon');
             this.nodeWorkers = new NodeWorkersList();
-            this.resetNodes();
         }
         /**
          * Returns an array containing all numbers like [start;end]
@@ -462,9 +522,9 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
             }).then(function (response) {
                 if (response.status !== 'OK')
                     throw 'invalid_getrandom_outs_answer';
-                if (response.outs.length > 0) {
-                    logDebugMsg(response.outs);
-                }
+                // if (response.outs.length > 0) {
+                //   logDebugMsg(response.outs);
+                // }
                 return response.outs;
             });
         };

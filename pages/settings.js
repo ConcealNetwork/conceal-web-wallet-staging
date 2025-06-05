@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Gnock
  * Copyright (c) 2018-2019 The Masari Project
  * Copyright (c) 2018-2020 The Karbo developers
- * Copyright (c) 2018-2023 Conceal Community, Conceal.Network & Conceal Devs
+ * Copyright (c) 2018-2025 Conceal Community, Conceal.Network & Conceal Devs
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -45,6 +45,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __extends(SettingsView, _super);
         function SettingsView(container) {
             var _this = _super.call(this, container) || this;
+            _this.unsubscribeTicker = null;
             _this.checkOptimization = function () {
                 blockchainExplorer.getHeight().then(function (blockchainHeight) {
                     var optimizeInfo = wallet.optimizationNeeded(blockchainHeight, config.optimizeThreshold);
@@ -58,7 +59,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 blockchainExplorer.getHeight().then(function (blockchainHeight) {
                     var optimizeInfo = wallet.optimizationNeeded(blockchainHeight, config.optimizeThreshold);
                     if (optimizeInfo.isNeeded) {
-                        wallet.optimize(blockchainHeight, config.optimizeThreshold, blockchainExplorer, function (amounts, numberOuts) {
+                        wallet.createFusionTransaction(blockchainHeight, config.optimizeThreshold, blockchainExplorer, function (amounts, numberOuts) {
                             return blockchainExplorer.getRandomOuts(amounts, numberOuts);
                         }).then(function (processedOuts) {
                             var watchdog = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(WalletWatchdog_1.WalletWatchdog.name);
@@ -92,6 +93,13 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                     console.error("Error in optimizeWallet, calling getHeight", err);
                 });
             };
+            _this.destruct = function () {
+                // Cleanup ticker subscription
+                if (_this.unsubscribeTicker) {
+                    _this.unsubscribeTicker();
+                }
+                return _super.prototype.destruct.call(_this);
+            };
             var self = _this;
             _this.readSpeed = wallet.options.readSpeed;
             _this.checkMinerTx = wallet.options.checkMinerTx;
@@ -99,6 +107,16 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             _this.nodeUrl = wallet.options.nodeUrl;
             _this.creationHeight = wallet.creationHeight;
             _this.scanHeight = wallet.lastHeight;
+            // Initialize ticker from store
+            Translations_1.tickerStore.initialize().then(function () {
+                _this.useShortTicker = Translations_1.tickerStore.useShortTicker;
+                _this.currentTicker = Translations_1.tickerStore.currentTicker;
+                // Subscribe to ticker changes
+                _this.unsubscribeTicker = Translations_1.tickerStore.subscribe(function (useShortTicker) {
+                    _this.useShortTicker = useShortTicker;
+                    _this.currentTicker = Translations_1.tickerStore.currentTicker;
+                });
+            });
             _this.checkOptimization();
             blockchainExplorer.getHeight().then(function (height) {
                 self.maxHeight = height;
@@ -172,6 +190,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             if (this.scanHeight > this.maxHeight && this.maxHeight !== -1)
                 this.scanHeight = this.maxHeight;
         };
+        SettingsView.prototype.useShortTickerWatch = function () {
+            Translations_1.tickerStore.setTickerPreference(this.useShortTicker);
+        };
         SettingsView.prototype.updateWalletOptions = function () {
             var options = wallet.options;
             options.readSpeed = this.readSpeed;
@@ -238,6 +259,15 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             (0, VueAnnotate_1.VueVar)(false)
         ], SettingsView.prototype, "optimizeLoading", void 0);
         __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], SettingsView.prototype, "useShortTicker", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)('')
+        ], SettingsView.prototype, "currentTicker", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(config)
+        ], SettingsView.prototype, "config", void 0);
+        __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "languageWatch", null);
         __decorate([
@@ -255,6 +285,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "scanHeightWatch", null);
+        __decorate([
+            (0, VueAnnotate_1.VueWatched)()
+        ], SettingsView.prototype, "useShortTickerWatch", null);
         return SettingsView;
     }(DestructableView_1.DestructableView));
     if (wallet !== null && blockchainExplorer !== null)

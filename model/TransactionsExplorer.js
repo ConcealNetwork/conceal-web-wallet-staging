@@ -5,8 +5,8 @@
  *     Copyright (c) 2018-2020, The Qwertycoin Project
  *     Copyright (c) 2018-2020, The Masari Project
  *     Copyright (c) 2022, The Karbo Developers
- *     Copyright (c) 2022, Conceal Devs
- *     Copyright (c) 2022, Conceal Network
+ *     Copyright (c) 2022 - 2025, Conceal Devs
+ *     Copyright (c) 2022 - 2025, Conceal Network
  *
  *     All rights reserved.
  *     Redistribution and use in source and binary forms, with or without modification,
@@ -33,7 +33,7 @@
  *     NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"], function (require, exports, Transaction_1, MathUtil_1, Cn_1, ChaCha8_1) {
+define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction", "./Interest", "./Currency"], function (require, exports, MathUtil_1, ChaCha8_1, Cn_1, Transaction_1, Interest_1, Currency_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.TransactionsExplorer = exports.TX_EXTRA_MESSAGE_CHECKSUM_SIZE = exports.TX_EXTRA_TTL = exports.TX_EXTRA_NONCE_ENCRYPTED_PAYMENT_ID = exports.TX_EXTRA_NONCE_PAYMENT_ID = exports.TX_EXTRA_MYSTERIOUS_MINERGATE_TAG = exports.TX_EXTRA_MESSAGE_TAG = exports.TX_EXTRA_MERGE_MINING_TAG = exports.TX_EXTRA_NONCE = exports.TX_EXTRA_TAG_PUBKEY = exports.TX_EXTRA_TAG_PADDING = exports.TX_EXTRA_NONCE_MAX_COUNT = exports.TX_EXTRA_PADDING_MAX_COUNT = void 0;
@@ -125,7 +125,6 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
             }
         };
         TransactionsExplorer.ownsTx = function (rawTransaction, wallet) {
-            var transaction = null;
             var tx_pub_key = '';
             var txExtras = [];
             try {
@@ -166,13 +165,27 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                 console.error('UNABLE TO CREATE DERIVATION');
                 return false;
             }
+            var keyIndex = 0;
             for (var iOut = 0; iOut < rawTransaction.vout.length; iOut++) {
                 var out = rawTransaction.vout[iOut];
                 var txout_k = out.target.data;
-                var output_idx_in_tx = iOut;
-                var generated_tx_pubkey = Cn_1.CnNativeBride.derive_public_key(derivation, output_idx_in_tx, wallet.keys.pub.spend);
-                if (txout_k.key == generated_tx_pubkey) {
-                    return true;
+                if (out.target.type == "02" && typeof txout_k.key !== 'undefined') {
+                    var publicEphemeral = Cn_1.CnNativeBride.derive_public_key(derivation, keyIndex, wallet.keys.pub.spend);
+                    if (txout_k.key == publicEphemeral) {
+                        logDebugMsg("Found our tx...");
+                        return true;
+                    }
+                    ++keyIndex;
+                }
+                else if (out.target.type == "03" && (typeof txout_k.keys !== 'undefined')) {
+                    for (var iKey = 0; iKey < txout_k.keys.length; iKey++) {
+                        var key = txout_k.keys[iKey];
+                        var publicEphemeral = Cn_1.CnNativeBride.derive_public_key(derivation, iOut, wallet.keys.pub.spend);
+                        if (key == publicEphemeral) {
+                            return true;
+                        }
+                        ++keyIndex;
+                    }
                 }
             }
             //check if no read only wallet
@@ -259,7 +272,11 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
             return decryptedMessage.slice(0, -exports.TX_EXTRA_MESSAGE_CHECKSUM_SIZE);
         };
         TransactionsExplorer.parse = function (rawTransaction, wallet) {
+            var _a;
+            var transactionData = null;
             var transaction = null;
+            var withdrawals = [];
+            var deposits = [];
             var tx_pub_key = '';
             var paymentId = null;
             var rawMessage = '';
@@ -292,8 +309,8 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
             tx_pub_key = Cn_1.CnUtils.bintohex(tx_pub_key);
             var encryptedPaymentId = null;
             var extraIndex = 0;
-            for (var _a = 0, txExtras_3 = txExtras; _a < txExtras_3.length; _a++) {
-                var extra = txExtras_3[_a];
+            for (var _b = 0, txExtras_3 = txExtras; _b < txExtras_3.length; _b++) {
+                var extra = txExtras_3[_b];
                 if (extra.type === exports.TX_EXTRA_NONCE) {
                     if (extra.data[0] === exports.TX_EXTRA_NONCE_PAYMENT_ID) {
                         paymentId = '';
@@ -354,7 +371,17 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                 var output_idx_in_tx = iOut;
                 var generated_tx_pubkey = Cn_1.CnNativeBride.derive_public_key(derivation, output_idx_in_tx, wallet.keys.pub.spend);
                 // check if generated public key matches the current output's key
-                var mine_output = (txout_k.key == generated_tx_pubkey);
+                var mine_output = false;
+                if (out.target.type == "02" && typeof txout_k.key !== 'undefined') {
+                    mine_output = (txout_k.key == generated_tx_pubkey);
+                }
+                else if (out.target.type == "03" && typeof txout_k.keys !== 'undefined') {
+                    for (var iKey = 0; iKey < txout_k.keys.length; iKey++) {
+                        if (txout_k.keys[iKey] == generated_tx_pubkey) {
+                            mine_output = true;
+                        }
+                    }
+                }
                 if (mine_output) {
                     var transactionOut = new Transaction_1.TransactionOut();
                     if (typeof rawTransaction.global_index_start !== 'undefined')
@@ -362,7 +389,35 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                     else
                         transactionOut.globalIndex = output_idx_in_tx;
                     transactionOut.amount = amount;
-                    transactionOut.pubKey = txout_k.key;
+                    if (out.target.type == "02" && typeof txout_k.key !== 'undefined') {
+                        transactionOut.pubKey = txout_k.key;
+                        transactionOut.type = "02";
+                    }
+                    else if (out.target.type == "03" && typeof txout_k.keys !== 'undefined') {
+                        transactionOut.pubKey = generated_tx_pubkey; // assume
+                        transactionOut.type = "03";
+                        if (out.target.data && out.target.data.term) {
+                            var deposit = new Transaction_1.Deposit();
+                            if (typeof rawTransaction.height !== 'undefined')
+                                deposit.blockHeight = rawTransaction.height;
+                            if (typeof rawTransaction.hash !== 'undefined')
+                                deposit.txHash = rawTransaction.hash;
+                            if (typeof rawTransaction.ts !== 'undefined')
+                                deposit.timestamp = rawTransaction.ts;
+                            deposit.amount = transactionOut.amount;
+                            deposit.term = out.target.data.term;
+                            deposit.globalOutputIndex = rawTransaction.output_indexes[iOut];
+                            deposit.indexInVout = iOut;
+                            // Extract keys from the transaction output target data
+                            if (out.target.data.keys && Array.isArray(out.target.data.keys)) {
+                                deposit.keys = out.target.data.keys;
+                            }
+                            deposit.txPubKey = tx_pub_key; // Reuse the already extracted transaction public key
+                            // Calculate the interest for this deposit
+                            deposit.interest = Interest_1.InterestCalculator.calculateInterest(deposit.amount, deposit.term, deposit.blockHeight);
+                            deposits.push(deposit);
+                        }
+                    }
                     transactionOut.outputIdx = output_idx_in_tx;
                     /*
                     if (!minerTx) {
@@ -370,7 +425,7 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                       transactionOut.rtcMask = rawTransaction.rct_signatures.ecdhInfo[output_idx_in_tx].mask;
                       transactionOut.rtcAmount = rawTransaction.rct_signatures.ecdhInfo[output_idx_in_tx].amount;
                     }
-                            */
+                    */
                     if (wallet.keys.priv.spend !== null && wallet.keys.priv.spend !== '') {
                         var m_key_image = Cn_1.CnTransactions.generate_key_image_helper({
                             view_secret_key: wallet.keys.priv.view,
@@ -381,8 +436,6 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                         transactionOut.ephemeralPub = m_key_image.ephemeral_pub;
                     }
                     outs.push(transactionOut);
-                    //if (minerTx)
-                    //    break;
                 } //  if (mine_output)
             }
             //check if no read only wallet
@@ -390,20 +443,63 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                 var keyImages = wallet.getTransactionKeyImages();
                 for (var iIn = 0; iIn < rawTransaction.vin.length; ++iIn) {
                     var vin = rawTransaction.vin[iIn];
-                    if (vin.value && keyImages.indexOf(vin.value.k_image) !== -1) {
+                    var wasAdded = false;
+                    if (vin.value && vin.value.k_image && keyImages.indexOf(vin.value.k_image) !== -1) {
                         var walletOuts = wallet.getAllOuts();
-                        for (var _b = 0, walletOuts_2 = walletOuts; _b < walletOuts_2.length; _b++) {
-                            var ut = walletOuts_2[_b];
+                        for (var _c = 0, walletOuts_2 = walletOuts; _c < walletOuts_2.length; _c++) {
+                            var ut = walletOuts_2[_c];
+                            if (wasAdded) {
+                                console.log(ut.keyImage, "=", vin.value.k_image);
+                            }
                             if (ut.keyImage == vin.value.k_image) {
-                                // ins.push(vin.key.k_image);
-                                // sumIns += ut.amount;
                                 var transactionIn = new Transaction_1.TransactionIn();
                                 transactionIn.amount = ut.amount;
                                 transactionIn.keyImage = ut.keyImage;
+                                // check if its a withdrawal
+                                if (vin.type == "03") {
+                                    if (vin.value && vin.value.term) {
+                                        var withdrawal = new Transaction_1.Deposit();
+                                        withdrawal.globalOutputIndex = (vin.value && vin.value.outputIndex) ? vin.value.outputIndex : 0;
+                                        if (typeof rawTransaction.height !== 'undefined')
+                                            withdrawal.blockHeight = rawTransaction.height;
+                                        if (typeof rawTransaction.hash !== 'undefined')
+                                            withdrawal.txHash = rawTransaction.hash;
+                                        if (typeof rawTransaction.ts !== 'undefined')
+                                            withdrawal.timestamp = rawTransaction.ts;
+                                        withdrawal.term = (vin.value && vin.value.term) ? vin.value.term : 0;
+                                        withdrawal.amount = transactionIn.amount;
+                                        withdrawals.push(withdrawal);
+                                        wasAdded = true;
+                                    }
+                                }
                                 ins.push(transactionIn);
                                 break;
                             }
                         }
+                    }
+                    // add the withdrawal if it was not yet processed
+                    if ((!wasAdded) && (vin.type == "03")) {
+                        var transactionIn = new Transaction_1.TransactionIn();
+                        transactionIn.type = "03"; // Set type explicitly for withdrawal
+                        transactionIn.term = (vin.value && vin.value.term) ? vin.value.term : 0;
+                        if (vin.value && vin.value.amount) {
+                            transactionIn.amount = parseInt(vin.value.amount);
+                        }
+                        // Add the transaction input to the array
+                        ins.push(transactionIn);
+                        var withdrawal = new Transaction_1.Deposit();
+                        if (typeof rawTransaction.ts !== 'undefined')
+                            withdrawal.timestamp = rawTransaction.ts;
+                        if (typeof rawTransaction.hash !== 'undefined')
+                            withdrawal.txHash = rawTransaction.hash;
+                        if (typeof rawTransaction.height !== 'undefined')
+                            withdrawal.blockHeight = rawTransaction.height;
+                        if (vin.value && vin.value.amount)
+                            withdrawal.amount = parseInt((_a = vin.value) === null || _a === void 0 ? void 0 : _a.amount);
+                        withdrawal.globalOutputIndex = (vin.value && vin.value.outputIndex) ? vin.value.outputIndex : 0;
+                        withdrawal.term = (vin.value && vin.value.term) ? vin.value.term : 0;
+                        withdrawals.push(withdrawal);
+                        wasAdded = true;
                     }
                 }
             }
@@ -418,8 +514,8 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                         absoluteOffets[i] += absoluteOffets[i - 1];
                     }
                     var ownTx = -1;
-                    for (var _c = 0, absoluteOffets_2 = absoluteOffets; _c < absoluteOffets_2.length; _c++) {
-                        var index = absoluteOffets_2[_c];
+                    for (var _d = 0, absoluteOffets_2 = absoluteOffets; _d < absoluteOffets_2.length; _d++) {
+                        var index = absoluteOffets_2[_d];
                         if (txOutIndexes.indexOf(index) !== -1) {
                             ownTx = index;
                             break;
@@ -431,12 +527,18 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                             var transactionIn = new Transaction_1.TransactionIn();
                             transactionIn.amount = -txOut.amount;
                             transactionIn.keyImage = txOut.keyImage;
+                            // check if its a withdrawal
+                            if (vin.type == "03") {
+                                if (vin.value && vin.value.term) {
+                                }
+                            }
                             ins.push(transactionIn);
                         }
                     }
                 }
             }
             if (outs.length > 0 || ins.length) {
+                transactionData = new Transaction_1.TransactionData();
                 transaction = new Transaction_1.Transaction();
                 if (typeof rawTransaction.height !== 'undefined')
                     transaction.blockHeight = rawTransaction.height;
@@ -456,8 +558,19 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                 else {
                     transaction.fees = rawTransaction.fee;
                 }
+                transaction.fusion = ((rawTransaction.vin.length > Currency_1.Currency.fusionTxMinInputCount) &&
+                    (rawTransaction.vout.length <= config.maxFusionOutputs) &&
+                    ((rawTransaction.vin.length / rawTransaction.vout.length) > config.fusionTxMinInOutCountRatio) &&
+                    (rawTransaction.vin.some(function (vin) { return vin.type != "03"; })) &&
+                    (rawTransaction.vout.some(function (vout) { return vout.target.type != "03"; }))) &&
+                    (transaction.fees === 0 || transaction.fees === parseInt(config.minimumFee_V2));
+                // fill the transaction info
                 transaction.outs = outs;
                 transaction.ins = ins;
+                // assing transaction, deposits etc... to wrapper
+                transactionData.transaction = transaction;
+                transactionData.withdrawals = withdrawals;
+                transactionData.deposits = deposits;
                 if (rawMessage !== '') {
                     // decode message
                     try {
@@ -469,7 +582,7 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                     }
                 }
             }
-            return transaction;
+            return transactionData;
         };
         TransactionsExplorer.formatWalletOutsForTx = function (wallet, blockchainHeight) {
             var unspentOuts = [];
@@ -486,6 +599,13 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
             // {"timestamp"       , static_cast<uint64_t>(out.timestamp)},
             // {"height"          , tx.height},
             // {"spend_key_images", json::array()}
+            var totalOutputs = 0;
+            // Get all deposits from the wallet and filter out locked ones
+            var deposits = wallet.getDepositsCopy();
+            var lockedDepositIndexes = deposits
+                .filter(function (deposit) { return deposit.getStatus(blockchainHeight) === 'Locked'; })
+                .map(function (deposit) { return deposit.globalOutputIndex; });
+            //console.log('Number of locked deposits:', lockedDepositIndexes.length);
             for (var _i = 0, _a = wallet.getAll(); _i < _a.length; _i++) {
                 var tr = _a[_i];
                 //todo improve to take into account miner tx
@@ -493,18 +613,26 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                 if (!tr.isConfirmed(blockchainHeight)) {
                     continue;
                 }
+                totalOutputs += tr.outs.length;
                 for (var _b = 0, _c = tr.outs; _b < _c.length; _b++) {
                     var out = _c[_b];
+                    // Skip outputs that are locked by deposits
+                    if (lockedDepositIndexes.includes(out.globalIndex)) {
+                        continue;
+                    }
                     unspentOuts.push({
                         keyImage: out.keyImage,
                         amount: out.amount,
                         public_key: out.pubKey,
                         index: out.outputIdx,
                         global_index: out.globalIndex,
-                        tx_pub_key: tr.txPubKey
+                        tx_pub_key: tr.txPubKey,
+                        keys: []
                     });
                 }
             }
+            //console.log('Total outputs before filtering:', totalOutputs);
+            //console.log('Unspent outputs after filtering:', unspentOuts.length);
             for (var _d = 0, _e = wallet.getAll().concat(wallet.txsMem); _d < _e.length; _d++) {
                 var tr = _e[_d];
                 for (var _f = 0, _g = tr.ins; _f < _g.length; _f++) {
@@ -519,7 +647,7 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
             }
             return unspentOuts;
         };
-        TransactionsExplorer.createRawTx = function (dsts, wallet, rct, usingOuts, pid_encrypt, mix_outs, mixin, neededFee, payment_id, message, ttl) {
+        TransactionsExplorer.createRawTx = function (dsts, wallet, rct, usingOuts, pid_encrypt, mix_outs, mixin, neededFee, payment_id, message, ttl, transactionType, term) {
             if (mix_outs === void 0) { mix_outs = []; }
             return new Promise(function (resolve, reject) {
                 var signed;
@@ -529,16 +657,32 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                     if (pid_encrypt) {
                         realDestViewKey = Cn_1.Cn.decode_address(dsts[0].address).view;
                     }
-                    var splittedDsts = Cn_1.CnTransactions.decompose_tx_destinations(dsts, rct);
+                    //let splittedDsts = CnTransactions.decompose_tx_destinations(dsts, rct);
+                    var splittedDsts = void 0;
+                    if (transactionType === "deposit") {
+                        // For deposit transactions, keep the first destination intact. At this stage, dsts[0].amount is the deposit amount. and will be type "03"
+                        var depositDst = dsts[0];
+                        var otherDsts = dsts.slice(1);
+                        // Only decompose the non-deposit destinations, those destinations will be type "02"
+                        var decomposedOtherDsts = Cn_1.CnTransactions.decompose_tx_destinations(otherDsts, rct);
+                        // Combine back with the deposit destination first
+                        splittedDsts = [depositDst].concat(decomposedOtherDsts); //then we could sort the splittedDsts by amount ?
+                    }
+                    else {
+                        // Regular transaction - decompose all destinations
+                        splittedDsts = Cn_1.CnTransactions.decompose_tx_destinations(dsts, rct);
+                    }
                     signed = Cn_1.CnTransactions.create_transaction({
                         spend: wallet.keys.pub.spend,
                         view: wallet.keys.pub.view
                     }, {
                         spend: wallet.keys.priv.spend,
                         view: wallet.keys.priv.view
-                    }, splittedDsts, wallet.getPublicAddress(), usingOuts, mix_outs, mixin, neededFee, payment_id, pid_encrypt, realDestViewKey, 0, rct, message, ttl);
+                    }, splittedDsts, wallet.getPublicAddress(), usingOuts, mix_outs, mixin, neededFee, payment_id, pid_encrypt, realDestViewKey, 0, rct, message, ttl, transactionType, term);
                     logDebugMsg("signed tx: ", signed);
+                    //console.log('Pre-serialization transaction:', JSON.stringify(signed, null, 2));
                     var raw_tx_and_hash = Cn_1.CnTransactions.serialize_tx_with_hash(signed);
+                    //console.log('Serialized transaction structure:', JSON.stringify(raw_tx_and_hash, null, 2));
                     resolve({ raw: raw_tx_and_hash, signed: signed });
                 }
                 catch (e) {
@@ -546,11 +690,13 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                 }
             });
         };
-        TransactionsExplorer.createTx = function (userDestinations, userPaymentId, wallet, blockchainHeight, obtainMixOutsCallback, confirmCallback, mixin, message, ttl) {
+        TransactionsExplorer.createTx = function (userDestinations, userPaymentId, wallet, blockchainHeight, obtainMixOutsCallback, confirmCallback, mixin, message, ttl, transactionType, term) {
             if (userPaymentId === void 0) { userPaymentId = ''; }
             if (mixin === void 0) { mixin = config.defaultMixin; }
             if (message === void 0) { message = ''; }
             if (ttl === void 0) { ttl = 0; }
+            if (transactionType === void 0) { transactionType = "regular"; }
+            if (term === void 0) { term = 0; }
             return new Promise(function (resolve, reject) {
                 var neededFee = new JSBigInt(window.config.coinFee);
                 var pid_encrypt = false; //don't encrypt payment ID unless we find an integrated one
@@ -660,12 +806,84 @@ define(["require", "exports", "./Transaction", "./MathUtil", "./Cn", "./ChaCha8"
                         logDebugMsg('------------------------------mix_outs');
                         logDebugMsg('amounts', amounts);
                         logDebugMsg('lots_mix_outs', lotsMixOuts);
-                        TransactionsExplorer.createRawTx(dsts, wallet, false, usingOuts, pid_encrypt, lotsMixOuts, mixin, neededFee, paymentId, message, ttl).then(function (data) {
+                        TransactionsExplorer.createRawTx(dsts, wallet, false, usingOuts, pid_encrypt, lotsMixOuts, mixin, neededFee, paymentId, message, ttl, transactionType, term).then(function (data) {
                             resolve(data);
                         }).catch(function (e) {
                             reject(e);
                         });
                     });
+                });
+            });
+        };
+        TransactionsExplorer.createWithdrawTx = function (deposit, wallet, blockchainHeight, obtainMixOutsCallback, confirmCallback, mixin, paymentId, message, ttl, transactionType, term) {
+            if (mixin === void 0) { mixin = 0; }
+            if (paymentId === void 0) { paymentId = ''; }
+            if (message === void 0) { message = ''; }
+            if (ttl === void 0) { ttl = 0; }
+            if (transactionType === void 0) { transactionType = "withdraw"; }
+            if (term === void 0) { term = 0; }
+            return new Promise(function (resolve, reject) {
+                var lockedAmount = deposit.amount;
+                var totalInterest = deposit.interest;
+                var totalAmount = lockedAmount + totalInterest;
+                var pid_encrypt = false; // don't encrypt payment ID for withdrawals
+                var paymentId = '';
+                // Check if the deposit is unlocked
+                if (deposit.unlockHeight > blockchainHeight) {
+                    reject(new Error("Deposit is still locked"));
+                    return;
+                }
+                logDebugMsg('Withdrawing deposit with amount', totalAmount);
+                // For withdrawals, we want a small fee for the transaction
+                var neededFee = new JSBigInt(config.depositSmallWithdrawFee);
+                var totalAmountWithoutFee = new JSBigInt(totalAmount);
+                if (lockedAmount < 1) {
+                    reject(new Error('such a deposit cannot could not have been created'));
+                    return;
+                }
+                confirmCallback(totalAmountWithoutFee.subtract(neededFee), neededFee).then(function () {
+                    var usingOuts = [];
+                    // Create the multisignature input for the deposit
+                    var depositOutput = {
+                        keyImage: '', // Not needed for deposit withdrawal
+                        amount: deposit.amount,
+                        public_key: deposit.keys[0], // to be corrected 
+                        index: deposit.indexInVout,
+                        global_index: deposit.globalOutputIndex,
+                        tx_pub_key: deposit.txPubKey,
+                        type: "input_to_deposit_key", // Specify this is a deposit key input
+                        required_signatures: 1, // We know this is a single-signature deposit
+                        keys: [deposit.keys[0]], // Add the single key from deposit
+                    };
+                    usingOuts.push(depositOutput);
+                    var changeAmount = totalAmountWithoutFee.subtract(neededFee);
+                    var dsts = [];
+                    logDebugMsg("Sending withdrawn amount of " + Cn_1.Cn.formatMoneySymbol(changeAmount)
+                        + " to " + wallet.getPublicAddress());
+                    dsts.push({
+                        address: wallet.getPublicAddress(),
+                        amount: changeAmount
+                    });
+                    logDebugMsg('destinations', dsts);
+                    var amounts = [];
+                    for (var l = 0; l < usingOuts.length; l++) {
+                        amounts.push(usingOuts[l].amount);
+                    }
+                    var nbOutsNeeded = mixin + 1;
+                    obtainMixOutsCallback(amounts, nbOutsNeeded).then(function (lotsMixOuts) {
+                        logDebugMsg('------------------------------mix_outs');
+                        logDebugMsg('amounts', amounts);
+                        logDebugMsg('lots_mix_outs', lotsMixOuts);
+                        TransactionsExplorer.createRawTx(dsts, wallet, false, usingOuts, pid_encrypt, lotsMixOuts, mixin, neededFee, paymentId, message, ttl, "withdraw", deposit.term).then(function (data) {
+                            resolve(data);
+                        }).catch(function (e) {
+                            reject(e);
+                        });
+                    }).catch(function (error) {
+                        reject(error);
+                    });
+                }).catch(function (error) {
+                    reject(error);
                 });
             });
         };
