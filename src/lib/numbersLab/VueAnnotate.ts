@@ -111,8 +111,9 @@ export function VueWatched(listenedPropertyOrDeep:string|null|boolean='', deep:b
 		if(listenedProperty === ''){
 			let wordsResearch = ['Watch'];
 			for(let wordResearch of wordsResearch) {
-				let index = propertyKey.indexOf(wordResearch);
-				if (index !== -1 && index === propertyKey.length - wordResearch.length) {
+
+				if ((propertyKey.indexOf(wordResearch) === propertyKey.length - wordResearch.length) && (propertyKey.indexOf(wordResearch) !== -1 )) {
+
 					listenedProperty = propertyKey.substr(0, propertyKey.length - wordResearch.length);
 					break;
 				}

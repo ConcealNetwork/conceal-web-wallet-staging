@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Gnock
  * Copyright (c) 2018-2019 The Masari Project
  * Copyright (c) 2018-2020 The Karbo developers
- * Copyright (c) 2018-2023 Conceal Community, Conceal.Network & Conceal Devs
+ * Copyright (c) 2018-2025 Conceal Community, Conceal.Network & Conceal Devs
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -36,7 +36,9 @@ const generateIntegrityHash = (filePath) => {
 	}
 };
 
-// Generate integrity hash for api.html and update the API file
+
+// Generate integrity hash for api.html and update the .env file
+
 const updateApiIntegrityHash = () => {
 	const apiHtmlPath = path.join(__dirname, 'src', 'api.html');
 	
