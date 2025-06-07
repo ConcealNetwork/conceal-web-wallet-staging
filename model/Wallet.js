@@ -184,6 +184,8 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                 if (_this.transactions[tr].txPubKey === transaction.txPubKey) {
                                     // Preserve fusion flag when replacing
                                     transaction.fusion = _this.transactions[tr].fusion;
+                                    // Preserve messageViewed flag when replacing
+                                    transaction.messageViewed = _this.transactions[tr].messageViewed || transaction.messageViewed;
                                     _this.keyLookupMap.set(transaction.txPubKey, transaction);
                                     _this.txLookupMap.set(transaction.hash, transaction);
                                     _this.transactions[tr] = transaction;
@@ -195,6 +197,8 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                         if (existMem) {
                             // Preserve fusion flag from mempool
                             transaction.fusion = existMem.fusion;
+                            // Preserve messageViewed flag from mempool
+                            transaction.messageViewed = existMem.messageViewed || transaction.messageViewed;
                             var trIndex = _this.txsMem.indexOf(existMem);
                             if (trIndex != -1) {
                                 _this.txsMem.splice(trIndex, 1);

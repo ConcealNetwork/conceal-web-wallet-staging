@@ -187,6 +187,7 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
             this.fees = 0;
             this.fusion = false;
             this.message = '';
+            this.messageViewed = false;
             this.export = function () {
                 var data = {
                     blockHeight: _this.blockHeight,
@@ -218,6 +219,8 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                     data.fees = _this.fees;
                 if (_this.fusion)
                     data.fusion = _this.fusion;
+                if (_this.messageViewed)
+                    data.messageViewed = _this.messageViewed;
                 return data;
             };
             this.getAmount = function () {
@@ -252,7 +255,6 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                 return false;
             };
             this.isFullyChecked = function () {
-                console.log("getAmount", _this.getAmount());
                 if (_this.getAmount() === 0 || _this.getAmount() === (-1 * config.minimumFee_V2)) {
                     if (_this.isFusion) {
                         return true;
@@ -271,6 +273,9 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                     return true;
                 }
             };
+            this.hasMessage = function () {
+                return (_this.message !== '') && (_this.getAmount() > 0);
+            };
             this.copy = function () {
                 var aCopy = new Transaction();
                 aCopy.blockHeight = _this.blockHeight;
@@ -281,6 +286,7 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                 aCopy.fees = _this.fees;
                 aCopy.message = _this.message;
                 aCopy.fusion = _this.fusion;
+                aCopy.messageViewed = _this.messageViewed;
                 for (var _i = 0, _a = _this.ins; _i < _a.length; _i++) {
                     var nin = _a[_i];
                     aCopy.ins.push(nin.copy());
@@ -351,6 +357,8 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                 transac.message = raw.message;
             if (typeof raw.fusion !== 'undefined')
                 transac.fusion = raw.fusion;
+            if (typeof raw.messageViewed !== 'undefined')
+                transac.messageViewed = raw.messageViewed;
             return transac;
         };
         return Transaction;

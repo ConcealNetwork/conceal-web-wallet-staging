@@ -82,7 +82,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                 type: 'error',
                                 title: i18n.t('global.error'),
                                 text: i18n.t('importFromFilePage.walletBlock.invalidFile'),
-                                confirmButtonText: i18n.t('global.ok'),
+                                confirmButtonText: i18n.t('global.confirmText'),
                             });
                         }
                     };

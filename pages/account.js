@@ -141,25 +141,35 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                 var explorerUrlBlock = config.testnet ? config.testnetExplorerUrlBlock : config.mainnetExplorerUrlBlock;
                 var feesHtml = '';
                 if (transaction.fees > 0) {
-                    feesHtml = "<div><span class=\"txDetailsLabel\">" + i18n.t('accountPage.txDetails.feesOnTx') + "</span>:<span class=\"txDetailsValue\">" + (transaction.fees / Math.pow(10, config.coinUnitPlaces)) + "</a></span></div>";
+                    feesHtml = "<div><span class=\"txDetailsLabel\">".concat(i18n.t('accountPage.txDetails.feesOnTx'), "</span>:<span class=\"txDetailsValue\">").concat((transaction.fees / Math.pow(10, config.coinUnitPlaces)), "</a></span></div>");
                 }
                 var paymentId = '';
                 if (transaction.paymentId) {
-                    paymentId = "<div><span class=\"txDetailsLabel\">" + i18n.t('accountPage.txDetails.paymentId') + "</span>:<span class=\"txDetailsValue\">" + transaction.paymentId + "</a></span></div>";
+                    paymentId = "<div><span class=\"txDetailsLabel\">".concat(i18n.t('accountPage.txDetails.paymentId'), "</span>:<span class=\"txDetailsValue\">").concat(transaction.paymentId, "</a></span></div>");
                 }
                 var txPrivKeyMessage = '';
                 var txPrivKey = wallet.findTxPrivateKeyWithHash(transaction.hash);
                 if (txPrivKey) {
-                    txPrivKeyMessage = "<div><span class=\"txDetailsLabel\">" + i18n.t('accountPage.txDetails.txPrivKey') + "</span>:<span class=\"txDetailsValue\">" + txPrivKey + "</a></span></div>";
+                    txPrivKeyMessage = "<div><span class=\"txDetailsLabel\">".concat(i18n.t('accountPage.txDetails.txPrivKey'), "</span>:<span class=\"txDetailsValue\">").concat(txPrivKey, "</a></span></div>");
                 }
                 var messageText = '';
                 if (transaction.message) {
-                    messageText = "<div><span class=\"txDetailsLabel\">" + i18n.t('accountPage.txDetails.message') + "</span>:<span class=\"txDetailsValue\">" + transaction.message + "</span>";
+                    messageText = "<div><span class=\"txDetailsLabel\">".concat(i18n.t('accountPage.txDetails.message'), "</span>:<div style=\"color: #e2e2e2; border: 1px solid #212529; border-radius: 4px; background-color: #343a40; padding: 8px; margin-top: 4px;\"><span class=\"txDetailsValue\">").concat(transaction.message, "</span></div></div>");
+                    // Set message as viewed and update the transaction in wallet
+                    transaction.messageViewed = true;
+                    wallet.addNew(transaction);
                 }
-                swal({
-                    title: i18n.t('accountPage.txDetails.title'),
-                    customClass: 'swal-wide',
-                    html: "\n        <div class=\"tl\" >\n          <div><span class=\"txDetailsLabel\">" + i18n.t('accountPage.txDetails.txHash') + "</span>:<span class=\"txDetailsValue\"><a href=\"" + explorerUrlHash.replace('{ID}', transaction.hash) + "\" target=\"_blank\">" + transaction.hash + "</a></span></div>\n          " + paymentId + "\n          " + feesHtml + "\n          " + txPrivKeyMessage + "\n          <div><span class=\"txDetailsLabel\">" + i18n.t('accountPage.txDetails.blockHeight') + "</span>:<span class=\"txDetailsValue\"><a href=\"" + explorerUrlBlock.replace('{ID}', '' + transaction.blockHeight) + "\" target=\"_blank\">" + transaction.blockHeight + "</a></span></div>\n          " + (transaction.fusion ? '<div><span class="txDetailsLabel">Fusion:</span><span class="txDetailsValue">true</span></div>' : '') + "\n          " + messageText + "          \n        </div>"
+                new Promise(function (resolve) {
+                    setTimeout(function () {
+                        swal({
+                            title: i18n.t('accountPage.txDetails.title'),
+                            customClass: 'swal-wide',
+                            html: "\n            <div class=\"tl\" >\n              <div><span class=\"txDetailsLabel\">".concat(i18n.t('accountPage.txDetails.txHash'), "</span>:<span class=\"txDetailsValue\"><a href=\"").concat(explorerUrlHash.replace('{ID}', transaction.hash), "\" target=\"_blank\">").concat(transaction.hash, "</a></span></div>\n              ").concat(paymentId, "\n              ").concat(feesHtml, "\n              ").concat(txPrivKeyMessage, "\n              <div><span class=\"txDetailsLabel\">").concat(i18n.t('accountPage.txDetails.blockHeight'), "</span>:<span class=\"txDetailsValue\"><a href=\"").concat(explorerUrlBlock.replace('{ID}', '' + transaction.blockHeight), "\" target=\"_blank\">").concat(transaction.blockHeight, "</a></span></div>\n              ").concat(transaction.fusion ? '<div><span class="txDetailsLabel">Fusion:</span><span class="txDetailsValue">true</span></div>' : '', "\n              ").concat(messageText, "\n            </div>")
+                        });
+                        resolve(true);
+                        // Force UI update after the modal is shown
+                        _this.refreshWallet(true);
+                    }, 500);
                 });
             };
             _this.refreshWallet = function (forceRedraw) {
