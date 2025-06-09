@@ -192,7 +192,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                 }
                             }
                         }
-                        // remove from unconfirmed and preserve fusion flag
+                        // remove from unconfirmed and preserve fusion flag and messageViewed flag
                         var existMem = _this.findMemWithTxPubKey(transaction.txPubKey);
                         if (existMem) {
                             // Preserve fusion flag from mempool
@@ -211,6 +211,23 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     }
                 }
             };
+            /**
+             * Update a flag on an existing transaction by txPubKey or hash.
+             * Only updates the specified fields, does not replace the transaction object.
+             */
+            _this.updateTransactionFlags = function (txPubKeyOrHash, flags) {
+                var tx = _this.findWithTxPubKey(txPubKeyOrHash) || _this.findWithTxHash(txPubKeyOrHash);
+                if (tx) {
+                    if (typeof flags.fusion !== 'undefined')
+                        tx.fusion = flags.fusion;
+                    if (typeof flags.messageViewed !== 'undefined')
+                        tx.messageViewed = flags.messageViewed;
+                    _this.signalChanged();
+                    _this.notify();
+                    return true;
+                }
+                return false;
+            };
             _this.addDeposits = function (deposits) {
                 for (var i = 0; i < deposits.length; ++i) {
                     _this.addDeposit(deposits[i]);
@@ -219,8 +236,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
             _this.addDeposit = function (deposit) {
                 var foundMatch = false;
                 for (var i = 0; i < _this.deposits.length; ++i) {
-                    if (_this.deposits[i].txHash == deposit.txHash && //used to be matcth by amount
-                        _this.deposits[i].globalOutputIndex == deposit.globalOutputIndex) { // double check
+                    if (_this.deposits[i].txHash == deposit.txHash) { // only check txHash
                         _this.deposits[i] = deposit;
                         foundMatch = true;
                         break;
@@ -231,6 +247,17 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 }
                 _this.signalChanged();
                 _this.notify();
+            };
+            _this.updateDepositFlags = function (txHashOrPubKey, flags) {
+                var deposit = _this.deposits.find(function (d) { return d.txHash === txHashOrPubKey || d.txPubKey === txHashOrPubKey; });
+                if (deposit) {
+                    if (typeof flags.withdrawPending !== 'undefined')
+                        deposit.withdrawPending = flags.withdrawPending;
+                    _this.signalChanged();
+                    _this.notify();
+                    return true;
+                }
+                return false;
             };
             _this.addWithdrawals = function (withdrawals) {
                 for (var i = 0; i < withdrawals.length; ++i) {
@@ -956,6 +983,27 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
             this.keyImages = keys;
             this.txOutIndexes = indexes;
         };
+        Object.defineProperty(Wallet.prototype, "hasPendingDeposit", {
+            /**
+             * Checks if there are any pending deposits in the wallet.
+             * @returns {boolean} True if there is at least one pending deposit
+             */
+            get: function () {
+                // Check mempool transactions
+                for (var _i = 0, _a = this.txsMem; _i < _a.length; _i++) {
+                    var tx = _a[_i];
+                    for (var _b = 0, _c = tx.outs; _b < _c.length; _b++) {
+                        var out = _c[_b];
+                        if (out.type === "03" && (out.globalIndex === undefined || out.globalIndex === 0)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            },
+            enumerable: false,
+            configurable: true
+        });
         Object.defineProperty(Wallet.prototype, "amount", {
             get: function () {
                 return this.availableAmount(-1);

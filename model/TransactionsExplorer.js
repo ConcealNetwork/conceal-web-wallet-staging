@@ -406,7 +406,12 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
                                 deposit.timestamp = rawTransaction.ts;
                             deposit.amount = transactionOut.amount;
                             deposit.term = out.target.data.term;
-                            deposit.globalOutputIndex = rawTransaction.output_indexes[iOut];
+                            if (rawTransaction.output_indexes && typeof rawTransaction.output_indexes[iOut] !== 'undefined') {
+                                deposit.globalOutputIndex = rawTransaction.output_indexes[iOut];
+                            }
+                            else {
+                                deposit.globalOutputIndex = output_idx_in_tx;
+                            }
                             deposit.indexInVout = iOut;
                             // Extract keys from the transaction output target data
                             if (out.target.data.keys && Array.isArray(out.target.data.keys)) {

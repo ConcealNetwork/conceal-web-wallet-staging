@@ -156,8 +156,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                 if (transaction.message) {
                     messageText = "<div><span class=\"txDetailsLabel\">".concat(i18n.t('accountPage.txDetails.message'), "</span>:<div style=\"color: #e2e2e2; border: 1px solid #212529; border-radius: 4px; background-color: #343a40; padding: 8px; margin-top: 4px;\"><span class=\"txDetailsValue\">").concat(transaction.message, "</span></div></div>");
                     // Set message as viewed and update the transaction in wallet
-                    transaction.messageViewed = true;
-                    wallet.addNew(transaction);
+                    wallet.updateTransactionFlags(transaction.hash, { messageViewed: true });
                 }
                 new Promise(function (resolve) {
                     setTimeout(function () {

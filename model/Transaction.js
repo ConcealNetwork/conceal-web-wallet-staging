@@ -446,11 +446,12 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
             deposit.spentTx = raw.spentTx;
             deposit.timestamp = raw.timestamp;
             deposit.blockHeight = raw.blockHeight;
-            deposit.globalOutputIndex = raw.globalOutputIndex;
-            deposit.indexInVout = raw.indexInVout;
+            deposit.globalOutputIndex = raw.globalOutputIndex; //used to build Multisig input for withdrawals
+            deposit.indexInVout = raw.indexInVout; //used to generate_signature for withdrawals
             deposit.txPubKey = raw.txPubKey;
             deposit.unlockHeight = raw.unlockHeight || (raw.blockHeight + raw.term);
             deposit.keys = raw.keys || [];
+            deposit.withdrawPending = raw.withdrawPending;
             return deposit;
         };
         Deposit.prototype.export = function () {

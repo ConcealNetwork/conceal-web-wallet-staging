@@ -123,6 +123,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                     _this.totalCashedOutInterest = future.spent;
                     _this.futureInterestLocked = future.locked;
                     _this.futureInterestUnlocked = future.unlocked;
+                    _this.depositPending = wallet.hasPendingDeposit;
                     // Earliest unlockable
                     var earliest = wallet.earliestUnlockableDeposit(_this.currentScanBlock);
                     if (earliest) {
@@ -225,8 +226,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                                 reject('');
                                             }
                                             else {
-                                                foundDeposit_1.withdrawPending = true;
-                                                wallet.addDeposit(foundDeposit_1); // Update the deposit in the wallet
+                                                wallet.updateDepositFlags(foundDeposit_1.txHash, { withdrawPending: true }); // Update the deposit in the wallet
                                                 swal({
                                                     title: i18n.t('sendPage.finalizingTransferModal.title'),
                                                     html: i18n.t('sendPage.finalizingTransferModal.content'),
@@ -262,8 +262,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                     }, 5);
                                 }).catch(function (data) {
                                     setTimeout(function () {
-                                        foundDeposit_1.withdrawPending = false;
-                                        wallet.addDeposit(foundDeposit_1);
+                                        wallet.updateDepositFlags(foundDeposit_1.txHash, { withdrawPending: false });
                                         swal({
                                             type: 'error',
                                             title: i18n.t('sendPage.transferExceptionModal.title'),
@@ -675,6 +674,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
         ], DepositsView.prototype, "isWithdrawDisabled", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], DepositsView.prototype, "depositPending", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(0)
         ], DepositsView.prototype, "totalLifetimeDeposit", void 0);
