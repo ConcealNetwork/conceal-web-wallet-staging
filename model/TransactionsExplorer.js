@@ -33,6 +33,15 @@
  *     NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  *     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction", "./Interest", "./Currency"], function (require, exports, MathUtil_1, ChaCha8_1, Cn_1, Transaction_1, Interest_1, Currency_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -590,6 +599,7 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
             return transactionData;
         };
         TransactionsExplorer.formatWalletOutsForTx = function (wallet, blockchainHeight) {
+            var allOuts = [];
             var unspentOuts = [];
             //rct=rct_outpk + rct_mask + rct_amount
             // {"amount"          , out.amount},
@@ -604,28 +614,21 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
             // {"timestamp"       , static_cast<uint64_t>(out.timestamp)},
             // {"height"          , tx.height},
             // {"spend_key_images", json::array()}
-            var totalOutputs = 0;
-            // Get all deposits from the wallet and filter out locked ones
-            var deposits = wallet.getDepositsCopy();
-            var lockedDepositIndexes = deposits
-                .filter(function (deposit) { return deposit.getStatus(blockchainHeight) === 'Locked'; })
-                .map(function (deposit) { return deposit.globalOutputIndex; });
-            //console.log('Number of locked deposits:', lockedDepositIndexes.length);
             for (var _i = 0, _a = wallet.getAll(); _i < _a.length; _i++) {
                 var tr = _a[_i];
-                //todo improve to take into account miner tx
+                //todo improve to take into account miner tx ... well, if the user is smart enough to mine, he should be able to toggle the "Read miner tx" option in settings.
                 //only add outs unlocked
-                if (!tr.isConfirmed(blockchainHeight)) {
+                if (!tr.isConfirmed(blockchainHeight - 2)) { // -2 extra buffer
                     continue;
                 }
-                totalOutputs += tr.outs.length;
                 for (var _b = 0, _c = tr.outs; _b < _c.length; _b++) {
                     var out = _c[_b];
-                    // Skip outputs that are locked by deposits
-                    if (lockedDepositIndexes.includes(out.globalIndex)) {
+                    // Skip type "03" outputs (deposit outputs) for regular transactions
+                    // These should only be used for withdrawals, not regular sends
+                    if (out.type === "03") {
                         continue;
                     }
-                    unspentOuts.push({
+                    allOuts.push({
                         keyImage: out.keyImage,
                         amount: out.amount,
                         public_key: out.pubKey,
@@ -636,20 +639,19 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
                     });
                 }
             }
-            //console.log('Total outputs before filtering:', totalOutputs);
-            //console.log('Unspent outputs after filtering:', unspentOuts.length);
+            // Create a set of all key images that have been spent (used as inputs)
+            var spentKeyImages = new Set();
             for (var _d = 0, _e = wallet.getAll().concat(wallet.txsMem); _d < _e.length; _d++) {
                 var tr = _e[_d];
                 for (var _f = 0, _g = tr.ins; _f < _g.length; _f++) {
                     var i = _g[_f];
-                    for (var iOut = 0; iOut < unspentOuts.length; ++iOut) {
-                        if (unspentOuts[iOut].keyImage === i.keyImage) {
-                            unspentOuts.splice(iOut, 1);
-                            break;
-                        }
+                    if (i.keyImage) {
+                        spentKeyImages.add(i.keyImage);
                     }
                 }
             }
+            // Filter out outputs that have already been spent
+            unspentOuts = allOuts.filter(function (out) { return !spentKeyImages.has(out.keyImage); });
             return unspentOuts;
         };
         TransactionsExplorer.createRawTx = function (dsts, wallet, rct, usingOuts, pid_encrypt, mix_outs, mixin, neededFee, payment_id, message, ttl, transactionType, term) {
@@ -807,11 +809,23 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
                         amounts.push(usingOuts[l].amount);
                     }
                     var nbOutsNeeded = mixin + 1;
-                    obtainMixOutsCallback(amounts, nbOutsNeeded).then(function (lotsMixOuts) {
+                    // Request nbOutsNeeded mixouts for each output (including duplicates)
+                    var nbOutsRequested = nbOutsNeeded + 3; // Request 3 more to account for potentialduplicates
+                    obtainMixOutsCallback(amounts, nbOutsRequested).then(function (lotsMixOuts) {
                         logDebugMsg('------------------------------mix_outs');
                         logDebugMsg('amounts', amounts);
                         logDebugMsg('lots_mix_outs', lotsMixOuts);
-                        TransactionsExplorer.createRawTx(dsts, wallet, false, usingOuts, pid_encrypt, lotsMixOuts, mixin, neededFee, paymentId, message, ttl, transactionType, term).then(function (data) {
+                        // 1. Check for duplicates and remove them
+                        var removedDuplicateMixOuts = TransactionsExplorer.removeDuplicateMixOuts(lotsMixOuts);
+                        // 2. Shuffle and select exactly nbOutsNeeded mixouts per amount
+                        var selectedMixOuts = TransactionsExplorer.selectMixOuts(removedDuplicateMixOuts, usingOuts, nbOutsNeeded);
+                        // 3. Validate that we have enough mixouts for each input
+                        var validation = TransactionsExplorer.validateMixOutsForInputs(usingOuts, selectedMixOuts, mixin);
+                        if (!validation.valid) {
+                            reject(new Error(validation.reason));
+                            return;
+                        }
+                        TransactionsExplorer.createRawTx(dsts, wallet, false, usingOuts, pid_encrypt, selectedMixOuts, mixin, neededFee, paymentId, message, ttl, transactionType, term).then(function (data) {
                             resolve(data);
                         }).catch(function (e) {
                             reject(e);
@@ -891,6 +905,140 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
                     reject(error);
                 });
             });
+        };
+        /**
+         * Validates that we have enough valid decoys for each input
+         * This ensures we have the required number of mixins (default 5) for each input
+         */
+        TransactionsExplorer.validateMixOutsForInputs = function (usingOuts, mixOuts, // Full mix_outs structure from daemon
+        mixin) {
+            // Check that we have one mixout group per output
+            if (mixOuts.length !== usingOuts.length) {
+                return {
+                    valid: false,
+                    reason: 'Wrong number of mixout groups provided'
+                };
+            }
+            // Check each output has enough mixouts
+            for (var i = 0; i < usingOuts.length; i++) {
+                var out = usingOuts[i];
+                var mixOutGroup = mixOuts[i];
+                if (!mixOutGroup || mixOutGroup.amount !== out.amount) {
+                    return {
+                        valid: false,
+                        reason: 'Mixout group mismatch'
+                    };
+                }
+                var availableMixouts = mixOutGroup.outs.length;
+                var requiredMixouts = mixin + 1;
+                if (availableMixouts < requiredMixouts) {
+                    return {
+                        valid: false,
+                        reason: 'Not enough mixouts available, try smaller amount'
+                    };
+                }
+            }
+            return {
+                valid: true,
+                reason: 'All outputs have sufficient mixouts'
+            };
+        };
+        /**
+         * Selects the required number of mixouts for each input from the daemon-provided mixouts
+         * Shuffles the available mixouts for additional entropy before selection
+         */
+        TransactionsExplorer.selectMixOuts = function (mixOuts, usingOuts, nbOutsNeeded) {
+            var _a;
+            var selectedMixOuts = [];
+            var usedGlobalIndices = new Set();
+            // Process outputs in order, using the corresponding mixout group for each
+            for (var i = 0; i < usingOuts.length; i++) {
+                var out = usingOuts[i];
+                var mixOutGroup = mixOuts[i]; // Use the mixout group at the same index
+                if (mixOutGroup && mixOutGroup.amount === out.amount && mixOutGroup.outs.length > 0) {
+                    // Filter out already used global indices to ensure uniqueness
+                    var availableMixouts = mixOutGroup.outs.filter(function (mixout) { return !usedGlobalIndices.has(mixout.global_index); });
+                    if (availableMixouts.length < nbOutsNeeded) {
+                        console.log("Warning: Not enough unique mixouts for output ".concat(i, " (amount ").concat(out.amount, "). Need ").concat(nbOutsNeeded, ", have ").concat(availableMixouts.length));
+                    }
+                    // Shuffle the available mixouts for additional entropy
+                    var shuffledMixouts = __spreadArray([], availableMixouts, true);
+                    for (var j = shuffledMixouts.length - 1; j > 0; j--) {
+                        var k = Math.floor(MathUtil_1.MathUtil.randomFloat() * (j + 1));
+                        _a = [shuffledMixouts[k], shuffledMixouts[j]], shuffledMixouts[j] = _a[0], shuffledMixouts[k] = _a[1];
+                    }
+                    // Select the first nbOutsNeeded mixouts from the shuffled array
+                    var selectedMixouts = shuffledMixouts.slice(0, nbOutsNeeded);
+                    // Mark these global indices as used
+                    for (var _i = 0, selectedMixouts_1 = selectedMixouts; _i < selectedMixouts_1.length; _i++) {
+                        var mixout = selectedMixouts_1[_i];
+                        usedGlobalIndices.add(mixout.global_index);
+                    }
+                    // Add to selected mixouts (one entry per output)
+                    selectedMixOuts.push({
+                        amount: out.amount,
+                        outs: selectedMixouts
+                    });
+                }
+                else {
+                    console.error("Error: No valid mixout group found for output ".concat(i, " (amount ").concat(out.amount, ")"));
+                }
+            }
+            return selectedMixOuts;
+        };
+        TransactionsExplorer.removeDuplicateMixOuts = function (mixOuts) {
+            // First loop: remove duplicates within each object
+            for (var i = 0; i < mixOuts.length; i++) {
+                var group = mixOuts[i];
+                var seenInThisGroup = new Set();
+                var uniqueOuts = [];
+                for (var _i = 0, _a = group.outs; _i < _a.length; _i++) {
+                    var mixout = _a[_i];
+                    if (!seenInThisGroup.has(mixout.global_index)) {
+                        seenInThisGroup.add(mixout.global_index);
+                        uniqueOuts.push(mixout);
+                    }
+                }
+                mixOuts[i] = {
+                    amount: group.amount,
+                    outs: uniqueOuts
+                };
+            }
+            // Second loop: if a global index appears in multiple objects, remove it from the object with more mixouts
+            var globalIndexCounts = new Map();
+            // Count which objects contain each global index
+            for (var i = 0; i < mixOuts.length; i++) {
+                for (var _b = 0, _c = mixOuts[i].outs; _b < _c.length; _b++) {
+                    var mixout = _c[_b];
+                    if (!globalIndexCounts.has(mixout.global_index)) {
+                        globalIndexCounts.set(mixout.global_index, []);
+                    }
+                    globalIndexCounts.get(mixout.global_index).push(i);
+                }
+            }
+            var _loop_1 = function (globalIndex, objectIndices) {
+                if (objectIndices.length > 1) {
+                    // Find the object with the most mixouts
+                    var maxMixouts = 0;
+                    var objectToRemoveFrom = objectIndices[0];
+                    for (var _g = 0, objectIndices_1 = objectIndices; _g < objectIndices_1.length; _g++) {
+                        var objectIndex = objectIndices_1[_g];
+                        if (mixOuts[objectIndex].outs.length > maxMixouts) {
+                            maxMixouts = mixOuts[objectIndex].outs.length;
+                            objectToRemoveFrom = objectIndex;
+                        }
+                    }
+                    // Remove this global index from the object with MORE mixouts
+                    // This leaves the duplicate in the object with fewer mixouts
+                    mixOuts[objectToRemoveFrom].outs = mixOuts[objectToRemoveFrom].outs.filter(function (mixout) { return mixout.global_index !== globalIndex; });
+                }
+            };
+            // Remove duplicates across objects
+            for (var _d = 0, _e = Array.from(globalIndexCounts.entries()); _d < _e.length; _d++) {
+                var _f = _e[_d], globalIndex = _f[0], objectIndices = _f[1];
+                _loop_1(globalIndex, objectIndices);
+            }
+            return mixOuts;
         };
         return TransactionsExplorer;
     }());

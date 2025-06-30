@@ -69,7 +69,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             _this.send = function () {
                 var self = _this;
                 blockchainExplorer.getHeight().then(function (blockchainHeight) {
-                    var amount = 0.0001;
                     if (self.destinationAddress !== null) {
                         var destinationAddress = self.destinationAddress;
                         var amountToSend = config.messageTxAmount;
@@ -369,9 +368,44 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 this.messageValid = false;
             }
         };
+        MessagesView.prototype.formatMessageText = function (text) {
+            if (!text)
+                return '';
+            // Replace **text** with <b>text</b> (bold) - no spaces between asterisks and text
+            var formatted = text.replace(/\*\*([^*\s][^*]*[^*\s])\*\*/g, '<b>$1</b>');
+            // Replace *text* with <i>text</i> (italic) - no spaces between asterisks and text
+            formatted = formatted.replace(/\*([^*\s][^*]*[^*\s])\*/g, '<i>$1</i>');
+            // Replace "* " with bullet point
+            formatted = formatted.replace(/\*\s/g, '&nbsp;&nbsp•&nbsp');
+            // Replace any two spaces with <br>
+            formatted = formatted.replace(/  /g, '<br>');
+            return formatted;
+        };
+        MessagesView.prototype.markMessageSeen = function (txHash) {
+            var _a;
+            if (((_a = this.transactions.find(function (tx) { return tx.hash === txHash; })) === null || _a === void 0 ? void 0 : _a.messageViewed) === false) {
+                wallet.updateTransactionFlags(txHash, { messageViewed: true });
+            }
+        };
+        Object.defineProperty(MessagesView.prototype, "filteredTransactions", {
+            get: function () {
+                if (!this.messageFilter) {
+                    return this.transactions;
+                }
+                var searchText = this.messageFilter.toLowerCase();
+                return this.transactions.filter(function (tx) {
+                    return tx.message && tx.message.toLowerCase().includes(searchText);
+                });
+            },
+            enumerable: false,
+            configurable: true
+        });
         __decorate([
             (0, VueAnnotate_1.VueVar)([])
         ], MessagesView.prototype, "transactions", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)('')
+        ], MessagesView.prototype, "messageFilter", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(0)
         ], MessagesView.prototype, "blockchainHeight", void 0);
@@ -417,6 +451,12 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
         ], MessagesView.prototype, "nfcAvailable", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], MessagesView.prototype, "formatMessage", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)('messageHistory')
+        ], MessagesView.prototype, "activeTab", void 0);
         __decorate([
             (0, DependencyInjector_1.Autowire)(Nfc_1.Nfc.name)
         ], MessagesView.prototype, "nfc", void 0);

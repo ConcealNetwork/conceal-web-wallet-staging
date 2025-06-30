@@ -144,7 +144,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                         }, mixinToSendWith, self.message, 0, "regular", 0).then(function (rawTxData) {
                             blockchainExplorer.sendRawTx(rawTxData.raw.raw).then(function () {
                                 //save the tx private key
-                                wallet.addTxPrivateKeyWithTxHash(rawTxData.raw.hash, rawTxData.raw.prvkey);
+                                wallet.addTxPrivateKeyWithTxHashAndFusion(rawTxData.raw.hash, rawTxData.raw.prvkey, false);
                                 //force a mempool check so the user is up to date
                                 var watchdog = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(WalletWatchdog_1.WalletWatchdog.name);
                                 if (watchdog !== null)
@@ -177,32 +177,49 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                         window.location.href = window.encodeURIComponent(self.redirectUrlAfterSend.replace('{TX_HASH}', rawTxData.raw.hash));
                                     }
                                 });
-                            }).catch(function (data) {
-                                swal({
-                                    type: 'error',
-                                    title: i18n.t('sendPage.transferExceptionModal.title'),
-                                    html: i18n.t('sendPage.transferExceptionModal.content', { details: JSON.stringify(data) }),
-                                    confirmButtonText: i18n.t('sendPage.transferExceptionModal.confirmText'),
-                                });
+                            }).catch(function (error) {
+                                //console.log(error);
+                                if (error && error !== '') {
+                                    var errorMessage = '';
+                                    var errorTitle = i18n.t('sendPage.transferExceptionModal.title');
+                                    if (typeof error === 'string') {
+                                        errorMessage = error;
+                                    }
+                                    else if (error instanceof Error) {
+                                        errorMessage = error.message;
+                                    }
+                                    else {
+                                        errorMessage = JSON.stringify(error);
+                                    }
+                                    swal({
+                                        type: 'error',
+                                        title: errorTitle,
+                                        html: i18n.t('sendPage.transferExceptionModal.content', { details: errorMessage }),
+                                        confirmButtonText: i18n.t('sendPage.transferExceptionModal.confirmText'),
+                                    });
+                                }
                             });
                             swal.close();
                         }).catch(function (error) {
                             //console.log(error);
                             if (error && error !== '') {
-                                if (typeof error === 'string')
-                                    swal({
-                                        type: 'error',
-                                        title: i18n.t('sendPage.transferExceptionModal.title'),
-                                        html: i18n.t('sendPage.transferExceptionModal.content', { details: error }),
-                                        confirmButtonText: i18n.t('sendPage.transferExceptionModal.confirmText'),
-                                    });
-                                else
-                                    swal({
-                                        type: 'error',
-                                        title: i18n.t('sendPage.transferExceptionModal.title'),
-                                        html: i18n.t('sendPage.transferExceptionModal.content', { details: JSON.stringify(error) }),
-                                        confirmButtonText: i18n.t('sendPage.transferExceptionModal.confirmText'),
-                                    });
+                                var errorMessage = '';
+                                var errorTitle = i18n.t('sendPage.transferExceptionModal.title');
+                                if (typeof error === 'string') {
+                                    errorMessage = error;
+                                }
+                                else if (error instanceof Error) {
+                                    errorMessage = error.message;
+                                }
+                                else {
+                                    errorMessage = JSON.stringify(error);
+                                }
+                                swal({
+                                    type: 'error',
+                                    title: errorTitle,
+                                    html: i18n.t('sendPage.transferExceptionModal.content', { details: errorMessage }),
+                                    confirmButtonText: i18n.t('sendPage.transferExceptionModal.confirmText'),
+                                });
                             }
                         });
                     }
