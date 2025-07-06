@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Gnock
  * Copyright (c) 2018-2019 The Masari Project
  * Copyright (c) 2018-2020 The Karbo developers
- * Copyright (c) 2018-2023 Conceal Community, Conceal.Network & Conceal Devs
+ * Copyright (c) 2018-2025 Conceal Community, Conceal.Network & Conceal Devs
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -74,6 +74,10 @@ export class AppState {
     if (walletWatchdog !== null) {
 			walletWatchdog.stop();
     }
+
+    // Clean up the blockchain explorer session to ensure fresh node selection on next connection
+    let blockchainExplorer = BlockchainExplorerProvider.getInstance();
+    blockchainExplorer.cleanupSession();
 
 		DependencyInjectorInstance().register(Wallet.name, undefined, 'default');
 		DependencyInjectorInstance().register(WalletWorker.name, undefined, 'default');
