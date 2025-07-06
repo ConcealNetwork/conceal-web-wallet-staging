@@ -5,8 +5,8 @@
  *     Copyright (c) 2018-2020, The Qwertycoin Project
  *     Copyright (c) 2018-2020, The Masari Project
  *     Copyright (c) 2022, The Karbo Developers
- *     Copyright (c) 2022, Conceal Devs
- *     Copyright (c) 2022, Conceal Network
+ *     Copyright (c) 2022 - 2025, Conceal Devs
+ *     Copyright (c) 2022 - 2025, Conceal Network
  *
  *     All rights reserved.
  *     Redistribution and use in source and binary forms, with or without modification,
@@ -2428,6 +2428,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                     for (var i_5 = 0; i_5 < dsts.length; i_5++) {
                         if (dsts[i_5].address !== senderAddress) {
                             messageAddress = dsts[i_5].address;
+                            break; // Break after finding the first non-sender destination
                         }
                     }
                     if (messageAddress) {
@@ -2460,7 +2461,10 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                     }
                 }
                 if (ttl !== 0) {
-                    var ttlStr = CnUtils.encode_varint(ttl);
+                    // Convert TTL from minutes to absolute UNIX timestamp in seconds
+                    var currentTimestamp = Math.floor(Date.now() / 1000); // Current time in seconds
+                    var ttlTimestamp = currentTimestamp + (ttl * 60); // Add TTL minutes converted to seconds
+                    var ttlStr = CnUtils.encode_varint(ttlTimestamp);
                     var ttlSize = CnUtils.encode_varint(ttlStr.length / 2);
                     tx.extra = tx.extra + TX_EXTRA_TAGS.TTL_TAG + ttlSize + ttlStr;
                 }

@@ -283,6 +283,28 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                 }
             }
         };
+        AccountView.prototype.getTTLCountdown = function (transaction) {
+            if (!transaction.ttl || transaction.ttl === 0 || transaction.blockHeight !== 0) {
+                return '';
+            }
+            var currentTimestamp = Math.floor(Date.now() / 1000);
+            var remainingSeconds = transaction.ttl - currentTimestamp;
+            if (remainingSeconds <= 0) {
+                return 'Expired';
+            }
+            var hours = Math.floor(remainingSeconds / 3600);
+            var minutes = Math.floor((remainingSeconds % 3600) / 60);
+            var seconds = remainingSeconds % 60;
+            if (hours > 0) {
+                return "".concat(hours, "h ").concat(minutes, "m ").concat(seconds, "s");
+            }
+            else if (minutes > 0) {
+                return "".concat(minutes, "m ").concat(seconds, "s");
+            }
+            else {
+                return "".concat(seconds, "s");
+            }
+        };
         __decorate([
             (0, VueAnnotate_1.VueVar)([])
         ], AccountView.prototype, "transactions", void 0);

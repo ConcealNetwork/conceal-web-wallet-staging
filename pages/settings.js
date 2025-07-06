@@ -103,8 +103,23 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             var self = _this;
             _this.readSpeed = wallet.options.readSpeed;
             _this.checkMinerTx = wallet.options.checkMinerTx;
-            _this.customNode = wallet.options.customNode;
-            _this.nodeUrl = wallet.options.nodeUrl;
+            // Sync custom node setting from storage to ensure consistency
+            Storage_1.Storage.getItem('customNodeUrl', null).then(function (customNodeUrl) {
+                if (customNodeUrl) {
+                    _this.customNode = true;
+                    _this.nodeUrl = customNodeUrl;
+                    // Update wallet options to match storage
+                    wallet.options.customNode = true;
+                    wallet.options.nodeUrl = customNodeUrl;
+                }
+                else {
+                    _this.customNode = wallet.options.customNode;
+                    _this.nodeUrl = wallet.options.nodeUrl;
+                }
+            }).catch(function () {
+                _this.customNode = wallet.options.customNode;
+                _this.nodeUrl = wallet.options.nodeUrl;
+            });
             _this.creationHeight = wallet.creationHeight;
             _this.scanHeight = wallet.lastHeight;
             // Initialize ticker from store
@@ -177,7 +192,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         SettingsView.prototype.readSpeedWatch = function () { this.updateWalletOptions(); };
         SettingsView.prototype.checkMinerTxWatch = function () { this.updateWalletOptions(); };
-        SettingsView.prototype.customNodeWatch = function () { this.updateWalletOptions(); };
+        //@VueWatched()	customNodeWatch(){this.updateConnectionSettings();}
+        //@VueWatched()	nodeUrlWatch(){this.updateConnectionSettings();}
         SettingsView.prototype.creationHeightWatch = function () {
             if (this.creationHeight < 0)
                 this.creationHeight = 0;
@@ -197,8 +213,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             var options = wallet.options;
             options.readSpeed = this.readSpeed;
             options.checkMinerTx = this.checkMinerTx;
-            options.customNode = this.customNode;
-            options.nodeUrl = this.nodeUrl;
             wallet.options = options;
             walletWatchdog.setupWorkers();
             walletWatchdog.signalWalletUpdate();
@@ -210,6 +224,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         SettingsView.prototype.updateConnectionSettings = function () {
             var options = wallet.options;
+            var oldCustomNode = options.customNode;
+            var oldNodeUrl = options.nodeUrl;
             options.customNode = this.customNode;
             options.nodeUrl = this.nodeUrl;
             wallet.options = options;
@@ -219,8 +235,25 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             else {
                 Storage_1.Storage.remove('customNodeUrl');
             }
-            // reset the node connection workers with new values
-            BlockchainExplorerProvider_1.BlockchainExplorerProvider.getInstance().resetNodes();
+            // Update wallet watchdog with new options
+            walletWatchdog.setupWorkers();
+            walletWatchdog.signalWalletUpdate();
+            // Reset nodes if custom node setting changed (enabled/disabled)
+            // This ensures proper switching between custom and random nodes
+            if (oldCustomNode !== this.customNode) {
+                console.log('Custom node setting changed, resetting nodes...');
+                // Reset the node connection workers with new values
+                // This will automatically clean up and reinitialize the session
+                BlockchainExplorerProvider_1.BlockchainExplorerProvider.getInstance().resetNodes();
+            }
+            else if (this.customNode && oldNodeUrl !== this.nodeUrl) {
+                // Only reset if custom node URL changed (when using custom node)
+                console.log('Custom node URL changed, resetting nodes...');
+                BlockchainExplorerProvider_1.BlockchainExplorerProvider.getInstance().resetNodes();
+            }
+            else {
+                console.log('Node configuration unchanged, skipping node reset');
+            }
         };
         __decorate([
             (0, VueAnnotate_1.VueVar)(10)
@@ -276,9 +309,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "checkMinerTxWatch", null);
-        __decorate([
-            (0, VueAnnotate_1.VueWatched)()
-        ], SettingsView.prototype, "customNodeWatch", null);
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "creationHeightWatch", null);

@@ -42,7 +42,7 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
     }
     return to.concat(ar || Array.prototype.slice.call(from));
 };
-define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction", "./Interest", "./Currency"], function (require, exports, MathUtil_1, ChaCha8_1, Cn_1, Transaction_1, Interest_1, Currency_1) {
+define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction", "./Interest", "./Currency", "./Varint"], function (require, exports, MathUtil_1, ChaCha8_1, Cn_1, Transaction_1, Interest_1, Currency_1, Varint_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.TransactionsExplorer = exports.TX_EXTRA_MESSAGE_CHECKSUM_SIZE = exports.TX_EXTRA_TTL = exports.TX_EXTRA_NONCE_ENCRYPTED_PAYMENT_ID = exports.TX_EXTRA_NONCE_PAYMENT_ID = exports.TX_EXTRA_MYSTERIOUS_MINERGATE_TAG = exports.TX_EXTRA_MESSAGE_TAG = exports.TX_EXTRA_MERGE_MINING_TAG = exports.TX_EXTRA_NONCE = exports.TX_EXTRA_TAG_PUBKEY = exports.TX_EXTRA_TAG_PADDING = exports.TX_EXTRA_NONCE_MAX_COUNT = exports.TX_EXTRA_PADDING_MAX_COUNT = void 0;
@@ -289,6 +289,7 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
             var tx_pub_key = '';
             var paymentId = null;
             var rawMessage = '';
+            var ttl = 0;
             var txExtras = [];
             try {
                 var hexExtra = [];
@@ -339,6 +340,7 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
                     }
                 }
                 else if (extra.type === exports.TX_EXTRA_MESSAGE_TAG) {
+                    // TODO: Only extract message if not a remote node fee transaction
                     for (var i = 0; i < extra.data.length; ++i) {
                         rawMessage += String.fromCharCode(extra.data[i]);
                     }
@@ -351,8 +353,7 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
                     }
                     var ttlStr = Cn_1.CnUtils.bintohex(rawTTL);
                     var uint8Array = Cn_1.CnUtils.hextobin(ttlStr);
-                    var Varint = void 0;
-                    var ttl = Varint.decode(uint8Array);
+                    ttl = (0, Varint_1.decode)(uint8Array);
                 }
                 extraIndex++;
             }
@@ -596,6 +597,9 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
                     }
                 }
             }
+            if (transaction && typeof ttl !== 'undefined') {
+                transaction.ttl = ttl;
+            }
             return transactionData;
         };
         TransactionsExplorer.formatWalletOutsForTx = function (wallet, blockchainHeight) {
@@ -781,6 +785,9 @@ define(["require", "exports", "./MathUtil", "./ChaCha8", "./Cn", "./Transaction"
                     }
                     else if (usingOuts_amount.compare(totalAmount) > 0) {
                         var changeAmount = usingOuts_amount.subtract(totalAmount);
+                        if (ttl > 0) {
+                            changeAmount = changeAmount.add(neededFee);
+                        }
                         //add entire change for rct
                         logDebugMsg("1) Sending change of " + Cn_1.Cn.formatMoneySymbol(changeAmount)
                             + " to " + wallet.getPublicAddress());

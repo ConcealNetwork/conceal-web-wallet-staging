@@ -188,6 +188,7 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
             this.fusion = false;
             this.message = '';
             this.messageViewed = false;
+            this.ttl = 0; // TTL timestamp (absolute UNIX timestamp in seconds)
             this.export = function () {
                 var data = {
                     blockHeight: _this.blockHeight,
@@ -221,6 +222,8 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                     data.fusion = _this.fusion;
                 if (_this.messageViewed)
                     data.messageViewed = _this.messageViewed;
+                if (_this.ttl !== 0)
+                    data.ttl = _this.ttl;
                 return data;
             };
             this.getAmount = function () {
@@ -259,6 +262,9 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                     if (_this.isFusion) {
                         return true;
                     }
+                    else if (_this.ttl > 0) {
+                        return true;
+                    }
                     else {
                         return false;
                     }
@@ -274,7 +280,8 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                 }
             };
             this.hasMessage = function () {
-                return (_this.message !== '') && (_this.getAmount() > 0);
+                var txAmount = _this.getAmount();
+                return (_this.message !== '') && (txAmount > 0) && (txAmount !== (1 * config.remoteNodeFee)) && (txAmount !== (10 * config.remoteNodeFee)); // no envelope for a suspectedremote node fee transaction
             };
             this.copy = function () {
                 var aCopy = new Transaction();
@@ -287,6 +294,7 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                 aCopy.message = _this.message;
                 aCopy.fusion = _this.fusion;
                 aCopy.messageViewed = _this.messageViewed;
+                aCopy.ttl = _this.ttl;
                 for (var _i = 0, _a = _this.ins; _i < _a.length; _i++) {
                     var nin = _a[_i];
                     aCopy.ins.push(nin.copy());
@@ -359,6 +367,8 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                 transac.fusion = raw.fusion;
             if (typeof raw.messageViewed !== 'undefined')
                 transac.messageViewed = raw.messageViewed;
+            if (typeof raw.ttl !== 'undefined')
+                transac.ttl = raw.ttl;
             return transac;
         };
         return Transaction;
