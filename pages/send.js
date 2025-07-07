@@ -164,11 +164,11 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                         return new Promise(function (resolve, reject) {
                                             setTimeout(function () {
                                                 var feeInfo = '';
-                                                if (remoteFeeAddress !== '' && remoteFeeAddress !== wallet.getPublicAddress()) {
-                                                    feeInfo = '<br><br><span style="font-size: 0.9em; color: #666;">' + i18n.t('sendPage.confirmTransactionModal.remoteNodeFee', {
+                                                if (remoteFeeAddress !== wallet.getPublicAddress()) {
+                                                    feeInfo = '<br><br><span style="font-size: 0.8em; font-style: italic; color: #666;">' + '(' + i18n.t('sendPage.confirmTransactionModal.remoteNodeFee', {
                                                         fee: config.remoteNodeFee / Math.pow(10, config.coinUnitPlaces),
                                                         symbol: config.coinSymbol
-                                                    }) + '</span>';
+                                                    }) + ')' + '</span>';
                                                 }
                                                 swal({
                                                     title: i18n.t('sendPage.confirmTransactionModal.title'),
