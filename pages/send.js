@@ -142,10 +142,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                         if (remoteFeeAddress !== '') {
                                             destination_1.push({ address: remoteFeeAddress, amount: config.remoteNodeFee });
                                         }
-                                        // it is your lucky day !
-                                        /* else {
-                                          destination.push({address: config.donationAddress, amount: config.remoteNodeFee});
-                                        } */
+                                        else {
+                                            destination_1.push({ address: config.donationAddress, amount: config.remoteNodeFee });
+                                        }
                                     }
                                     TransactionsExplorer_1.TransactionsExplorer.createTx(destination_1, self.paymentId, wallet, blockchainHeight, function (amounts, numberOuts) {
                                         return blockchainExplorer.getRandomOuts(amounts, numberOuts);

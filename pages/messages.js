@@ -88,10 +88,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                 if (remoteFeeAddress !== '') {
                                     destination_1.push({ address: remoteFeeAddress, amount: config.remoteNodeFee });
                                 }
-                                // it is your lucky day !
-                                /* else {
-                                  destination.push({address: config.donationAddress, amount: config.remoteNodeFee});
-                                } */
+                                else {
+                                    destination_1.push({ address: config.donationAddress, amount: config.remoteNodeFee });
+                                }
                             }
                             TransactionsExplorer_1.TransactionsExplorer.createTx(destination_1, '', wallet, blockchainHeight, function (amounts, numberOuts) {
                                 return blockchainExplorer.getRandomOuts(amounts, numberOuts);
@@ -403,12 +402,16 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         MessagesView.prototype.formatMessageText = function (text) {
             if (!text)
                 return '';
+            // Define colors based on active tab
+            var codeColors = this.activeTab === 'messageHistory'
+                ? { bg: '#2d3748', textCode: '#fafafa', textBold: '#fafafa', border: '#D9DCE7' } // Dark theme for history
+                : { bg: '#424242', textCode: '#fafafa', textBold: '#2d3748', border: '#000' }; // Light theme for send message
             // Replace **text** with <b>text</b> (bold) - no spaces between asterisks and text
-            var formatted = text.replace(/\*\*([^*\s][^*]*[^*\s])\*\*/g, '<span style="font-weight: bold; color: #000; text-shadow: 0px 0px 1px rgba(0,0,0);">$1</span>');
+            var formatted = text.replace(/\*\*([^*\s][^*]*[^*\s])\*\*/g, "<span style=\"font-weight: bold; color: ".concat(codeColors.textBold, "; text-shadow: 0px 0px 1px ").concat(codeColors.textBold, "\">$1</span>"));
             // Replace *text* with <i>text</i> (italic) - no spaces between asterisks and text
             formatted = formatted.replace(/\*([^*\s][^*]*[^*\s])\*/g, '<i>$1</i>');
-            // Replace `text` with inverted styling - allows phrases and sentences
-            formatted = formatted.replace(/`([^`]+)`/g, '<span style="background-color: #333; color: #fff; padding: 1px 3px; border-radius: 3px; font-family: monospace; font-size: 0.9em;">$1</span>');
+            // Replace `text` with variable styling based on active tab
+            formatted = formatted.replace(/`([^`]+)`/g, "<span style=\"background-color: ".concat(codeColors.bg, "; color: ").concat(codeColors.textCode, "; padding: 1px 3px; border-radius: 3px; border: 1px solid ").concat(codeColors.border, "; font-family: monospace; font-size: 0.9em;\">$1</span>"));
             // Replace "* " with bullet point
             formatted = formatted.replace(/\*\s/g, '&nbsp;&nbsp•&nbsp');
             // Replace any two spaces with <br>
