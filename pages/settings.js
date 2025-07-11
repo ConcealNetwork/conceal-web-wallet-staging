@@ -101,8 +101,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 return _super.prototype.destruct.call(_this);
             };
             var self = _this;
-            // Set native environment detection
-            _this.isNativeEnvironment = window.native;
+            // Set native environment detection using the same logic as index.ts
+            var isCordovaApp = document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1;
+            _this.isNativeEnvironment = isCordovaApp;
             _this.readSpeed = wallet.options.readSpeed;
             _this.checkMinerTx = wallet.options.checkMinerTx;
             // Sync custom node setting from storage to ensure consistency

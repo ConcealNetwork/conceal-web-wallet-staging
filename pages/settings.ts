@@ -64,8 +64,9 @@ class SettingsView extends DestructableView{
 		super(container);
 		let self = this;
 		
-		// Set native environment detection
-		this.isNativeEnvironment = window.native;
+		// Set native environment detection using the same logic as index.ts
+		const isCordovaApp = document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1;
+		this.isNativeEnvironment = isCordovaApp;
 		
 		this.readSpeed = wallet.options.readSpeed;
 		this.checkMinerTx = wallet.options.checkMinerTx;
