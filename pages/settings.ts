@@ -48,6 +48,7 @@ class SettingsView extends DestructableView{
 
 	@VueVar(0) nativeVersionCode !: number;
 	@VueVar('') nativeVersionNumber !: string;
+	@VueVar(false) isNativeEnvironment !: boolean;
 
   @VueVar(false) optimizeIsNeeded !: boolean;
   @VueVar(false) optimizeLoading !: boolean;
@@ -55,12 +56,17 @@ class SettingsView extends DestructableView{
 	@VueVar(false) useShortTicker !: boolean;
 	@VueVar('') currentTicker !: string;
 	@VueVar(config) config !: any;
+	@VueVar(false) notificationsEnabled !: boolean;
 
 	private unsubscribeTicker: (() => void) | null = null;
 
 	constructor(container : string) {
 		super(container);
 		let self = this;
+		
+		// Set native environment detection
+		this.isNativeEnvironment = window.native;
+		
 		this.readSpeed = wallet.options.readSpeed;
 		this.checkMinerTx = wallet.options.checkMinerTx;
 
@@ -118,6 +124,13 @@ class SettingsView extends DestructableView{
 				this.nativeVersionCode = version;
 			});
 		}
+
+		// Initialize notification setting
+		Storage.getItem('notificationsEnabled', false).then((enabled : boolean) => {
+			this.notificationsEnabled = enabled;
+		}).catch(() => {
+			this.notificationsEnabled = false;
+		});
 	}
 
 	@VueWatched()
@@ -228,6 +241,11 @@ class SettingsView extends DestructableView{
 	@VueWatched()
 	useShortTickerWatch() {
 		tickerStore.setTickerPreference(this.useShortTicker);
+	}
+
+	@VueWatched()
+	notificationsEnabledWatch() {
+		Storage.setItem('notificationsEnabled', this.notificationsEnabled);
 	}
 
 	private updateWalletOptions() {

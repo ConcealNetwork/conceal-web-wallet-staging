@@ -101,6 +101,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 return _super.prototype.destruct.call(_this);
             };
             var self = _this;
+            // Set native environment detection
+            _this.isNativeEnvironment = window.native;
             _this.readSpeed = wallet.options.readSpeed;
             _this.checkMinerTx = wallet.options.checkMinerTx;
             // Sync custom node setting from storage to ensure consistency
@@ -151,6 +153,12 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                     _this.nativeVersionCode = version;
                 });
             }
+            // Initialize notification setting
+            Storage_1.Storage.getItem('notificationsEnabled', false).then(function (enabled) {
+                _this.notificationsEnabled = enabled;
+            }).catch(function () {
+                _this.notificationsEnabled = false;
+            });
             return _this;
         }
         SettingsView.prototype.languageWatch = function () {
@@ -208,6 +216,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         SettingsView.prototype.useShortTickerWatch = function () {
             Translations_1.tickerStore.setTickerPreference(this.useShortTicker);
+        };
+        SettingsView.prototype.notificationsEnabledWatch = function () {
+            Storage_1.Storage.setItem('notificationsEnabled', this.notificationsEnabled);
         };
         SettingsView.prototype.updateWalletOptions = function () {
             var options = wallet.options;
@@ -287,6 +298,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         ], SettingsView.prototype, "nativeVersionNumber", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
+        ], SettingsView.prototype, "isNativeEnvironment", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
         ], SettingsView.prototype, "optimizeIsNeeded", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
@@ -300,6 +314,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueVar)(config)
         ], SettingsView.prototype, "config", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], SettingsView.prototype, "notificationsEnabled", void 0);
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "languageWatch", null);
@@ -318,6 +335,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "useShortTickerWatch", null);
+        __decorate([
+            (0, VueAnnotate_1.VueWatched)()
+        ], SettingsView.prototype, "notificationsEnabledWatch", null);
         return SettingsView;
     }(DestructableView_1.DestructableView));
     if (wallet !== null && blockchainExplorer !== null)
