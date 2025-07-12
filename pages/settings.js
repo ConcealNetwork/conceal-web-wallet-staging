@@ -101,8 +101,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 return _super.prototype.destruct.call(_this);
             };
             var self = _this;
-            // Use the global CordovaDetector instance for environment detection
-            _this.initializeCordovaDetection();
             _this.readSpeed = wallet.options.readSpeed;
             _this.checkMinerTx = wallet.options.checkMinerTx;
             // Sync custom node setting from storage to ensure consistency
@@ -145,146 +143,16 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }).catch(function (err) {
                 console.error("Error trying to get user language", err);
             });
-            // Initialize notification setting
-            Storage_1.Storage.getItem('notificationsEnabled', false).then(function (enabled) {
-                _this.notificationsEnabled = enabled;
-            }).catch(function () {
-                _this.notificationsEnabled = false;
-            });
-            // Initialize debug information for troubleshooting
-            _this.initializeDebugInfo();
+            if (typeof window.cordova !== 'undefined' && typeof window.cordova.getAppVersion !== 'undefined') {
+                window.cordova.getAppVersion.getVersionNumber().then(function (version) {
+                    _this.nativeVersionNumber = version;
+                });
+                window.cordova.getAppVersion.getVersionCode().then(function (version) {
+                    _this.nativeVersionCode = version;
+                });
+            }
             return _this;
         }
-        /**
-         * Initialize debug information that can be displayed on the phone
-         */
-        SettingsView.prototype.initializeDebugInfo = function () {
-            var _this = this;
-            var updateDebugInfo = function () {
-                var _a, _b, _c;
-                var debugData = {
-                    // Time info
-                    timestamp: new Date().toISOString(),
-                    timeElapsed: Math.round((Date.now() - window.loadStartTime) / 1000) + 's',
-                    // Environment detection
-                    currentUrl: window.location.href,
-                    documentUrl: document.URL,
-                    protocol: window.location.protocol,
-                    host: window.location.host,
-                    // CordovaDetector results
-                    cordovaDetectorExists: typeof cordovaDetector !== 'undefined',
-                    cordovaDetectorIsNative: typeof cordovaDetector !== 'undefined' ? cordovaDetector.isNative() : 'N/A',
-                    isNativeEnvironment: _this.isNativeEnvironment,
-                    // WebView detection details
-                    userAgent: navigator.userAgent,
-                    isAndroidWebView: navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv'),
-                    hasAndroidInUA: navigator.userAgent.includes('Android'),
-                    hasWvInUA: navigator.userAgent.includes('wv'),
-                    hasWebViewInUA: navigator.userAgent.includes('webview'),
-                    hasVersionInUA: navigator.userAgent.includes('version/'),
-                    hasChromeInUA: navigator.userAgent.includes('chrome/'),
-                    // Environment checks
-                    windowNative: window.native,
-                    bodyHasNativeClass: document.body.classList.contains('native'),
-                    hasServiceWorker: 'serviceWorker' in navigator,
-                    // Cordova runtime (may or may not be present)
-                    windowCordova: typeof window.cordova !== 'undefined',
-                    windowDevice: typeof window.device !== 'undefined',
-                    windowPlugins: typeof window.plugins !== 'undefined',
-                    cordovaVersion: ((_a = window.cordova) === null || _a === void 0 ? void 0 : _a.version) || 'N/A',
-                    cordovaPlatformId: ((_b = window.cordova) === null || _b === void 0 ? void 0 : _b.platformId) || 'N/A',
-                    cordovaGetAppVersion: typeof ((_c = window.cordova) === null || _c === void 0 ? void 0 : _c.getAppVersion) !== 'undefined',
-                    // Version info
-                    nativeVersionCode: _this.nativeVersionCode,
-                    nativeVersionNumber: _this.nativeVersionNumber,
-                    // URL analysis
-                    isFileProtocol: window.location.protocol === 'file:',
-                    isHttpsProtocol: window.location.protocol === 'https:',
-                    isHttpProtocol: window.location.protocol === 'http:',
-                    // Detection method used
-                    detectionMethod: _this.isNativeEnvironment ? 'WebView detected' : 'Web browser detected'
-                };
-                _this.debugInfo = JSON.stringify(debugData, null, 2);
-            };
-            // Set load start time if not already set
-            if (!window.loadStartTime) {
-                window.loadStartTime = Date.now();
-            }
-            // Update immediately
-            updateDebugInfo();
-            // Show debug info automatically if CordovaDetector is missing or WebView detection might need verification
-            if (typeof cordovaDetector === 'undefined') {
-                this.showDebugInfo = true;
-            }
-            // Refresh debug info every 3 seconds for live monitoring
-            var debugInterval = setInterval(function () {
-                if (_this.showDebugInfo) {
-                    updateDebugInfo();
-                }
-            }, 3000);
-            // Stop refreshing after 30 seconds to save resources
-            setTimeout(function () {
-                clearInterval(debugInterval);
-            }, 30000);
-        };
-        SettingsView.prototype.toggleDebugInfo = function () {
-            this.showDebugInfo = !this.showDebugInfo;
-            if (this.showDebugInfo) {
-                this.initializeDebugInfo(); // Refresh the info
-            }
-        };
-        /**
-         * Initialize Cordova detection using the global CordovaDetector
-         * This leverages the centralized detection system from index.ts
-         */
-        SettingsView.prototype.initializeCordovaDetection = function () {
-            // Check if we're in a native environment using the global detector
-            if (typeof cordovaDetector !== 'undefined') {
-                this.isNativeEnvironment = cordovaDetector.isNative();
-                // If we're in a native environment, try to initialize Cordova plugins
-                if (this.isNativeEnvironment) {
-                    // Since detection is now immediate, we can try to initialize plugins right away
-                    // If Cordova.js is loaded, this will work; if not, it will gracefully fail
-                    this.initializeCordovaPlugins();
-                }
-            }
-            else {
-                // Fallback if CordovaDetector is not available
-                console.warn('CordovaDetector not found, falling back to web mode');
-                this.isNativeEnvironment = false;
-            }
-        };
-        /**
-         * Initialize Cordova plugins if available
-         */
-        SettingsView.prototype.initializeCordovaPlugins = function () {
-            var _this = this;
-            var cordova = window.cordova;
-            if (!cordova) {
-                console.log('Cordova object not found - native environment without Cordova runtime');
-                return;
-            }
-            // Get app version information if plugin is available
-            if (cordova.getAppVersion) {
-                cordova.getAppVersion.getVersionNumber().then(function (version) {
-                    _this.nativeVersionNumber = version;
-                    console.log('App version number:', version);
-                }).catch(function (err) {
-                    console.warn('Could not get app version number:', err);
-                });
-                cordova.getAppVersion.getVersionCode().then(function (version) {
-                    _this.nativeVersionCode = version;
-                    console.log('App version code:', version);
-                }).catch(function (err) {
-                    console.warn('Could not get app version code:', err);
-                });
-            }
-            else {
-                console.log('getAppVersion plugin not available');
-            }
-            // Initialize other Cordova-specific features here
-            // For example: push notifications, file system access, etc.
-        };
         SettingsView.prototype.languageWatch = function () {
             Translations_1.Translations.setBrowserLang(this.language);
             Translations_1.Translations.loadLangTranslation(this.language);
@@ -340,9 +208,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         SettingsView.prototype.useShortTickerWatch = function () {
             Translations_1.tickerStore.setTickerPreference(this.useShortTicker);
-        };
-        SettingsView.prototype.notificationsEnabledWatch = function () {
-            Storage_1.Storage.setItem('notificationsEnabled', this.notificationsEnabled);
         };
         SettingsView.prototype.updateWalletOptions = function () {
             var options = wallet.options;
@@ -422,9 +287,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         ], SettingsView.prototype, "nativeVersionNumber", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
-        ], SettingsView.prototype, "isNativeEnvironment", void 0);
-        __decorate([
-            (0, VueAnnotate_1.VueVar)(false)
         ], SettingsView.prototype, "optimizeIsNeeded", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
@@ -438,15 +300,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueVar)(config)
         ], SettingsView.prototype, "config", void 0);
-        __decorate([
-            (0, VueAnnotate_1.VueVar)(false)
-        ], SettingsView.prototype, "notificationsEnabled", void 0);
-        __decorate([
-            (0, VueAnnotate_1.VueVar)('')
-        ], SettingsView.prototype, "debugInfo", void 0);
-        __decorate([
-            (0, VueAnnotate_1.VueVar)(false)
-        ], SettingsView.prototype, "showDebugInfo", void 0);
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "languageWatch", null);
@@ -465,9 +318,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "useShortTickerWatch", null);
-        __decorate([
-            (0, VueAnnotate_1.VueWatched)()
-        ], SettingsView.prototype, "notificationsEnabledWatch", null);
         return SettingsView;
     }(DestructableView_1.DestructableView));
     if (wallet !== null && blockchainExplorer !== null)

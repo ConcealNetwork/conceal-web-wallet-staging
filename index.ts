@@ -233,150 +233,39 @@ let copyrightView = new CopyrightView('#copyright');
 //==================Loading the right page================
 //========================================================
 
-/**
- * Cordova Environment Detection and Initialization
- * Simplified approach: WebView apps = native, browsers = web
- */
-class CordovaDetector {
-	private static instance: CordovaDetector;
-	private isNativeEnvironment = false;
-	private loadingPromise: Promise<void>;
-	private loadingPromiseResolve: Function | null = null;
+let isCordovaApp = document.URL.indexOf('http://') === -1
+	&& document.URL.indexOf('https://') === -1;
 
-	constructor() {
-		this.loadingPromise = new Promise<void>((resolve) => {
-			this.loadingPromiseResolve = resolve;
-		});
+let promiseLoadingReady : Promise<void>;
 
-		this.detectEnvironment();
-	}
+window.native = false;
+if(isCordovaApp){
+	window.native = true;
+	$('body').addClass('native');
 
-	static getInstance(): CordovaDetector {
-		if (!CordovaDetector.instance) {
-			CordovaDetector.instance = new CordovaDetector();
-		}
-		return CordovaDetector.instance;
-	}
+	let promiseLoadingReadyResolve : null|Function = null;
+	let promiseLoadingReadyReject : null|Function = null;
+	promiseLoadingReady = new Promise<void>(function(resolve, reject){
+		promiseLoadingReadyResolve = resolve;
+		promiseLoadingReadyReject = reject;
+	});
+	let cordovaJs = document.createElement('script');
+	cordovaJs.type = 'text/javascript';
+	cordovaJs.src = 'cordova.js';
+	document.body.appendChild(cordovaJs);
 
-	/**
-	 * Simple detection: WebView app = native, browser = web
-	 */
-	private detectEnvironment(): void {
-		console.log('Detecting environment: WebView app vs Web browser');
+	let timeoutCordovaLoad = setTimeout(function(){
+		if(promiseLoadingReadyResolve)
+			promiseLoadingReadyResolve();
+	}, 10*1000);
+	document.addEventListener('deviceready', function(){
+		if(promiseLoadingReadyResolve)
+			promiseLoadingReadyResolve();
+		clearInterval(timeoutCordovaLoad);
+	}, false);
 
-		// Determine the environment type immediately
-		this.isNativeEnvironment = this.isWebViewApp();
-		
-		// Wait for DOM ready before setting up the environment
-		if (document.readyState === 'loading') {
-			document.addEventListener('DOMContentLoaded', () => {
-				this.setupEnvironment();
-			});
-		} else {
-			// DOM is already ready
-			this.setupEnvironment();
-		}
-	}
-
-	/**
-	 * Setup the environment after DOM is ready
-	 */
-	private setupEnvironment(): void {
-		if (this.isNativeEnvironment) {
-			console.log('WebView app detected - setting up native environment');
-			this.setupNativeEnvironment();
-		} else {
-			console.log('Web browser detected - setting up web environment');
-			this.setupWebEnvironment();
-		}
-
-		// Resolve the promise after environment is set up
-		if (this.loadingPromiseResolve) {
-			this.loadingPromiseResolve();
-		}
-	}
-
-	/**
-	 * Detect if running in a WebView app (Android APK)
-	 */
-	private isWebViewApp(): boolean {
-		const userAgent = navigator.userAgent.toLowerCase();
-		
-		// Primary indicator: Android WebView has "wv" in user agent
-		const isAndroidWebView = userAgent.includes('android') && userAgent.includes('wv');
-		
-		// Additional indicators for WebView apps
-		const hasWebViewIndicators = userAgent.includes('webview') || 
-									 (userAgent.includes('version/') && !userAgent.includes('chrome/'));
-		
-		console.log('WebView detection:', {
-			userAgent,
-			isAndroidWebView,
-			hasWebViewIndicators,
-			finalResult: isAndroidWebView || hasWebViewIndicators
-		});
-
-		return isAndroidWebView || hasWebViewIndicators;
-	}
-
-	/**
-	 * Setup native environment for WebView apps
-	 */
-	private setupNativeEnvironment(): void {
-		window.native = true;
-		
-		// Add native class to body, but check if jQuery is available
-		if (typeof $ !== 'undefined' && $) {
-			$('body').addClass('native');
-		} else {
-			// Fallback to vanilla JS if jQuery isn't ready yet
-			document.body.classList.add('native');
-		}
-		
-		// Try to load cordova.js if available (optional)
-		if (!document.querySelector('script[src="cordova.js"]')) {
-			const cordovaJs = document.createElement('script');
-			cordovaJs.type = 'text/javascript';
-			cordovaJs.src = 'cordova.js';
-			cordovaJs.onerror = () => {
-				console.log('cordova.js not available - continuing without Cordova plugins');
-			};
-			document.body.appendChild(cordovaJs);
-		}
-	}
-
-	/**
-	 * Setup web environment for browsers
-	 */
-	private setupWebEnvironment(): void {
-		window.native = false;
-		// Don't add native class to body
-	}
-
-	/**
-	 * Get the loading promise that resolves when environment is determined
-	 */
-	public getLoadingPromise(): Promise<void> {
-		return this.loadingPromise;
-	}
-
-	/**
-	 * Check if running in native environment (WebView app)
-	 */
-	public isNative(): boolean {
-		return this.isNativeEnvironment;
-	}
-}
-
-// Initialize Cordova detection
-const cordovaDetector = CordovaDetector.getInstance();
-const promiseLoadingReady = cordovaDetector.getLoadingPromise();
-
-// Make cordovaDetector globally accessible
-(window as any).cordovaDetector = cordovaDetector;
-
-// Legacy compatibility - remove these once all code is updated
-const isCordovaApp = false; // Deprecated - use cordovaDetector.isNative() instead
+}else
+	promiseLoadingReady = Promise.resolve();
 
 promiseLoadingReady.then(function(){
 	let router = new Router('./','../../');
@@ -408,89 +297,86 @@ Y88b  d88P Y88b.  Y88..88P 888 d88P         scam and will give them access to yo
 
 IA Self-XSS scam tricks you into compromising your wallet by claiming to provide a way to log into someone else's wallet, or some other kind of reward, after pasting a special code or link into your web browser.`, "font-family:monospace")
 
-// Use proper Cordova detection for service worker registration
-promiseLoadingReady.then(() => {
-	if (!cordovaDetector.isNative() && 'serviceWorker' in navigator) {
-		// Flag to prevent showing the same update multiple times
-		let updateModalShown = false;
+if (!isCordovaApp && 'serviceWorker' in navigator) {
+	// Flag to prevent showing the same update multiple times
+	let updateModalShown = false;
+	
+	const showRefreshUI = function(registration : any){
+		// Prevent showing the same update multiple times
+		if (updateModalShown) {
+			return;
+		}
+		updateModalShown = true;
 		
-		const showRefreshUI = function(registration : any){
-			// Prevent showing the same update multiple times
-			if (updateModalShown) {
-				return;
+		// Use safeSwal which automatically waits for i18n
+		(window as any).safeSwal({
+			type:'info',
+			title:i18n.t('global.newVersionModal.title'),
+			html:i18n.t('global.newVersionModal.content'),
+			confirmButtonText:i18n.t('global.newVersionModal.confirmText'),
+			showCancelButton: true,
+			cancelButtonText:i18n.t('global.newVersionModal.cancelText'),
+		}).then(function(value : any){
+			if(!value.dismiss){
+				registration.waiting.postMessage('force-activate');
+			} else {
+				// Reset flag when user cancels so they can see it again later
+				updateModalShown = false;
 			}
-			updateModalShown = true;
-			
-			// Use safeSwal which automatically waits for i18n
-			(window as any).safeSwal({
-				type:'info',
-				title:i18n.t('global.newVersionModal.title'),
-				html:i18n.t('global.newVersionModal.content'),
-				confirmButtonText:i18n.t('global.newVersionModal.confirmText'),
-				showCancelButton: true,
-				cancelButtonText:i18n.t('global.newVersionModal.cancelText'),
-			}).then(function(value : any){
-				if(!value.dismiss){
-					registration.waiting.postMessage('force-activate');
-				} else {
-					// Reset flag when user cancels so they can see it again later
-					updateModalShown = false;
+		});
+	};
+
+	const onNewServiceWorker = function(registration:any, callback : Function){
+		if (registration.waiting) {
+			// SW is waiting to activate. Can occur if multiple clients open and
+			// one of the clients is refreshed.
+			return callback();
+		}
+
+		const listenInstalledStateChange = () => {
+			registration.installing.addEventListener('statechange', (event : Event) => {
+				if ((<any>event.target).state === 'installed') {
+					// A new service worker is available, inform the user
+					callback();
 				}
 			});
 		};
 
-		const onNewServiceWorker = function(registration:any, callback : Function){
-			if (registration.waiting) {
-				// SW is waiting to activate. Can occur if multiple clients open and
-				// one of the clients is refreshed.
-				return callback();
-			}
+		if (registration.installing) {
+			return listenInstalledStateChange();
+		}
 
-			const listenInstalledStateChange = () => {
-				registration.installing.addEventListener('statechange', (event : Event) => {
-					if ((<any>event.target).state === 'installed') {
-						// A new service worker is available, inform the user
-						callback();
-					}
-				});
-			};
+		// We are currently controlled so a new SW may be found...
+		// Add a listener in case a new SW is found,
+		registration.addEventListener('updatefound', listenInstalledStateChange);
+	};
 
-			if (registration.installing) {
-				return listenInstalledStateChange();
-			}
+	navigator.serviceWorker.addEventListener('message', (event) => {
+		if (!event.data) {
+			return;
+		}
 
-			// We are currently controlled so a new SW may be found...
-			// Add a listener in case a new SW is found,
-			registration.addEventListener('updatefound', listenInstalledStateChange);
-		};
+		switch (event.data) {
+			case 'reload-window-update':
+				window.location.reload();
+				break;
+			default:
+				// NOOP
+				break;
+		}
+	});
 
-		navigator.serviceWorker.addEventListener('message', (event) => {
-			if (!event.data) {
-				return;
-			}
+	navigator.serviceWorker.register('/service-worker.js').then(function (registration) {
+		// Track updates to the Service Worker.
+		if (!navigator.serviceWorker.controller) {
+			// The window client isn't currently controlled so it's a new service
+			// worker that will activate immediately
+			return;
+		}
 
-			switch (event.data) {
-				case 'reload-window-update':
-					window.location.reload();
-					break;
-				default:
-					// NOOP
-					break;
-			}
+		//console.log('on new service worker');
+		onNewServiceWorker(registration, () => {
+			showRefreshUI(registration);
 		});
-
-		navigator.serviceWorker.register('/service-worker.js').then(function (registration) {
-			// Track updates to the Service Worker.
-			if (!navigator.serviceWorker.controller) {
-				// The window client isn't currently controlled so it's a new service
-				// worker that will activate immediately
-				return;
-			}
-
-			//console.log('on new service worker');
-			onNewServiceWorker(registration, () => {
-				showRefreshUI(registration);
-			});
-		});
-	}
-});
+	});
+}

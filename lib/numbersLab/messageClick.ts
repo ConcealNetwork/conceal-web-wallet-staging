@@ -3,8 +3,6 @@
  * Copyright (c) 2018-2025 Conceal Community, Conceal.Network & Conceal Devs
 */
 
-import {Storage} from "../../model/Storage";
-
 /**
  * Initializes the message menu functionality.
  * This function ensures the event handler is attached at the right time
@@ -52,23 +50,7 @@ function attachHandler() {
             if (accountView) {
                 accountView.isInitialized = false;
             }
-
-            // Clear Cordova badge when user visits messages
-            clearCordovaBadge();
         }
         
-    });
-}
-
-/**
- * Clear the Cordova badge when user visits messages
- */
-function clearCordovaBadge() {
-    Storage.getItem('notificationsEnabled', false).then((enabled: boolean) => {
-        if (enabled && window.cordova?.plugins?.notification?.badge) {
-            window.cordova.plugins.notification.badge.clear();
-        }
-    }).catch(() => {
-        // If storage fails, don't clear notifications
     });
 }

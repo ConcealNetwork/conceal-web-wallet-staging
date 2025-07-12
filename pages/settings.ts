@@ -33,9 +33,6 @@ let wallet : Wallet = DependencyInjectorInstance().getInstance(Wallet.name, 'def
 let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 let walletWatchdog : WalletWatchdog = DependencyInjectorInstance().getInstance(WalletWatchdog.name,'default', false);
 
-// Access the global CordovaDetector instance
-declare const cordovaDetector: any;
-
 class SettingsView extends DestructableView{
 	@VueVar(10) readSpeed !: number;
 	@VueVar(false) checkMinerTx !: boolean;
@@ -51,7 +48,6 @@ class SettingsView extends DestructableView{
 
 	@VueVar(0) nativeVersionCode !: number;
 	@VueVar('') nativeVersionNumber !: string;
-	@VueVar(false) isNativeEnvironment !: boolean;
 
   @VueVar(false) optimizeIsNeeded !: boolean;
   @VueVar(false) optimizeLoading !: boolean;
@@ -59,21 +55,12 @@ class SettingsView extends DestructableView{
 	@VueVar(false) useShortTicker !: boolean;
 	@VueVar('') currentTicker !: string;
 	@VueVar(config) config !: any;
-	@VueVar(false) notificationsEnabled !: boolean;
-
-	// Debug information for troubleshooting on device
-	@VueVar('') debugInfo !: string;
-	@VueVar(false) showDebugInfo !: boolean;
 
 	private unsubscribeTicker: (() => void) | null = null;
 
 	constructor(container : string) {
 		super(container);
 		let self = this;
-		
-		// Use the global CordovaDetector instance for environment detection
-		this.initializeCordovaDetection();
-		
 		this.readSpeed = wallet.options.readSpeed;
 		this.checkMinerTx = wallet.options.checkMinerTx;
 
@@ -113,173 +100,24 @@ class SettingsView extends DestructableView{
 
 		blockchainExplorer.getHeight().then(function (height: number) {
 			self.maxHeight = height;
-		}).catch((err: any) => {
-			// do nothing
-		});
+    }).catch((err: any) => {
+      // do nothing
+    });
 
 		Translations.getLang().then((userLang : string) => {
 			this.language = userLang;
-		}).catch((err: any) => {
-			console.error("Error trying to get user language", err);
-		});
+    }).catch((err: any) => {
+      console.error("Error trying to get user language", err);
+    });
 
-		// Initialize notification setting
-		Storage.getItem('notificationsEnabled', false).then((enabled : boolean) => {
-			this.notificationsEnabled = enabled;
-		}).catch(() => {
-			this.notificationsEnabled = false;
-		});
-
-		// Initialize debug information for troubleshooting
-		this.initializeDebugInfo();
-	}
-
-	/**
-	 * Initialize debug information that can be displayed on the phone
-	 */
-	private initializeDebugInfo(): void {
-		const updateDebugInfo = () => {
-			const debugData = {
-				// Time info
-				timestamp: new Date().toISOString(),
-				timeElapsed: Math.round((Date.now() - (window as any).loadStartTime) / 1000) + 's',
-				
-				// Environment detection
-				currentUrl: window.location.href,
-				documentUrl: document.URL,
-				protocol: window.location.protocol,
-				host: window.location.host,
-				
-				// CordovaDetector results
-				cordovaDetectorExists: typeof cordovaDetector !== 'undefined',
-				cordovaDetectorIsNative: typeof cordovaDetector !== 'undefined' ? cordovaDetector.isNative() : 'N/A',
-				isNativeEnvironment: this.isNativeEnvironment,
-				
-				// WebView detection details
-				userAgent: navigator.userAgent,
-				isAndroidWebView: navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv'),
-				hasAndroidInUA: navigator.userAgent.includes('Android'),
-				hasWvInUA: navigator.userAgent.includes('wv'),
-				hasWebViewInUA: navigator.userAgent.includes('webview'),
-				hasVersionInUA: navigator.userAgent.includes('version/'),
-				hasChromeInUA: navigator.userAgent.includes('chrome/'),
-				
-				// Environment checks
-				windowNative: (window as any).native,
-				bodyHasNativeClass: document.body.classList.contains('native'),
-				hasServiceWorker: 'serviceWorker' in navigator,
-				
-				// Cordova runtime (may or may not be present)
-				windowCordova: typeof (window as any).cordova !== 'undefined',
-				windowDevice: typeof (window as any).device !== 'undefined',
-				windowPlugins: typeof (window as any).plugins !== 'undefined',
-				cordovaVersion: (window as any).cordova?.version || 'N/A',
-				cordovaPlatformId: (window as any).cordova?.platformId || 'N/A',
-				cordovaGetAppVersion: typeof (window as any).cordova?.getAppVersion !== 'undefined',
-				
-				// Version info
-				nativeVersionCode: this.nativeVersionCode,
-				nativeVersionNumber: this.nativeVersionNumber,
-				
-				// URL analysis
-				isFileProtocol: window.location.protocol === 'file:',
-				isHttpsProtocol: window.location.protocol === 'https:',
-				isHttpProtocol: window.location.protocol === 'http:',
-				
-				// Detection method used
-				detectionMethod: this.isNativeEnvironment ? 'WebView detected' : 'Web browser detected'
-			};
-
-			this.debugInfo = JSON.stringify(debugData, null, 2);
-		};
-
-		// Set load start time if not already set
-		if (!(window as any).loadStartTime) {
-			(window as any).loadStartTime = Date.now();
-		}
-
-		// Update immediately
-		updateDebugInfo();
-		
-		// Show debug info automatically if CordovaDetector is missing or WebView detection might need verification
-		if (typeof cordovaDetector === 'undefined') {
-			this.showDebugInfo = true;
-		}
-		
-		// Refresh debug info every 3 seconds for live monitoring
-		const debugInterval = setInterval(() => {
-			if (this.showDebugInfo) {
-				updateDebugInfo();
-			}
-		}, 3000);
-		
-		// Stop refreshing after 30 seconds to save resources
-		setTimeout(() => {
-			clearInterval(debugInterval);
-		}, 30000);
-	}
-
-	toggleDebugInfo(): void {
-		this.showDebugInfo = !this.showDebugInfo;
-		if (this.showDebugInfo) {
-			this.initializeDebugInfo(); // Refresh the info
-		}
-	}
-
-	/**
-	 * Initialize Cordova detection using the global CordovaDetector
-	 * This leverages the centralized detection system from index.ts
-	 */
-	private initializeCordovaDetection(): void {
-		// Check if we're in a native environment using the global detector
-		if (typeof cordovaDetector !== 'undefined') {
-			this.isNativeEnvironment = cordovaDetector.isNative();
-			
-			// If we're in a native environment, try to initialize Cordova plugins
-			if (this.isNativeEnvironment) {
-				// Since detection is now immediate, we can try to initialize plugins right away
-				// If Cordova.js is loaded, this will work; if not, it will gracefully fail
-				this.initializeCordovaPlugins();
-			}
-		} else {
-			// Fallback if CordovaDetector is not available
-			console.warn('CordovaDetector not found, falling back to web mode');
-			this.isNativeEnvironment = false;
-		}
-	}
-
-	/**
-	 * Initialize Cordova plugins if available
-	 */
-	private initializeCordovaPlugins(): void {
-		const cordova = (window as any).cordova;
-		
-		if (!cordova) {
-			console.log('Cordova object not found - native environment without Cordova runtime');
-			return;
-		}
-
-		// Get app version information if plugin is available
-		if (cordova.getAppVersion) {
-			cordova.getAppVersion.getVersionNumber().then((version: string) => {
+		if(typeof (<any>window).cordova !== 'undefined' && typeof (<any>window).cordova.getAppVersion !== 'undefined') {
+			(<any>window).cordova.getAppVersion.getVersionNumber().then((version : string) => {
 				this.nativeVersionNumber = version;
-				console.log('App version number:', version);
-			}).catch((err: any) => {
-				console.warn('Could not get app version number:', err);
 			});
-
-			cordova.getAppVersion.getVersionCode().then((version: number) => {
+			(<any>window).cordova.getAppVersion.getVersionCode().then((version : number) => {
 				this.nativeVersionCode = version;
-				console.log('App version code:', version);
-			}).catch((err: any) => {
-				console.warn('Could not get app version code:', err);
 			});
-		} else {
-			console.log('getAppVersion plugin not available');
 		}
-
-		// Initialize other Cordova-specific features here
-		// For example: push notifications, file system access, etc.
 	}
 
 	@VueWatched()
@@ -390,11 +228,6 @@ class SettingsView extends DestructableView{
 	@VueWatched()
 	useShortTickerWatch() {
 		tickerStore.setTickerPreference(this.useShortTicker);
-	}
-
-	@VueWatched()
-	notificationsEnabledWatch() {
-		Storage.setItem('notificationsEnabled', this.notificationsEnabled);
 	}
 
 	private updateWalletOptions() {

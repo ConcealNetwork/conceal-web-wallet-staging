@@ -1717,14 +1717,6 @@ body {
 	left: 2.15rem;
 }
 
-.field-description {
-	font-size: 0.9em;
-	color: var(--color-text-tertiary);
-	margin-top: 0.5em;
-	margin-bottom: 1em;
-	line-height: 1.4;
-}
-
 /* TTL Slider Styles */
 .ttl-slider-container {
 	margin: 10px 0;

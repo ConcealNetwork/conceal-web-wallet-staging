@@ -8,20 +8,6 @@
 		</div>
 	</div>
 	<div class="body-content" >
-		<!-- Debug Panel (always visible for troubleshooting) -->
-		<div class="panel">
-			<div class="body">
-				<div class="content">
-					<div class="field">
-						<button @click="toggleDebugInfo()" class="btn">
-							{{ showDebugInfo ? 'Hide Debug Info' : 'Show Debug Info' }}
-						</button>
-					</div>
-					<div v-if="showDebugInfo" class="debug-panel" style="background: #f5f5f5; padding: 10px; margin: 10px 0; border: 1px solid #ddd; font-family: monospace; font-size: 12px; white-space: pre-wrap; max-height: 300px; overflow-y: auto;">{{ debugInfo }}</div>
-				</div>
-			</div>
-		</div>
-
 		<div class="panel inline" v-if="nativeVersionCode !== 0">
 			<div class="body" >
 				<div class="content" >
@@ -78,21 +64,6 @@
 			</div>
 		</div>
 
-		<div class="panel" v-if="isNativeEnvironment">
-			<div class="body" >
-				<div class="content" >
-					<div class="field">
-						<label>{{ $t("settingsPage.settingsBlock.notifications.label") }}</label>
-						<div class="field-description">{{ $t("settingsPage.settingsBlock.notifications.description") }}</div>
-					</div>
-					<div class="field checkbox toggle">
-						<input type="checkbox" name="notificationsEnabled" v-model="notificationsEnabled">
-						<label>{{ notificationsEnabled ? $t("settingsPage.settingsBlock.notifications.enabled") : $t("settingsPage.settingsBlock.notifications.disabled") }}</label>
-					</div>
-				</div>
-			</div>
-		</div>
-
 		<div class="panel">
 			<div class="body">
 				<div class="header-title">{{ $t("global.optimize.label") }}</div>
@@ -141,7 +112,6 @@
 				</div>
 			</div>
 		</div>
-
 
 		<div class="panel">
 			<div class="body" >

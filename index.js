@@ -233,132 +233,35 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
     //========================================================
     //==================Loading the right page================
     //========================================================
-    /**
-     * Cordova Environment Detection and Initialization
-     * Simplified approach: WebView apps = native, browsers = web
-     */
-    var CordovaDetector = /** @class */ (function () {
-        function CordovaDetector() {
-            var _this = this;
-            this.isNativeEnvironment = false;
-            this.loadingPromiseResolve = null;
-            this.loadingPromise = new Promise(function (resolve) {
-                _this.loadingPromiseResolve = resolve;
-            });
-            this.detectEnvironment();
-        }
-        CordovaDetector.getInstance = function () {
-            if (!CordovaDetector.instance) {
-                CordovaDetector.instance = new CordovaDetector();
-            }
-            return CordovaDetector.instance;
-        };
-        /**
-         * Simple detection: WebView app = native, browser = web
-         */
-        CordovaDetector.prototype.detectEnvironment = function () {
-            var _this = this;
-            console.log('Detecting environment: WebView app vs Web browser');
-            // Determine the environment type immediately
-            this.isNativeEnvironment = this.isWebViewApp();
-            // Wait for DOM ready before setting up the environment
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', function () {
-                    _this.setupEnvironment();
-                });
-            }
-            else {
-                // DOM is already ready
-                this.setupEnvironment();
-            }
-        };
-        /**
-         * Setup the environment after DOM is ready
-         */
-        CordovaDetector.prototype.setupEnvironment = function () {
-            if (this.isNativeEnvironment) {
-                console.log('WebView app detected - setting up native environment');
-                this.setupNativeEnvironment();
-            }
-            else {
-                console.log('Web browser detected - setting up web environment');
-                this.setupWebEnvironment();
-            }
-            // Resolve the promise after environment is set up
-            if (this.loadingPromiseResolve) {
-                this.loadingPromiseResolve();
-            }
-        };
-        /**
-         * Detect if running in a WebView app (Android APK)
-         */
-        CordovaDetector.prototype.isWebViewApp = function () {
-            var userAgent = navigator.userAgent.toLowerCase();
-            // Primary indicator: Android WebView has "wv" in user agent
-            var isAndroidWebView = userAgent.includes('android') && userAgent.includes('wv');
-            // Additional indicators for WebView apps
-            var hasWebViewIndicators = userAgent.includes('webview') ||
-                (userAgent.includes('version/') && !userAgent.includes('chrome/'));
-            console.log('WebView detection:', {
-                userAgent: userAgent,
-                isAndroidWebView: isAndroidWebView,
-                hasWebViewIndicators: hasWebViewIndicators,
-                finalResult: isAndroidWebView || hasWebViewIndicators
-            });
-            return isAndroidWebView || hasWebViewIndicators;
-        };
-        /**
-         * Setup native environment for WebView apps
-         */
-        CordovaDetector.prototype.setupNativeEnvironment = function () {
-            window.native = true;
-            // Add native class to body, but check if jQuery is available
-            if (typeof $ !== 'undefined' && $) {
-                $('body').addClass('native');
-            }
-            else {
-                // Fallback to vanilla JS if jQuery isn't ready yet
-                document.body.classList.add('native');
-            }
-            // Try to load cordova.js if available (optional)
-            if (!document.querySelector('script[src="cordova.js"]')) {
-                var cordovaJs = document.createElement('script');
-                cordovaJs.type = 'text/javascript';
-                cordovaJs.src = 'cordova.js';
-                cordovaJs.onerror = function () {
-                    console.log('cordova.js not available - continuing without Cordova plugins');
-                };
-                document.body.appendChild(cordovaJs);
-            }
-        };
-        /**
-         * Setup web environment for browsers
-         */
-        CordovaDetector.prototype.setupWebEnvironment = function () {
-            window.native = false;
-            // Don't add native class to body
-        };
-        /**
-         * Get the loading promise that resolves when environment is determined
-         */
-        CordovaDetector.prototype.getLoadingPromise = function () {
-            return this.loadingPromise;
-        };
-        /**
-         * Check if running in native environment (WebView app)
-         */
-        CordovaDetector.prototype.isNative = function () {
-            return this.isNativeEnvironment;
-        };
-        return CordovaDetector;
-    }());
-    // Initialize Cordova detection
-    var cordovaDetector = CordovaDetector.getInstance();
-    var promiseLoadingReady = cordovaDetector.getLoadingPromise();
-    // Make cordovaDetector globally accessible
-    window.cordovaDetector = cordovaDetector;
-    // Legacy compatibility - remove these once all code is updated
-    var isCordovaApp = false; // Deprecated - use cordovaDetector.isNative() instead
+    var isCordovaApp = document.URL.indexOf('http://') === -1
+        && document.URL.indexOf('https://') === -1;
+    var promiseLoadingReady;
+    window.native = false;
+    if (isCordovaApp) {
+        window.native = true;
+        $('body').addClass('native');
+        var promiseLoadingReadyResolve_1 = null;
+        var promiseLoadingReadyReject_1 = null;
+        promiseLoadingReady = new Promise(function (resolve, reject) {
+            promiseLoadingReadyResolve_1 = resolve;
+            promiseLoadingReadyReject_1 = reject;
+        });
+        var cordovaJs = document.createElement('script');
+        cordovaJs.type = 'text/javascript';
+        cordovaJs.src = 'cordova.js';
+        document.body.appendChild(cordovaJs);
+        var timeoutCordovaLoad_1 = setTimeout(function () {
+            if (promiseLoadingReadyResolve_1)
+                promiseLoadingReadyResolve_1();
+        }, 10 * 1000);
+        document.addEventListener('deviceready', function () {
+            if (promiseLoadingReadyResolve_1)
+                promiseLoadingReadyResolve_1();
+            clearInterval(timeoutCordovaLoad_1);
+        }, false);
+    }
+    else
+        promiseLoadingReady = Promise.resolve();
     promiseLoadingReady.then(function () {
         var router = new Router_1.Router('./', '../../');
         window.onhashchange = function () {
@@ -372,81 +275,78 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
     //========================================================
     //only install the service on web platforms and not native
     console.log("%c                                            \n .d8888b.  888                       888    \nd88P  Y88b 888                       888    \nY88b.      888                       888    This is a browser feature intended for \n \"Y888b.   888888  .d88b.  88888b.   888    developers. If someone told you to copy-paste \n    \"Y88b. 888    d88\"\"88b 888 \"88b  888    something here to enable a feature \n      \"888 888    888  888 888  888  Y8P    or \"hack\" someone's account, it is a \nY88b  d88P Y88b.  Y88..88P 888 d88P         scam and will give them access to your \n \"Y8888P\"   \"Y888  \"Y88P\"  88888P\"   888    Conceal Network Wallet!\n                           888              \n                           888              \n                           888              \n\nIA Self-XSS scam tricks you into compromising your wallet by claiming to provide a way to log into someone else's wallet, or some other kind of reward, after pasting a special code or link into your web browser.", "font-family:monospace");
-    // Use proper Cordova detection for service worker registration
-    promiseLoadingReady.then(function () {
-        if (!cordovaDetector.isNative() && 'serviceWorker' in navigator) {
-            // Flag to prevent showing the same update multiple times
-            var updateModalShown_1 = false;
-            var showRefreshUI_1 = function (registration) {
-                // Prevent showing the same update multiple times
-                if (updateModalShown_1) {
-                    return;
+    if (!isCordovaApp && 'serviceWorker' in navigator) {
+        // Flag to prevent showing the same update multiple times
+        var updateModalShown_1 = false;
+        var showRefreshUI_1 = function (registration) {
+            // Prevent showing the same update multiple times
+            if (updateModalShown_1) {
+                return;
+            }
+            updateModalShown_1 = true;
+            // Use safeSwal which automatically waits for i18n
+            window.safeSwal({
+                type: 'info',
+                title: i18n.t('global.newVersionModal.title'),
+                html: i18n.t('global.newVersionModal.content'),
+                confirmButtonText: i18n.t('global.newVersionModal.confirmText'),
+                showCancelButton: true,
+                cancelButtonText: i18n.t('global.newVersionModal.cancelText'),
+            }).then(function (value) {
+                if (!value.dismiss) {
+                    registration.waiting.postMessage('force-activate');
                 }
-                updateModalShown_1 = true;
-                // Use safeSwal which automatically waits for i18n
-                window.safeSwal({
-                    type: 'info',
-                    title: i18n.t('global.newVersionModal.title'),
-                    html: i18n.t('global.newVersionModal.content'),
-                    confirmButtonText: i18n.t('global.newVersionModal.confirmText'),
-                    showCancelButton: true,
-                    cancelButtonText: i18n.t('global.newVersionModal.cancelText'),
-                }).then(function (value) {
-                    if (!value.dismiss) {
-                        registration.waiting.postMessage('force-activate');
-                    }
-                    else {
-                        // Reset flag when user cancels so they can see it again later
-                        updateModalShown_1 = false;
+                else {
+                    // Reset flag when user cancels so they can see it again later
+                    updateModalShown_1 = false;
+                }
+            });
+        };
+        var onNewServiceWorker_1 = function (registration, callback) {
+            if (registration.waiting) {
+                // SW is waiting to activate. Can occur if multiple clients open and
+                // one of the clients is refreshed.
+                return callback();
+            }
+            var listenInstalledStateChange = function () {
+                registration.installing.addEventListener('statechange', function (event) {
+                    if (event.target.state === 'installed') {
+                        // A new service worker is available, inform the user
+                        callback();
                     }
                 });
             };
-            var onNewServiceWorker_1 = function (registration, callback) {
-                if (registration.waiting) {
-                    // SW is waiting to activate. Can occur if multiple clients open and
-                    // one of the clients is refreshed.
-                    return callback();
-                }
-                var listenInstalledStateChange = function () {
-                    registration.installing.addEventListener('statechange', function (event) {
-                        if (event.target.state === 'installed') {
-                            // A new service worker is available, inform the user
-                            callback();
-                        }
-                    });
-                };
-                if (registration.installing) {
-                    return listenInstalledStateChange();
-                }
-                // We are currently controlled so a new SW may be found...
-                // Add a listener in case a new SW is found,
-                registration.addEventListener('updatefound', listenInstalledStateChange);
-            };
-            navigator.serviceWorker.addEventListener('message', function (event) {
-                if (!event.data) {
-                    return;
-                }
-                switch (event.data) {
-                    case 'reload-window-update':
-                        window.location.reload();
-                        break;
-                    default:
-                        // NOOP
-                        break;
-                }
+            if (registration.installing) {
+                return listenInstalledStateChange();
+            }
+            // We are currently controlled so a new SW may be found...
+            // Add a listener in case a new SW is found,
+            registration.addEventListener('updatefound', listenInstalledStateChange);
+        };
+        navigator.serviceWorker.addEventListener('message', function (event) {
+            if (!event.data) {
+                return;
+            }
+            switch (event.data) {
+                case 'reload-window-update':
+                    window.location.reload();
+                    break;
+                default:
+                    // NOOP
+                    break;
+            }
+        });
+        navigator.serviceWorker.register('/service-worker.js').then(function (registration) {
+            // Track updates to the Service Worker.
+            if (!navigator.serviceWorker.controller) {
+                // The window client isn't currently controlled so it's a new service
+                // worker that will activate immediately
+                return;
+            }
+            //console.log('on new service worker');
+            onNewServiceWorker_1(registration, function () {
+                showRefreshUI_1(registration);
             });
-            navigator.serviceWorker.register('/service-worker.js').then(function (registration) {
-                // Track updates to the Service Worker.
-                if (!navigator.serviceWorker.controller) {
-                    // The window client isn't currently controlled so it's a new service
-                    // worker that will activate immediately
-                    return;
-                }
-                //console.log('on new service worker');
-                onNewServiceWorker_1(registration, function () {
-                    showRefreshUI_1(registration);
-                });
-            });
-        }
-    });
+        });
+    }
 });
