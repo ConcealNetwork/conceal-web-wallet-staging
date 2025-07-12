@@ -61,6 +61,10 @@ class SettingsView extends DestructableView{
 	@VueVar(config) config !: any;
 	@VueVar(false) notificationsEnabled !: boolean;
 
+	// Debug information for troubleshooting on device
+	@VueVar('') debugInfo !: string;
+	@VueVar(false) showDebugInfo !: boolean;
+
 	private unsubscribeTicker: (() => void) | null = null;
 
 	constructor(container : string) {
@@ -125,6 +129,96 @@ class SettingsView extends DestructableView{
 		}).catch(() => {
 			this.notificationsEnabled = false;
 		});
+
+		// Initialize debug information for troubleshooting
+		this.initializeDebugInfo();
+	}
+
+	/**
+	 * Initialize debug information that can be displayed on the phone
+	 */
+	private initializeDebugInfo(): void {
+		const updateDebugInfo = () => {
+			const debugData = {
+				// Time info
+				timestamp: new Date().toISOString(),
+				timeElapsed: Math.round((Date.now() - (window as any).loadStartTime) / 1000) + 's',
+				
+				// Environment detection
+				currentUrl: window.location.href,
+				documentUrl: document.URL,
+				protocol: window.location.protocol,
+				host: window.location.host,
+				
+				// Cordova detection
+				cordovaDetectorExists: typeof cordovaDetector !== 'undefined',
+				cordovaDetectorIsNative: typeof cordovaDetector !== 'undefined' ? cordovaDetector.isNative() : 'N/A',
+				isNativeEnvironment: this.isNativeEnvironment,
+				
+				// Window objects
+				windowNative: (window as any).native,
+				windowCordova: typeof (window as any).cordova !== 'undefined',
+				windowDevice: typeof (window as any).device !== 'undefined',
+				windowPlugins: typeof (window as any).plugins !== 'undefined',
+				
+				// Cordova object details
+				cordovaVersion: (window as any).cordova?.version || 'N/A',
+				cordovaPlatformId: (window as any).cordova?.platformId || 'N/A',
+				cordovaGetAppVersion: typeof (window as any).cordova?.getAppVersion !== 'undefined',
+				
+				// User agent and environment
+				userAgent: navigator.userAgent,
+				hasServiceWorker: 'serviceWorker' in navigator,
+				isAndroidWebView: navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv'),
+				
+				// Version info
+				nativeVersionCode: this.nativeVersionCode,
+				nativeVersionNumber: this.nativeVersionNumber,
+				
+				// Additional checks
+				bodyHasNativeClass: document.body.classList.contains('native'),
+				hasDeviceReadyListener: true,
+				
+				// URL analysis
+				isFileProtocol: window.location.protocol === 'file:',
+				isHttpsProtocol: window.location.protocol === 'https:',
+				isHttpProtocol: window.location.protocol === 'http:'
+			};
+
+			this.debugInfo = JSON.stringify(debugData, null, 2);
+		};
+
+		// Set load start time if not already set
+		if (!(window as any).loadStartTime) {
+			(window as any).loadStartTime = Date.now();
+		}
+
+		// Update immediately
+		updateDebugInfo();
+		
+		// Show debug info automatically if we're having issues or detection failed
+		if (typeof cordovaDetector === 'undefined' || !this.isNativeEnvironment) {
+			this.showDebugInfo = true;
+		}
+		
+		// Refresh debug info every 3 seconds for live monitoring
+		const debugInterval = setInterval(() => {
+			if (this.showDebugInfo) {
+				updateDebugInfo();
+			}
+		}, 3000);
+		
+		// Stop refreshing after 30 seconds to save resources
+		setTimeout(() => {
+			clearInterval(debugInterval);
+		}, 30000);
+	}
+
+	toggleDebugInfo(): void {
+		this.showDebugInfo = !this.showDebugInfo;
+		if (this.showDebugInfo) {
+			this.initializeDebugInfo(); // Refresh the info
+		}
 	}
 
 	/**

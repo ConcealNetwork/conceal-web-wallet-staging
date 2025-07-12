@@ -285,6 +285,57 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
                     }
                 }
             }, 3000); // Increased timeout to allow for slower devices
+            // Method 3: Aggressive detection for remote-loading Cordova apps (parallel process)
+            this.startAggressiveDetection();
+        };
+        /**
+         * Aggressive detection method that runs in parallel for Android WebView apps
+         * This won't interfere with the main detection logic
+         */
+        CordovaDetector.prototype.startAggressiveDetection = function () {
+            var _this = this;
+            var detectionAttempts = 0;
+            var maxAttempts = 8;
+            var tryAggressiveDetection = function () {
+                detectionAttempts++;
+                // Only continue if we haven't already detected Cordova
+                if (!_this.deviceReadyFired && !_this.isNativeEnvironment) {
+                    // Check for Android WebView environment indicators
+                    if (_this.isLikelyAndroidWebViewApp()) {
+                        console.log("Aggressive detection attempt ".concat(detectionAttempts, ": Android WebView detected"));
+                        // Try to validate Cordova object
+                        if (_this.validateCordovaObject()) {
+                            console.log('Cordova detected via aggressive method');
+                            _this.deviceReadyFired = true;
+                            _this.isNativeEnvironment = true;
+                            _this.handleCordovaReady();
+                            return; // Stop trying
+                        }
+                    }
+                    // Continue trying if we haven't reached max attempts
+                    if (detectionAttempts < maxAttempts) {
+                        setTimeout(tryAggressiveDetection, 600); // Try every 600ms
+                    }
+                }
+            };
+            // Start aggressive detection after a short delay
+            setTimeout(tryAggressiveDetection, 200);
+        };
+        /**
+         * Check specifically for Android WebView app environment
+         */
+        CordovaDetector.prototype.isLikelyAndroidWebViewApp = function () {
+            var userAgent = navigator.userAgent.toLowerCase();
+            // Android WebView indicators
+            var isAndroid = userAgent.includes('android');
+            var hasWebView = userAgent.includes('wv') || userAgent.includes('webview');
+            var hasVersionString = userAgent.includes('version/');
+            var lacksChrome = !userAgent.includes('chrome/') || userAgent.includes('chrome/0.');
+            // Service worker check (often missing in WebView)
+            var noServiceWorker = !('serviceWorker' in navigator);
+            // URL checks for remote loading
+            var isRemoteUrl = window.location.protocol.startsWith('http');
+            return isAndroid && (hasWebView || (hasVersionString && lacksChrome) || noServiceWorker) && isRemoteUrl;
         };
         /**
          * Validate that the cordova object has expected properties

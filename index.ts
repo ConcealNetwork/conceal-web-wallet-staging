@@ -290,6 +290,69 @@ class CordovaDetector {
 				}
 			}
 		}, 3000); // Increased timeout to allow for slower devices
+
+		// Method 3: Aggressive detection for remote-loading Cordova apps (parallel process)
+		this.startAggressiveDetection();
+	}
+
+	/**
+	 * Aggressive detection method that runs in parallel for Android WebView apps
+	 * This won't interfere with the main detection logic
+	 */
+	private startAggressiveDetection(): void {
+		let detectionAttempts = 0;
+		const maxAttempts = 8;
+		
+		const tryAggressiveDetection = () => {
+			detectionAttempts++;
+			
+			// Only continue if we haven't already detected Cordova
+			if (!this.deviceReadyFired && !this.isNativeEnvironment) {
+				
+				// Check for Android WebView environment indicators
+				if (this.isLikelyAndroidWebViewApp()) {
+					console.log(`Aggressive detection attempt ${detectionAttempts}: Android WebView detected`);
+					
+					// Try to validate Cordova object
+					if (this.validateCordovaObject()) {
+						console.log('Cordova detected via aggressive method');
+						this.deviceReadyFired = true;
+						this.isNativeEnvironment = true;
+						this.handleCordovaReady();
+						return; // Stop trying
+					}
+				}
+				
+				// Continue trying if we haven't reached max attempts
+				if (detectionAttempts < maxAttempts) {
+					setTimeout(tryAggressiveDetection, 600); // Try every 600ms
+				}
+			}
+		};
+		
+		// Start aggressive detection after a short delay
+		setTimeout(tryAggressiveDetection, 200);
+	}
+
+	/**
+	 * Check specifically for Android WebView app environment
+	 */
+	private isLikelyAndroidWebViewApp(): boolean {
+		const userAgent = navigator.userAgent.toLowerCase();
+		
+		// Android WebView indicators
+		const isAndroid = userAgent.includes('android');
+		const hasWebView = userAgent.includes('wv') || userAgent.includes('webview');
+		const hasVersionString = userAgent.includes('version/');
+		const lacksChrome = !userAgent.includes('chrome/') || userAgent.includes('chrome/0.');
+		
+		// Service worker check (often missing in WebView)
+		const noServiceWorker = !('serviceWorker' in navigator);
+		
+		// URL checks for remote loading
+		const isRemoteUrl = window.location.protocol.startsWith('http');
+		
+		return isAndroid && (hasWebView || (hasVersionString && lacksChrome) || noServiceWorker) && isRemoteUrl;
 	}
 
 	/**

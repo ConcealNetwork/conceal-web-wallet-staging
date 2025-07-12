@@ -151,8 +151,83 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }).catch(function () {
                 _this.notificationsEnabled = false;
             });
+            // Initialize debug information for troubleshooting
+            _this.initializeDebugInfo();
             return _this;
         }
+        /**
+         * Initialize debug information that can be displayed on the phone
+         */
+        SettingsView.prototype.initializeDebugInfo = function () {
+            var _this = this;
+            var updateDebugInfo = function () {
+                var _a, _b, _c;
+                var debugData = {
+                    // Time info
+                    timestamp: new Date().toISOString(),
+                    timeElapsed: Math.round((Date.now() - window.loadStartTime) / 1000) + 's',
+                    // Environment detection
+                    currentUrl: window.location.href,
+                    documentUrl: document.URL,
+                    protocol: window.location.protocol,
+                    host: window.location.host,
+                    // Cordova detection
+                    cordovaDetectorExists: typeof cordovaDetector !== 'undefined',
+                    cordovaDetectorIsNative: typeof cordovaDetector !== 'undefined' ? cordovaDetector.isNative() : 'N/A',
+                    isNativeEnvironment: _this.isNativeEnvironment,
+                    // Window objects
+                    windowNative: window.native,
+                    windowCordova: typeof window.cordova !== 'undefined',
+                    windowDevice: typeof window.device !== 'undefined',
+                    windowPlugins: typeof window.plugins !== 'undefined',
+                    // Cordova object details
+                    cordovaVersion: ((_a = window.cordova) === null || _a === void 0 ? void 0 : _a.version) || 'N/A',
+                    cordovaPlatformId: ((_b = window.cordova) === null || _b === void 0 ? void 0 : _b.platformId) || 'N/A',
+                    cordovaGetAppVersion: typeof ((_c = window.cordova) === null || _c === void 0 ? void 0 : _c.getAppVersion) !== 'undefined',
+                    // User agent and environment
+                    userAgent: navigator.userAgent,
+                    hasServiceWorker: 'serviceWorker' in navigator,
+                    isAndroidWebView: navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv'),
+                    // Version info
+                    nativeVersionCode: _this.nativeVersionCode,
+                    nativeVersionNumber: _this.nativeVersionNumber,
+                    // Additional checks
+                    bodyHasNativeClass: document.body.classList.contains('native'),
+                    hasDeviceReadyListener: true,
+                    // URL analysis
+                    isFileProtocol: window.location.protocol === 'file:',
+                    isHttpsProtocol: window.location.protocol === 'https:',
+                    isHttpProtocol: window.location.protocol === 'http:'
+                };
+                _this.debugInfo = JSON.stringify(debugData, null, 2);
+            };
+            // Set load start time if not already set
+            if (!window.loadStartTime) {
+                window.loadStartTime = Date.now();
+            }
+            // Update immediately
+            updateDebugInfo();
+            // Show debug info automatically if we're having issues or detection failed
+            if (typeof cordovaDetector === 'undefined' || !this.isNativeEnvironment) {
+                this.showDebugInfo = true;
+            }
+            // Refresh debug info every 3 seconds for live monitoring
+            var debugInterval = setInterval(function () {
+                if (_this.showDebugInfo) {
+                    updateDebugInfo();
+                }
+            }, 3000);
+            // Stop refreshing after 30 seconds to save resources
+            setTimeout(function () {
+                clearInterval(debugInterval);
+            }, 30000);
+        };
+        SettingsView.prototype.toggleDebugInfo = function () {
+            this.showDebugInfo = !this.showDebugInfo;
+            if (this.showDebugInfo) {
+                this.initializeDebugInfo(); // Refresh the info
+            }
+        };
         /**
          * Initialize Cordova detection using the global CordovaDetector
          * This leverages the centralized detection system from index.ts
@@ -383,6 +458,12 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
         ], SettingsView.prototype, "notificationsEnabled", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)('')
+        ], SettingsView.prototype, "debugInfo", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], SettingsView.prototype, "showDebugInfo", void 0);
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "languageWatch", null);
