@@ -101,9 +101,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 return _super.prototype.destruct.call(_this);
             };
             var self = _this;
-            // Set native environment detection using the same logic as index.ts
-            var isCordovaApp = document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1;
-            _this.isNativeEnvironment = isCordovaApp;
+            // Use the global CordovaDetector instance for environment detection
+            _this.initializeCordovaDetection();
             _this.readSpeed = wallet.options.readSpeed;
             _this.checkMinerTx = wallet.options.checkMinerTx;
             // Sync custom node setting from storage to ensure consistency
@@ -146,14 +145,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }).catch(function (err) {
                 console.error("Error trying to get user language", err);
             });
-            if (typeof window.cordova !== 'undefined' && typeof window.cordova.getAppVersion !== 'undefined') {
-                window.cordova.getAppVersion.getVersionNumber().then(function (version) {
-                    _this.nativeVersionNumber = version;
-                });
-                window.cordova.getAppVersion.getVersionCode().then(function (version) {
-                    _this.nativeVersionCode = version;
-                });
-            }
             // Initialize notification setting
             Storage_1.Storage.getItem('notificationsEnabled', false).then(function (enabled) {
                 _this.notificationsEnabled = enabled;
@@ -162,6 +153,80 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             });
             return _this;
         }
+        /**
+         * Initialize Cordova detection using the global CordovaDetector
+         * This leverages the centralized detection system from index.ts
+         */
+        SettingsView.prototype.initializeCordovaDetection = function () {
+            var _this = this;
+            // Check if we're in a native environment using the global detector
+            if (typeof cordovaDetector !== 'undefined') {
+                this.isNativeEnvironment = cordovaDetector.isNative();
+                // If we're in a native environment, initialize Cordova features
+                if (this.isNativeEnvironment) {
+                    // Since the router waits for Cordova detection, we can try immediate initialization
+                    // If Cordova is ready, this will work immediately; if not, use the promise
+                    if (this.tryInitializeCordovaPlugins()) {
+                        console.log('Cordova plugins initialized immediately');
+                    }
+                    else {
+                        // Fallback to promise-based initialization
+                        cordovaDetector.getLoadingPromise().then(function () {
+                            _this.initializeCordovaPlugins();
+                        });
+                    }
+                }
+            }
+            else {
+                // Fallback if CordovaDetector is not available
+                console.warn('CordovaDetector not found, falling back to web mode');
+                this.isNativeEnvironment = false;
+            }
+        };
+        /**
+         * Try to initialize Cordova plugins immediately if Cordova is ready
+         * Returns true if successful, false if Cordova is not yet ready
+         */
+        SettingsView.prototype.tryInitializeCordovaPlugins = function () {
+            var cordova = window.cordova;
+            if (!cordova || !cordova.getAppVersion) {
+                return false; // Cordova not ready yet
+            }
+            // Cordova is ready, initialize plugins
+            this.initializeCordovaPlugins();
+            return true;
+        };
+        /**
+         * Initialize Cordova plugins after environment is confirmed
+         */
+        SettingsView.prototype.initializeCordovaPlugins = function () {
+            var _this = this;
+            var cordova = window.cordova;
+            if (!cordova) {
+                console.warn('Cordova object not found despite native environment detection');
+                return;
+            }
+            // Get app version information
+            if (cordova.getAppVersion) {
+                cordova.getAppVersion.getVersionNumber().then(function (version) {
+                    _this.nativeVersionNumber = version;
+                    console.log('App version number:', version);
+                }).catch(function (err) {
+                    console.warn('Could not get app version number:', err);
+                });
+                cordova.getAppVersion.getVersionCode().then(function (version) {
+                    _this.nativeVersionCode = version;
+                    console.log('App version code:', version);
+                }).catch(function (err) {
+                    console.warn('Could not get app version code:', err);
+                });
+            }
+            else {
+                console.warn('getAppVersion plugin not available');
+            }
+            // Initialize other Cordova-specific features here
+            // For example: push notifications, file system access, etc.
+        };
         SettingsView.prototype.languageWatch = function () {
             Translations_1.Translations.setBrowserLang(this.language);
             Translations_1.Translations.loadLangTranslation(this.language);
