@@ -109,7 +109,7 @@ class SettingsView extends DestructableView{
     }).catch((err: any) => {
       console.error("Error trying to get user language", err);
     });
-
+//if cordova.js has been loaded properly: 
 		if(typeof (<any>window).cordova !== 'undefined' && typeof (<any>window).cordova.getAppVersion !== 'undefined') {
 			(<any>window).cordova.getAppVersion.getVersionNumber().then((version : string) => {
 				this.nativeVersionNumber = version;

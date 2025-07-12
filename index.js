@@ -209,6 +209,7 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
             Translations_1.Translations.getLang().then(function (userLang) {
                 _this.language = userLang;
             });
+            _this.isNative = window.native;
             return _this;
         }
         CopyrightView.prototype.languageWatch = function () {
@@ -218,6 +219,9 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
                 console.error("Failed to load \"".concat(_this.language, "\" language"), err);
             });
         };
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], CopyrightView.prototype, "isNative", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)('en')
         ], CopyrightView.prototype, "language", void 0);
@@ -233,12 +237,18 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
     //========================================================
     //==================Loading the right page================
     //========================================================
-    var isCordovaApp = document.URL.indexOf('http://') === -1
-        && document.URL.indexOf('https://') === -1;
+    var isCordovaApp = false;
+    // Check for traditional Cordova app (local files)
+    var isLocalFileApp = document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1;
+    // Check for WebView app (remote content in WebView)
+    var isWebViewApp = navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv');
+    // Either local Cordova app or WebView app should be treated as native
+    isCordovaApp = isLocalFileApp || isWebViewApp;
     var promiseLoadingReady;
     window.native = false;
     if (isCordovaApp) {
         window.native = true;
+        copyrightView.isNative = true;
         $('body').addClass('native');
         var promiseLoadingReadyResolve_1 = null;
         var promiseLoadingReadyReject_1 = null;

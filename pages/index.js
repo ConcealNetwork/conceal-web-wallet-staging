@@ -52,6 +52,7 @@ define(["require", "exports", "../model/WalletRepository", "../providers/Blockch
                 _this.hasLocalWallet = status;
             });
             AppState_1.AppState.disableLeftMenu();
+            _this.isNative = window.native;
             return _this;
         }
         IndexView.prototype.destruct = function () {
@@ -68,6 +69,9 @@ define(["require", "exports", "../model/WalletRepository", "../providers/Blockch
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
         ], IndexView.prototype, "isWalletLoaded", void 0);
+        __decorate([
+            (0, VueAnnotate_1.VueVar)(false)
+        ], IndexView.prototype, "isNative", void 0);
         return IndexView;
     }(DestructableView_1.DestructableView));
     var newIndexView = new IndexView('#app');

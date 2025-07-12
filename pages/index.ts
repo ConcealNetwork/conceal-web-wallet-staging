@@ -34,7 +34,7 @@ if(wallet !== null){
 class IndexView extends DestructableView{
 	@VueVar(false) hasLocalWallet !: boolean;
 	@VueVar(false) isWalletLoaded !: boolean;
-
+	@VueVar(false) isNative !: boolean;
 	constructor(container : string){
 		super(container);
 
@@ -43,6 +43,8 @@ class IndexView extends DestructableView{
       this.hasLocalWallet = status;
     });
     AppState.disableLeftMenu();
+
+		this.isNative = window.native;
 	}
 
 	destruct(): Promise<void> {

@@ -143,6 +143,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }).catch(function (err) {
                 console.error("Error trying to get user language", err);
             });
+            //if cordova.js has been loaded properly: 
             if (typeof window.cordova !== 'undefined' && typeof window.cordova.getAppVersion !== 'undefined') {
                 window.cordova.getAppVersion.getVersionNumber().then(function (version) {
                     _this.nativeVersionNumber = version;
