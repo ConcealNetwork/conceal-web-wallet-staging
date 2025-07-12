@@ -257,19 +257,34 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
          * Simple detection: WebView app = native, browser = web
          */
         CordovaDetector.prototype.detectEnvironment = function () {
+            var _this = this;
             console.log('Detecting environment: WebView app vs Web browser');
-            // Check if this is a WebView app (the key indicator)
-            if (this.isWebViewApp()) {
+            // Determine the environment type immediately
+            this.isNativeEnvironment = this.isWebViewApp();
+            // Wait for DOM ready before setting up the environment
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', function () {
+                    _this.setupEnvironment();
+                });
+            }
+            else {
+                // DOM is already ready
+                this.setupEnvironment();
+            }
+        };
+        /**
+         * Setup the environment after DOM is ready
+         */
+        CordovaDetector.prototype.setupEnvironment = function () {
+            if (this.isNativeEnvironment) {
                 console.log('WebView app detected - setting up native environment');
-                this.isNativeEnvironment = true;
                 this.setupNativeEnvironment();
             }
             else {
                 console.log('Web browser detected - setting up web environment');
-                this.isNativeEnvironment = false;
                 this.setupWebEnvironment();
             }
-            // Resolve immediately since detection is synchronous
+            // Resolve the promise after environment is set up
             if (this.loadingPromiseResolve) {
                 this.loadingPromiseResolve();
             }
@@ -297,7 +312,14 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
          */
         CordovaDetector.prototype.setupNativeEnvironment = function () {
             window.native = true;
-            $('body').addClass('native');
+            // Add native class to body, but check if jQuery is available
+            if (typeof $ !== 'undefined' && $) {
+                $('body').addClass('native');
+            }
+            else {
+                // Fallback to vanilla JS if jQuery isn't ready yet
+                document.body.classList.add('native');
+            }
             // Try to load cordova.js if available (optional)
             if (!document.querySelector('script[src="cordova.js"]')) {
                 var cordovaJs = document.createElement('script');
