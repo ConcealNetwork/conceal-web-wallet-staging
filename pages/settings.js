@@ -171,33 +171,38 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                     documentUrl: document.URL,
                     protocol: window.location.protocol,
                     host: window.location.host,
-                    // Cordova detection
+                    // CordovaDetector results
                     cordovaDetectorExists: typeof cordovaDetector !== 'undefined',
                     cordovaDetectorIsNative: typeof cordovaDetector !== 'undefined' ? cordovaDetector.isNative() : 'N/A',
                     isNativeEnvironment: _this.isNativeEnvironment,
-                    // Window objects
+                    // WebView detection details
+                    userAgent: navigator.userAgent,
+                    isAndroidWebView: navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv'),
+                    hasAndroidInUA: navigator.userAgent.includes('Android'),
+                    hasWvInUA: navigator.userAgent.includes('wv'),
+                    hasWebViewInUA: navigator.userAgent.includes('webview'),
+                    hasVersionInUA: navigator.userAgent.includes('version/'),
+                    hasChromeInUA: navigator.userAgent.includes('chrome/'),
+                    // Environment checks
                     windowNative: window.native,
+                    bodyHasNativeClass: document.body.classList.contains('native'),
+                    hasServiceWorker: 'serviceWorker' in navigator,
+                    // Cordova runtime (may or may not be present)
                     windowCordova: typeof window.cordova !== 'undefined',
                     windowDevice: typeof window.device !== 'undefined',
                     windowPlugins: typeof window.plugins !== 'undefined',
-                    // Cordova object details
                     cordovaVersion: ((_a = window.cordova) === null || _a === void 0 ? void 0 : _a.version) || 'N/A',
                     cordovaPlatformId: ((_b = window.cordova) === null || _b === void 0 ? void 0 : _b.platformId) || 'N/A',
                     cordovaGetAppVersion: typeof ((_c = window.cordova) === null || _c === void 0 ? void 0 : _c.getAppVersion) !== 'undefined',
-                    // User agent and environment
-                    userAgent: navigator.userAgent,
-                    hasServiceWorker: 'serviceWorker' in navigator,
-                    isAndroidWebView: navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv'),
                     // Version info
                     nativeVersionCode: _this.nativeVersionCode,
                     nativeVersionNumber: _this.nativeVersionNumber,
-                    // Additional checks
-                    bodyHasNativeClass: document.body.classList.contains('native'),
-                    hasDeviceReadyListener: true,
                     // URL analysis
                     isFileProtocol: window.location.protocol === 'file:',
                     isHttpsProtocol: window.location.protocol === 'https:',
-                    isHttpProtocol: window.location.protocol === 'http:'
+                    isHttpProtocol: window.location.protocol === 'http:',
+                    // Detection method used
+                    detectionMethod: _this.isNativeEnvironment ? 'WebView detected' : 'Web browser detected'
                 };
                 _this.debugInfo = JSON.stringify(debugData, null, 2);
             };
@@ -207,8 +212,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }
             // Update immediately
             updateDebugInfo();
-            // Show debug info automatically if we're having issues or detection failed
-            if (typeof cordovaDetector === 'undefined' || !this.isNativeEnvironment) {
+            // Show debug info automatically if CordovaDetector is missing or WebView detection might need verification
+            if (typeof cordovaDetector === 'undefined') {
                 this.showDebugInfo = true;
             }
             // Refresh debug info every 3 seconds for live monitoring
@@ -233,23 +238,14 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
          * This leverages the centralized detection system from index.ts
          */
         SettingsView.prototype.initializeCordovaDetection = function () {
-            var _this = this;
             // Check if we're in a native environment using the global detector
             if (typeof cordovaDetector !== 'undefined') {
                 this.isNativeEnvironment = cordovaDetector.isNative();
-                // If we're in a native environment, initialize Cordova features
+                // If we're in a native environment, try to initialize Cordova plugins
                 if (this.isNativeEnvironment) {
-                    // Since the router waits for Cordova detection, we can try immediate initialization
-                    // If Cordova is ready, this will work immediately; if not, use the promise
-                    if (this.tryInitializeCordovaPlugins()) {
-                        console.log('Cordova plugins initialized immediately');
-                    }
-                    else {
-                        // Fallback to promise-based initialization
-                        cordovaDetector.getLoadingPromise().then(function () {
-                            _this.initializeCordovaPlugins();
-                        });
-                    }
+                    // Since detection is now immediate, we can try to initialize plugins right away
+                    // If Cordova.js is loaded, this will work; if not, it will gracefully fail
+                    this.initializeCordovaPlugins();
                 }
             }
             else {
@@ -259,29 +255,16 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }
         };
         /**
-         * Try to initialize Cordova plugins immediately if Cordova is ready
-         * Returns true if successful, false if Cordova is not yet ready
-         */
-        SettingsView.prototype.tryInitializeCordovaPlugins = function () {
-            var cordova = window.cordova;
-            if (!cordova || !cordova.getAppVersion) {
-                return false; // Cordova not ready yet
-            }
-            // Cordova is ready, initialize plugins
-            this.initializeCordovaPlugins();
-            return true;
-        };
-        /**
-         * Initialize Cordova plugins after environment is confirmed
+         * Initialize Cordova plugins if available
          */
         SettingsView.prototype.initializeCordovaPlugins = function () {
             var _this = this;
             var cordova = window.cordova;
             if (!cordova) {
-                console.warn('Cordova object not found despite native environment detection');
+                console.log('Cordova object not found - native environment without Cordova runtime');
                 return;
             }
-            // Get app version information
+            // Get app version information if plugin is available
             if (cordova.getAppVersion) {
                 cordova.getAppVersion.getVersionNumber().then(function (version) {
                     _this.nativeVersionNumber = version;
@@ -297,7 +280,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 });
             }
             else {
-                console.warn('getAppVersion plugin not available');
+                console.log('getAppVersion plugin not available');
             }
             // Initialize other Cordova-specific features here
             // For example: push notifications, file system access, etc.

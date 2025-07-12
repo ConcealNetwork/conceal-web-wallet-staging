@@ -235,23 +235,20 @@ let copyrightView = new CopyrightView('#copyright');
 
 /**
  * Cordova Environment Detection and Initialization
- * Uses the official event-driven approach as recommended by Apache Cordova
+ * Simplified approach: WebView apps = native, browsers = web
  */
 class CordovaDetector {
 	private static instance: CordovaDetector;
-	private deviceReadyFired = false;
 	private isNativeEnvironment = false;
 	private loadingPromise: Promise<void>;
 	private loadingPromiseResolve: Function | null = null;
-	private loadingPromiseReject: Function | null = null;
 
 	constructor() {
-		this.loadingPromise = new Promise<void>((resolve, reject) => {
+		this.loadingPromise = new Promise<void>((resolve) => {
 			this.loadingPromiseResolve = resolve;
-			this.loadingPromiseReject = reject;
 		});
 
-		this.initializeCordovaDetection();
+		this.detectEnvironment();
 	}
 
 	static getInstance(): CordovaDetector {
@@ -262,150 +259,76 @@ class CordovaDetector {
 	}
 
 	/**
-	 * Initialize Cordova detection using the official event-driven approach
+	 * Simple detection: WebView app = native, browser = web
 	 */
-	private initializeCordovaDetection(): void {
-		console.log('Initializing Cordova detection...');
+	private detectEnvironment(): void {
+		console.log('Detecting environment: WebView app vs Web browser');
 
-		// Method 1: Listen for deviceready event (OFFICIAL METHOD)
-		document.addEventListener('deviceready', () => {
-			console.log('Cordova deviceready event fired');
-			this.deviceReadyFired = true;
+		// Check if this is a WebView app (the key indicator)
+		if (this.isWebViewApp()) {
+			console.log('WebView app detected - setting up native environment');
 			this.isNativeEnvironment = true;
-			this.handleCordovaReady();
-		}, false);
+			this.setupNativeEnvironment();
+		} else {
+			console.log('Web browser detected - setting up web environment');
+			this.isNativeEnvironment = false;
+			this.setupWebEnvironment();
+		}
 
-		// Method 2: Fallback detection with validation
-		setTimeout(() => {
-			if (!this.deviceReadyFired) {
-				if (this.validateCordovaObject()) {
-					console.log('Cordova detected via fallback method');
-					this.deviceReadyFired = true;
-					this.isNativeEnvironment = true;
-					this.handleCordovaReady();
-				} else {
-					console.log('Cordova not detected - running in web mode');
-					this.isNativeEnvironment = false;
-					this.handleWebMode();
-				}
-			}
-		}, 3000); // Increased timeout to allow for slower devices
-
-		// Method 3: Aggressive detection for remote-loading Cordova apps (parallel process)
-		this.startAggressiveDetection();
+		// Resolve immediately since detection is synchronous
+		if (this.loadingPromiseResolve) {
+			this.loadingPromiseResolve();
+		}
 	}
 
 	/**
-	 * Aggressive detection method that runs in parallel for Android WebView apps
-	 * This won't interfere with the main detection logic
+	 * Detect if running in a WebView app (Android APK)
 	 */
-	private startAggressiveDetection(): void {
-		let detectionAttempts = 0;
-		const maxAttempts = 8;
-		
-		const tryAggressiveDetection = () => {
-			detectionAttempts++;
-			
-			// Only continue if we haven't already detected Cordova
-			if (!this.deviceReadyFired && !this.isNativeEnvironment) {
-				
-				// Check for Android WebView environment indicators
-				if (this.isLikelyAndroidWebViewApp()) {
-					console.log(`Aggressive detection attempt ${detectionAttempts}: Android WebView detected`);
-					
-					// Try to validate Cordova object
-					if (this.validateCordovaObject()) {
-						console.log('Cordova detected via aggressive method');
-						this.deviceReadyFired = true;
-						this.isNativeEnvironment = true;
-						this.handleCordovaReady();
-						return; // Stop trying
-					}
-				}
-				
-				// Continue trying if we haven't reached max attempts
-				if (detectionAttempts < maxAttempts) {
-					setTimeout(tryAggressiveDetection, 600); // Try every 600ms
-				}
-			}
-		};
-		
-		// Start aggressive detection after a short delay
-		setTimeout(tryAggressiveDetection, 200);
-	}
-
-	/**
-	 * Check specifically for Android WebView app environment
-	 */
-	private isLikelyAndroidWebViewApp(): boolean {
+	private isWebViewApp(): boolean {
 		const userAgent = navigator.userAgent.toLowerCase();
 		
-		// Android WebView indicators
-		const isAndroid = userAgent.includes('android');
-		const hasWebView = userAgent.includes('wv') || userAgent.includes('webview');
-		const hasVersionString = userAgent.includes('version/');
-		const lacksChrome = !userAgent.includes('chrome/') || userAgent.includes('chrome/0.');
+		// Primary indicator: Android WebView has "wv" in user agent
+		const isAndroidWebView = userAgent.includes('android') && userAgent.includes('wv');
 		
-		// Service worker check (often missing in WebView)
-		const noServiceWorker = !('serviceWorker' in navigator);
+		// Additional indicators for WebView apps
+		const hasWebViewIndicators = userAgent.includes('webview') || 
+									 (userAgent.includes('version/') && !userAgent.includes('chrome/'));
 		
-		// URL checks for remote loading
-		const isRemoteUrl = window.location.protocol.startsWith('http');
-		
-		return isAndroid && (hasWebView || (hasVersionString && lacksChrome) || noServiceWorker) && isRemoteUrl;
+		console.log('WebView detection:', {
+			userAgent,
+			isAndroidWebView,
+			hasWebViewIndicators,
+			finalResult: isAndroidWebView || hasWebViewIndicators
+		});
+
+		return isAndroidWebView || hasWebViewIndicators;
 	}
 
 	/**
-	 * Validate that the cordova object has expected properties
+	 * Setup native environment for WebView apps
 	 */
-	private validateCordovaObject(): boolean {
-		const cordova = (window as any).cordova;
-		if (!cordova) return false;
-
-		// Check for essential Cordova properties
-		return (
-			typeof cordova.version === 'string' &&
-			typeof cordova.platformId === 'string' &&
-			cordova.plugins !== undefined
-		);
-	}
-
-	/**
-	 * Handle Cordova-specific initialization after environment is confirmed
-	 */
-	private handleCordovaReady(): void {
-		console.log('Cordova environment confirmed - setting up native mode');
-		
+	private setupNativeEnvironment(): void {
 		window.native = true;
 		$('body').addClass('native');
-
-		// Load cordova.js if not already loaded
+		
+		// Try to load cordova.js if available (optional)
 		if (!document.querySelector('script[src="cordova.js"]')) {
 			const cordovaJs = document.createElement('script');
 			cordovaJs.type = 'text/javascript';
 			cordovaJs.src = 'cordova.js';
+			cordovaJs.onerror = () => {
+				console.log('cordova.js not available - continuing without Cordova plugins');
+			};
 			document.body.appendChild(cordovaJs);
-		}
-
-		// Resolve the loading promise
-		if (this.loadingPromiseResolve) {
-			this.loadingPromiseResolve();
 		}
 	}
 
 	/**
-	 * Handle web mode initialization
+	 * Setup web environment for browsers
 	 */
-	private handleWebMode(): void {
-		console.log('Web environment confirmed - setting up web mode');
-		
+	private setupWebEnvironment(): void {
 		window.native = false;
-		// Don't add native class
-
-		// Resolve the loading promise immediately for web mode
-		if (this.loadingPromiseResolve) {
-			this.loadingPromiseResolve();
-		}
+		// Don't add native class to body
 	}
 
 	/**
@@ -416,7 +339,7 @@ class CordovaDetector {
 	}
 
 	/**
-	 * Check if running in native environment
+	 * Check if running in native environment (WebView app)
 	 */
 	public isNative(): boolean {
 		return this.isNativeEnvironment;
@@ -426,6 +349,9 @@ class CordovaDetector {
 // Initialize Cordova detection
 const cordovaDetector = CordovaDetector.getInstance();
 const promiseLoadingReady = cordovaDetector.getLoadingPromise();
+
+// Make cordovaDetector globally accessible
+(window as any).cordovaDetector = cordovaDetector;
 
 // Legacy compatibility - remove these once all code is updated
 const isCordovaApp = false; // Deprecated - use cordovaDetector.isNative() instead

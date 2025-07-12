@@ -150,39 +150,44 @@ class SettingsView extends DestructableView{
 				protocol: window.location.protocol,
 				host: window.location.host,
 				
-				// Cordova detection
+				// CordovaDetector results
 				cordovaDetectorExists: typeof cordovaDetector !== 'undefined',
 				cordovaDetectorIsNative: typeof cordovaDetector !== 'undefined' ? cordovaDetector.isNative() : 'N/A',
 				isNativeEnvironment: this.isNativeEnvironment,
 				
-				// Window objects
+				// WebView detection details
+				userAgent: navigator.userAgent,
+				isAndroidWebView: navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv'),
+				hasAndroidInUA: navigator.userAgent.includes('Android'),
+				hasWvInUA: navigator.userAgent.includes('wv'),
+				hasWebViewInUA: navigator.userAgent.includes('webview'),
+				hasVersionInUA: navigator.userAgent.includes('version/'),
+				hasChromeInUA: navigator.userAgent.includes('chrome/'),
+				
+				// Environment checks
 				windowNative: (window as any).native,
+				bodyHasNativeClass: document.body.classList.contains('native'),
+				hasServiceWorker: 'serviceWorker' in navigator,
+				
+				// Cordova runtime (may or may not be present)
 				windowCordova: typeof (window as any).cordova !== 'undefined',
 				windowDevice: typeof (window as any).device !== 'undefined',
 				windowPlugins: typeof (window as any).plugins !== 'undefined',
-				
-				// Cordova object details
 				cordovaVersion: (window as any).cordova?.version || 'N/A',
 				cordovaPlatformId: (window as any).cordova?.platformId || 'N/A',
 				cordovaGetAppVersion: typeof (window as any).cordova?.getAppVersion !== 'undefined',
-				
-				// User agent and environment
-				userAgent: navigator.userAgent,
-				hasServiceWorker: 'serviceWorker' in navigator,
-				isAndroidWebView: navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv'),
 				
 				// Version info
 				nativeVersionCode: this.nativeVersionCode,
 				nativeVersionNumber: this.nativeVersionNumber,
 				
-				// Additional checks
-				bodyHasNativeClass: document.body.classList.contains('native'),
-				hasDeviceReadyListener: true,
-				
 				// URL analysis
 				isFileProtocol: window.location.protocol === 'file:',
 				isHttpsProtocol: window.location.protocol === 'https:',
-				isHttpProtocol: window.location.protocol === 'http:'
+				isHttpProtocol: window.location.protocol === 'http:',
+				
+				// Detection method used
+				detectionMethod: this.isNativeEnvironment ? 'WebView detected' : 'Web browser detected'
 			};
 
 			this.debugInfo = JSON.stringify(debugData, null, 2);
@@ -196,8 +201,8 @@ class SettingsView extends DestructableView{
 		// Update immediately
 		updateDebugInfo();
 		
-		// Show debug info automatically if we're having issues or detection failed
-		if (typeof cordovaDetector === 'undefined' || !this.isNativeEnvironment) {
+		// Show debug info automatically if CordovaDetector is missing or WebView detection might need verification
+		if (typeof cordovaDetector === 'undefined') {
 			this.showDebugInfo = true;
 		}
 		
@@ -230,18 +235,11 @@ class SettingsView extends DestructableView{
 		if (typeof cordovaDetector !== 'undefined') {
 			this.isNativeEnvironment = cordovaDetector.isNative();
 			
-			// If we're in a native environment, initialize Cordova features
+			// If we're in a native environment, try to initialize Cordova plugins
 			if (this.isNativeEnvironment) {
-				// Since the router waits for Cordova detection, we can try immediate initialization
-				// If Cordova is ready, this will work immediately; if not, use the promise
-				if (this.tryInitializeCordovaPlugins()) {
-					console.log('Cordova plugins initialized immediately');
-				} else {
-					// Fallback to promise-based initialization
-					cordovaDetector.getLoadingPromise().then(() => {
-						this.initializeCordovaPlugins();
-					});
-				}
+				// Since detection is now immediate, we can try to initialize plugins right away
+				// If Cordova.js is loaded, this will work; if not, it will gracefully fail
+				this.initializeCordovaPlugins();
 			}
 		} else {
 			// Fallback if CordovaDetector is not available
@@ -251,33 +249,17 @@ class SettingsView extends DestructableView{
 	}
 
 	/**
-	 * Try to initialize Cordova plugins immediately if Cordova is ready
-	 * Returns true if successful, false if Cordova is not yet ready
-	 */
-	private tryInitializeCordovaPlugins(): boolean {
-		const cordova = (window as any).cordova;
-		
-		if (!cordova || !cordova.getAppVersion) {
-			return false; // Cordova not ready yet
-		}
-		
-		// Cordova is ready, initialize plugins
-		this.initializeCordovaPlugins();
-		return true;
-	}
-
-	/**
-	 * Initialize Cordova plugins after environment is confirmed
+	 * Initialize Cordova plugins if available
 	 */
 	private initializeCordovaPlugins(): void {
 		const cordova = (window as any).cordova;
 		
 		if (!cordova) {
-			console.warn('Cordova object not found despite native environment detection');
+			console.log('Cordova object not found - native environment without Cordova runtime');
 			return;
 		}
 
-		// Get app version information
+		// Get app version information if plugin is available
 		if (cordova.getAppVersion) {
 			cordova.getAppVersion.getVersionNumber().then((version: string) => {
 				this.nativeVersionNumber = version;
@@ -293,7 +275,7 @@ class SettingsView extends DestructableView{
 				console.warn('Could not get app version code:', err);
 			});
 		} else {
-			console.warn('getAppVersion plugin not available');
+			console.log('getAppVersion plugin not available');
 		}
 
 		// Initialize other Cordova-specific features here
