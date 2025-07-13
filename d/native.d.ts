@@ -2,4 +2,5 @@
 
 interface Window {
 	native:boolean;
+	cordova?: any;
 }

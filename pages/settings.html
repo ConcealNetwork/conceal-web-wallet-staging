@@ -64,6 +64,21 @@
 			</div>
 		</div>
 
+		<div class="panel" v-if="isNativeEnvironment">
+			<div class="body" >
+				<div class="content" >
+					<div class="field">
+						<label>{{ $t("settingsPage.settingsBlock.notifications.label") }}</label>
+						<div class="field-description">{{ $t("settingsPage.settingsBlock.notifications.description") }}</div>
+					</div>
+					<div class="field checkbox toggle">
+						<input type="checkbox" name="notificationsEnabled" v-model="notificationsEnabled">
+						<label>{{ notificationsEnabled ? $t("settingsPage.settingsBlock.notifications.enabled") : $t("settingsPage.settingsBlock.notifications.disabled") }}</label>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<div class="panel">
 			<div class="body">
 				<div class="header-title">{{ $t("global.optimize.label") }}</div>
@@ -112,6 +127,7 @@
 				</div>
 			</div>
 		</div>
+
 
 		<div class="panel">
 			<div class="body" >
