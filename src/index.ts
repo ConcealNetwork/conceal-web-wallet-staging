@@ -251,7 +251,7 @@ if(isCordovaApp){
 	window.native = true;
 	copyrightView.isNative = true;
 	$('body').addClass('native');
-
+/* legacy when we had hope to load cordova.js, but that cannot happen on a redirect
 	let timeoutCordovaLoad: any = null;
 	promiseLoadingReady = new Promise<void>(function(resolve, reject){
 		// Check if cordova is already loaded (e.g., by APK)
@@ -270,7 +270,7 @@ if(isCordovaApp){
 
 			timeoutCordovaLoad = setTimeout(function(){
 				resolve();
-			}, 10*1000);
+			}, 3*1000);
 			
 			document.addEventListener('deviceready', function(){
 				resolve();
@@ -279,6 +279,12 @@ if(isCordovaApp){
 			}, false);
 		}
 	});
+	*/
+	// Since we're in a WebView with redirect, we can't load cordova.js
+	// Just resolve immediately for better user experience
+	console.log('📱 Cordova WebView detected - skipping cordova.js loading');
+	promiseLoadingReady = Promise.resolve();
+
 }else
 	promiseLoadingReady = Promise.resolve();
 
