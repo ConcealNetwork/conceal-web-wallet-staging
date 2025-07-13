@@ -208,7 +208,7 @@ function isMobileDevice() {
 
 @VueClass()
 class CopyrightView extends Vue{
-
+	@VueVar(false) isNative !: boolean;
 	@VueVar('en') language !: string;
 
 	constructor(containerName:any,vueData:any=null){
@@ -217,6 +217,7 @@ class CopyrightView extends Vue{
 		Translations.getLang().then((userLang : string) => {
 			this.language = userLang;
 		});
+		this.isNative = window.native;
 	}
 
 	@VueWatched()
@@ -233,37 +234,51 @@ let copyrightView = new CopyrightView('#copyright');
 //==================Loading the right page================
 //========================================================
 
-let isCordovaApp = document.URL.indexOf('http://') === -1
-	&& document.URL.indexOf('https://') === -1;
+let isCordovaApp = false;
+// Check for traditional Cordova app (local files)
+const isLocalFileApp = document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1;
+
+// Check for WebView app (remote content in WebView)
+const isWebViewApp = navigator.userAgent.includes('Android') && navigator.userAgent.includes('wv');
+
+// Either local Cordova app or WebView app should be treated as native
+isCordovaApp = isLocalFileApp || isWebViewApp;
 
 let promiseLoadingReady : Promise<void>;
 
 window.native = false;
 if(isCordovaApp){
 	window.native = true;
+	copyrightView.isNative = true;
 	$('body').addClass('native');
 
-	let promiseLoadingReadyResolve : null|Function = null;
-	let promiseLoadingReadyReject : null|Function = null;
+	let timeoutCordovaLoad: any = null;
 	promiseLoadingReady = new Promise<void>(function(resolve, reject){
-		promiseLoadingReadyResolve = resolve;
-		promiseLoadingReadyReject = reject;
+		// Check if cordova is already loaded (e.g., by APK)
+		if(typeof (<any>window).cordova !== 'undefined') {
+			console.log('Cordova already loaded, skipping cordova.js loading');
+			resolve();
+		} else {
+			// Load cordova.js only if not already loaded
+			console.log('Loading cordova.js...');
+			let cordovaJs = document.createElement('script');
+			cordovaJs.type = 'text/javascript';
+			cordovaJs.src = 'cordova.js';
+			cordovaJs.onload = () => console.log('cordova.js loaded successfully');
+			cordovaJs.onerror = () => console.log('cordova.js failed to load');
+			document.body.appendChild(cordovaJs);
+
+			timeoutCordovaLoad = setTimeout(function(){
+				resolve();
+			}, 10*1000);
+			
+			document.addEventListener('deviceready', function(){
+				resolve();
+				if(timeoutCordovaLoad)
+					clearTimeout(timeoutCordovaLoad);
+			}, false);
+		}
 	});
-	let cordovaJs = document.createElement('script');
-	cordovaJs.type = 'text/javascript';
-	cordovaJs.src = 'cordova.js';
-	document.body.appendChild(cordovaJs);
-
-	let timeoutCordovaLoad = setTimeout(function(){
-		if(promiseLoadingReadyResolve)
-			promiseLoadingReadyResolve();
-	}, 10*1000);
-	document.addEventListener('deviceready', function(){
-		if(promiseLoadingReadyResolve)
-			promiseLoadingReadyResolve();
-		clearInterval(timeoutCordovaLoad);
-	}, false);
-
 }else
 	promiseLoadingReady = Promise.resolve();
 
