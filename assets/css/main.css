@@ -1083,15 +1083,16 @@ body.native .home .btn {
 	margin: 10px auto;
 	margin-right: auto;
 	max-width: 280px;
-	width: 80%;
+	width: 45%;
 }
 
 body.native .indexTab .mainBlock>.actions {
 	text-align: center;
 }
 
-.indexTab .mainBlock>.actions img {
-	max-height: 35px;
+body.native .indexTab .mainBlock>.actions img{
+	margin-top: -10px;
+	max-height: 52px;
 }
 
 .indexTab .mainBlock>.actions .btn {

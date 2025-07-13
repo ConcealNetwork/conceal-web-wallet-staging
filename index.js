@@ -250,25 +250,32 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
         window.native = true;
         copyrightView.isNative = true;
         $('body').addClass('native');
-        var promiseLoadingReadyResolve_1 = null;
-        var promiseLoadingReadyReject_1 = null;
+        var timeoutCordovaLoad_1 = null;
         promiseLoadingReady = new Promise(function (resolve, reject) {
-            promiseLoadingReadyResolve_1 = resolve;
-            promiseLoadingReadyReject_1 = reject;
+            // Check if cordova is already loaded (e.g., by APK)
+            if (typeof window.cordova !== 'undefined') {
+                console.log('Cordova already loaded, skipping cordova.js loading');
+                resolve();
+            }
+            else {
+                // Load cordova.js only if not already loaded
+                console.log('Loading cordova.js...');
+                var cordovaJs = document.createElement('script');
+                cordovaJs.type = 'text/javascript';
+                cordovaJs.src = 'cordova.js';
+                cordovaJs.onload = function () { return console.log('cordova.js loaded successfully'); };
+                cordovaJs.onerror = function () { return console.log('cordova.js failed to load'); };
+                document.body.appendChild(cordovaJs);
+                timeoutCordovaLoad_1 = setTimeout(function () {
+                    resolve();
+                }, 10 * 1000);
+                document.addEventListener('deviceready', function () {
+                    resolve();
+                    if (timeoutCordovaLoad_1)
+                        clearTimeout(timeoutCordovaLoad_1);
+                }, false);
+            }
         });
-        var cordovaJs = document.createElement('script');
-        cordovaJs.type = 'text/javascript';
-        cordovaJs.src = 'cordova.js';
-        document.body.appendChild(cordovaJs);
-        var timeoutCordovaLoad_1 = setTimeout(function () {
-            if (promiseLoadingReadyResolve_1)
-                promiseLoadingReadyResolve_1();
-        }, 10 * 1000);
-        document.addEventListener('deviceready', function () {
-            if (promiseLoadingReadyResolve_1)
-                promiseLoadingReadyResolve_1();
-            clearInterval(timeoutCordovaLoad_1);
-        }, false);
     }
     else
         promiseLoadingReady = Promise.resolve();
