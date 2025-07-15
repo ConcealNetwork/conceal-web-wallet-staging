@@ -67,11 +67,11 @@ class ImportView extends DestructableView{
 
 	importWallet(){
 		let self = this;
-    $("#appLoader").addClass("appLoaderVisible");
+		$('#pageLoading').show();
 
     blockchainExplorer.initialize().then(success => {    
       blockchainExplorer.getHeight().then(function(currentHeight){
-        $("#appLoader").removeClass("appLoaderVisible");
+		$('#pageLoading').hide();
         let newWallet = new Wallet();
 
         if(self.mnemonicSeed !== null) {
@@ -136,9 +136,11 @@ class ImportView extends DestructableView{
         window.location.href = '#account';
      }).catch(err => {
         console.log(err);
+		$('#pageLoading').hide();
       });
     }).catch(err => {
       console.log(err);
+		$('#pageLoading').hide();
     });  
 	}
 

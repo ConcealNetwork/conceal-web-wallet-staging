@@ -419,7 +419,7 @@ body.menuHidden #menu {
 
 #pageLoading {
 	position: fixed;
-	left: 60%;
+	left: 0;
 	top: 0;
 	bottom: 0;
 	width: 100%;
@@ -427,6 +427,7 @@ body.menuHidden #menu {
 	z-index: 10;
 	text-align: center;
 	color: black;
+	display: none;
 }
 
 #pageLoading i {
@@ -2311,10 +2312,6 @@ body {
 @keyframes spinner {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
-}
-
-.appLoaderVisible {
-  display: flex !important;
 }
 
 .create-deposit-button {

@@ -26,8 +26,6 @@ import {RawDaemon_Out} from "../model/blockchain/BlockchainExplorer";
 import {WalletWatchdog} from "../model/WalletWatchdog";
 import {CnUtils} from "../model/Cn";
 import {Translations, tickerStore} from "../model/Translations";
-import {Storage} from "../model/Storage";
-
 
 let wallet : Wallet = DependencyInjectorInstance().getInstance(Wallet.name,'default', false);
 let blockchainExplorer = DependencyInjectorInstance().getInstance(Constants.BLOCKCHAIN_EXPLORER);
@@ -349,20 +347,7 @@ class AccountView extends DestructableView{
             }
         }
 
-        // Handle Cordova badge notifications
-        this.updateCordovaBadge(currentMessagesCount);
     }
-  }
-
-  private updateCordovaBadge(currentMessagesCount: number) {
-    // Check if notifications are enabled
-    Storage.getItem('notificationsEnabled', false).then((enabled: boolean) => {
-      if (enabled && window.cordova?.plugins?.notification?.badge) {
-        window.cordova.plugins.notification.badge.set(currentMessagesCount);
-      }
-    }).catch(() => {
-      // If storage fails, don't show notifications
-    });
   }
 
   getTTLCountdown(transaction: Transaction): string {
