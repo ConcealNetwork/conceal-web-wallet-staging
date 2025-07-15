@@ -91,9 +91,9 @@ define(["require", "exports", "../lib/numbersLab/DependencyInjector", "./Wallet"
                     confirmButtonText: i18n.t('global.openWalletModal.confirmText'),
                     cancelButtonText: i18n.t('global.openWalletModal.cancelText'),
                 }).then(function (result) {
-                    $("#appLoader").addClass("appLoaderVisible");
+                    $('#pageLoading').show();
                     BlockchainExplorerProvider_1.BlockchainExplorerProvider.getInstance().initialize().then(function (success) {
-                        $("#appLoader").removeClass("appLoaderVisible");
+                        $('#pageLoading').hide();
                         setTimeout(function () {
                             if (result.value) {
                                 swal({

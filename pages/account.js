@@ -35,7 +35,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
-define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLab/DependencyInjector", "../model/Wallet", "../lib/numbersLab/DestructableView", "../model/Constants", "../model/AppState", "../model/WalletWatchdog", "../model/Translations", "../model/Storage"], function (require, exports, VueAnnotate_1, DependencyInjector_1, Wallet_1, DestructableView_1, Constants_1, AppState_1, WalletWatchdog_1, Translations_1, Storage_1) {
+define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLab/DependencyInjector", "../model/Wallet", "../lib/numbersLab/DestructableView", "../model/Constants", "../model/AppState", "../model/WalletWatchdog", "../model/Translations"], function (require, exports, VueAnnotate_1, DependencyInjector_1, Wallet_1, DestructableView_1, Constants_1, AppState_1, WalletWatchdog_1, Translations_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var wallet = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(Wallet_1.Wallet.name, 'default', false);
@@ -281,20 +281,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                         this.messagesCountRecord = newMessagesCount;
                     }
                 }
-                // Handle Cordova badge notifications
-                this.updateCordovaBadge(currentMessagesCount);
             }
-        };
-        AccountView.prototype.updateCordovaBadge = function (currentMessagesCount) {
-            // Check if notifications are enabled
-            Storage_1.Storage.getItem('notificationsEnabled', false).then(function (enabled) {
-                var _a, _b, _c;
-                if (enabled && ((_c = (_b = (_a = window.cordova) === null || _a === void 0 ? void 0 : _a.plugins) === null || _b === void 0 ? void 0 : _b.notification) === null || _c === void 0 ? void 0 : _c.badge)) {
-                    window.cordova.plugins.notification.badge.set(currentMessagesCount);
-                }
-            }).catch(function () {
-                // If storage fails, don't show notifications
-            });
         };
         AccountView.prototype.getTTLCountdown = function (transaction) {
             if (!transaction.ttl || transaction.ttl === 0 || transaction.blockHeight !== 0) {

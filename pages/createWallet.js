@@ -37,10 +37,10 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
         CreateViewWallet.prototype.generateWallet = function () {
             var self = this;
             setTimeout(function () {
-                $("#appLoader").addClass("appLoaderVisible");
+                $('#pageLoading').show();
                 blockchainExplorer.initialize().then(function (success) {
                     blockchainExplorer.getHeight().then(function (currentHeight) {
-                        $("#appLoader").removeClass("appLoaderVisible");
+                        $('#pageLoading').hide();
                         var seed = Cn_1.CnNativeBride.sc_reduce32(Cn_1.CnRandom.rand_32());
                         var keys = Cn_1.Cn.create_address(seed);
                         var newWallet = new Wallet_1.Wallet();
@@ -68,9 +68,11 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                             self.step = 1;
                         }, 2000);
                     }).catch(function (err) {
+                        $('#pageLoading').hide();
                         console.log(err);
                     });
                 }).catch(function (err) {
+                    $('#pageLoading').hide();
                     console.log(err);
                 });
             }, 0);
