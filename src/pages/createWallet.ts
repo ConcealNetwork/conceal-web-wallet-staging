@@ -14,110 +14,118 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-import {VueVar, VueWatched} from "../lib/numbersLab/VueAnnotate";
-import {DestructableView} from "../lib/numbersLab/DestructableView";
-import {KeysRepository} from "../model/KeysRepository";
-import {Wallet} from "../model/Wallet";
-import {Password} from "../model/Password";
-import {BlockchainExplorerProvider} from "../providers/BlockchainExplorerProvider";
-import {Mnemonic} from "../model/Mnemonic";
-import {AppState} from "../model/AppState";
-import {WalletRepository} from "../model/WalletRepository";
-import {Translations} from "../model/Translations";
-import {MnemonicLang} from "../model/MnemonicLang";
-import {BlockchainExplorer} from "../model/blockchain/BlockchainExplorer";
-import {Cn, CnNativeBride, CnRandom} from "../model/Cn";
+import { VueVar, VueWatched } from "../lib/numbersLab/VueAnnotate";
+import { DestructableView } from "../lib/numbersLab/DestructableView";
+import { KeysRepository } from "../model/KeysRepository";
+import { Wallet } from "../model/Wallet";
+import { Password } from "../model/Password";
+import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
+import { Mnemonic } from "../model/Mnemonic";
+import { AppState } from "../model/AppState";
+import { WalletRepository } from "../model/WalletRepository";
+import { Translations } from "../model/Translations";
+import { MnemonicLang } from "../model/MnemonicLang";
+import type { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
+import { Cn, CnNativeBride, CnRandom } from "../model/Cn";
 
-let blockchainExplorer : BlockchainExplorer = BlockchainExplorerProvider.getInstance();
+let blockchainExplorer: BlockchainExplorer =
+  BlockchainExplorerProvider.getInstance();
 
-class CreateViewWallet extends DestructableView{
-	@VueVar(0) step !: number;
+class CreateViewWallet extends DestructableView {
+  @VueVar(0) step!: number;
 
-	@VueVar('') walletPassword !: string;
-	@VueVar('') walletPassword2 !: string;
-	@VueVar(false) insecurePassword !: boolean;
-	@VueVar(false) forceInsecurePassword !: boolean;
+  @VueVar("") walletPassword!: string;
+  @VueVar("") walletPassword2!: string;
+  @VueVar(false) insecurePassword!: boolean;
+  @VueVar(false) forceInsecurePassword!: boolean;
 
-	@VueVar(false) walletBackupMade !: boolean;
+  @VueVar(false) walletBackupMade!: boolean;
 
-	@VueVar(null) newWallet !: Wallet|null;
-	@VueVar('') mnemonicPhrase !: string;
+  @VueVar(null) newWallet!: Wallet | null;
+  @VueVar("") mnemonicPhrase!: string;
 
-	constructor(container : string){
-		super(container);
-		this.generateWallet();
-		AppState.enableLeftMenu();
-	}
+  constructor(container: string) {
+    super(container);
+    this.generateWallet();
+    AppState.enableLeftMenu();
+  }
 
-	destruct(): Promise<void> {
-		return super.destruct();
-	}
+  destruct(): Promise<void> {
+    return super.destruct();
+  }
 
-	generateWallet(){
-		let self = this;
-		setTimeout(function(){
-			$('#pageLoading').show();
+  generateWallet() {
+    setTimeout(() => {
+      $("#pageLoading").show();
 
-      blockchainExplorer.initialize().then(success => {    
-        blockchainExplorer.getHeight().then(function(currentHeight){
-			$('#pageLoading').hide();
-          
-          let seed = CnNativeBride.sc_reduce32(CnRandom.rand_32());
-          let keys = Cn.create_address(seed);
+      blockchainExplorer
+        .initialize()
+        .then((success) => {
+          blockchainExplorer
+            .getHeight()
+            .then((currentHeight) => {
+              $("#pageLoading").hide();
 
-          let newWallet = new Wallet();
-          newWallet.keys = KeysRepository.fromPriv(keys.spend.sec, keys.view.sec);
-          let height = currentHeight - 10;
-          if(height < 0)height = 0;
-          newWallet.lastHeight = height;
-          newWallet.creationHeight = height;
+              let seed = CnNativeBride.sc_reduce32(CnRandom.rand_32());
+              let keys = Cn.create_address(seed);
 
-          self.newWallet = newWallet;
+              let newWallet = new Wallet();
+              newWallet.keys = KeysRepository.fromPriv(
+                keys.spend.sec,
+                keys.view.sec
+              );
+              let height = currentHeight - 10;
+              if (height < 0) height = 0;
+              newWallet.lastHeight = height;
+              newWallet.creationHeight = height;
 
-          Translations.getLang().then(function(userLang : string){
-            let langToExport = 'english';
-            for(let lang of MnemonicLang.getLangs()){
-              if(lang.shortLang === userLang){
-                langToExport = lang.name;
-                break;
-              }
-            }
-            let phrase = Mnemonic.mn_encode(newWallet.keys.priv.spend, langToExport);
-            if(phrase !== null)
-              self.mnemonicPhrase = phrase;
+              this.newWallet = newWallet;
 
-          });
+              Translations.getLang().then((userLang: string) => {
+                let langToExport = "english";
+                for (let lang of MnemonicLang.getLangs()) {
+                  if (lang.shortLang === userLang) {
+                    langToExport = lang.name;
+                    break;
+                  }
+                }
+                let phrase = Mnemonic.mn_encode(
+                  newWallet.keys.priv.spend,
+                  langToExport
+                );
+                if (phrase !== null) this.mnemonicPhrase = phrase;
+              });
 
-          setTimeout(function(){
-            self.step = 1;
-          }, 2000);
-        }).catch(err => {
-			$('#pageLoading').hide();
+              setTimeout(() => {
+                this.step = 1;
+              }, 2000);
+            })
+            .catch((err) => {
+              $("#pageLoading").hide();
+              console.log(err);
+            });
+        })
+        .catch((err) => {
+          $("#pageLoading").hide();
           console.log(err);
         });
-      }).catch(err => {
-		$('#pageLoading').hide();
-        console.log(err);
-      });  
-		},0);
-	}
+    }, 0);
+  }
 
-	@VueWatched()
-	walletPasswordWatch(){
-		if(!Password.checkPasswordConstraints(this.walletPassword, false)){
-			this.insecurePassword = true;
-		}else
-			this.insecurePassword = false;
-	}
+  @VueWatched()
+  walletPasswordWatch() {
+    if (!Password.checkPasswordConstraints(this.walletPassword, false)) {
+      this.insecurePassword = true;
+    } else this.insecurePassword = false;
+  }
 
-	@VueWatched()
-	stepWatch(){
-		$("html, body").animate({ scrollTop: 0 }, "fast");
-	}
+  @VueWatched()
+  stepWatch() {
+    $("html, body").animate({ scrollTop: 0 }, "fast");
+  }
 
-	forceInsecurePasswordCheck(){
-		let self = this;
-		/*swal({
+  forceInsecurePasswordCheck() {
+    /*swal({
 			title: 'Are you sure?',
 			text: "You won't be able to revert this!",
 			type: 'warning',
@@ -126,30 +134,32 @@ class CreateViewWallet extends DestructableView{
 			confirmButtonText: 'Yes'
 		}).then((result:{value:boolean}) => {
 			if (result.value) {*/
-		self.forceInsecurePassword = true;
-		// }
-		// });
-	}
+    this.forceInsecurePassword = true;
+    // }
+    // });
+  }
 
-	exportStep(){
-		if(this.walletPassword !== '' && (!this.insecurePassword || this.forceInsecurePassword)) {
-			this.step = 2;
-		}
-	}
-
-	downloadBackup(){
-		if(this.newWallet !== null)
-			WalletRepository.downloadEncryptedPdf(this.newWallet);
-		this.walletBackupMade = true;
-	}
-
-	finish(){
-		if(this.newWallet !== null) {
-      AppState.openWallet(this.newWallet, this.walletPassword);
-      window.location.href = '#account';
+  exportStep() {
+    if (
+      this.walletPassword !== "" &&
+      (!this.insecurePassword || this.forceInsecurePassword)
+    ) {
+      this.step = 2;
     }
-	}
+  }
 
+  downloadBackup() {
+    if (this.newWallet !== null)
+      WalletRepository.downloadEncryptedPdf(this.newWallet);
+    this.walletBackupMade = true;
+  }
+
+  finish() {
+    if (this.newWallet !== null) {
+      AppState.openWallet(this.newWallet, this.walletPassword);
+      window.location.href = "#account";
+    }
+  }
 }
 
-new CreateViewWallet('#app');
+new CreateViewWallet("#app");
