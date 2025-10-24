@@ -54,68 +54,77 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         ImportView.prototype.formValid = function () {
             if (this.password != this.password2)
                 return false;
-            if (!(this.password !== '' && (!this.insecurePassword || this.forceInsecurePassword)))
+            if (!(this.password !== "" &&
+                (!this.insecurePassword || this.forceInsecurePassword)))
                 return false;
-            if (!(this.privateSpendKey !== null || this.mnemonicSeed !== null || (this.publicAddress !== null && this.privateViewKey !== null)))
+            if (!(this.privateSpendKey !== null ||
+                this.mnemonicSeed !== null ||
+                (this.publicAddress !== null && this.privateViewKey !== null)))
                 return false;
             return true;
         };
         ImportView.prototype.importWallet = function () {
-            var self = this;
-            $('#pageLoading').show();
-            blockchainExplorer.initialize().then(function (success) {
-                blockchainExplorer.getHeight().then(function (currentHeight) {
-                    $('#pageLoading').hide();
+            var _this = this;
+            $("#pageLoading").show();
+            blockchainExplorer
+                .initialize()
+                .then(function (success) {
+                blockchainExplorer
+                    .getHeight()
+                    .then(function (currentHeight) {
+                    $("#pageLoading").hide();
                     var newWallet = new Wallet_1.Wallet();
-                    if (self.mnemonicSeed !== null) {
-                        var detectedMnemonicLang = Mnemonic_1.Mnemonic.detectLang(self.mnemonicSeed);
+                    if (_this.mnemonicSeed !== null) {
+                        var detectedMnemonicLang = Mnemonic_1.Mnemonic.detectLang(_this.mnemonicSeed);
                         if (detectedMnemonicLang !== null) {
-                            var mnemonic_decoded = Mnemonic_1.Mnemonic.mn_decode(self.mnemonicSeed, detectedMnemonicLang);
+                            var mnemonic_decoded = Mnemonic_1.Mnemonic.mn_decode(_this.mnemonicSeed, detectedMnemonicLang);
                             if (mnemonic_decoded !== null) {
                                 var keys = Cn_1.Cn.create_address(mnemonic_decoded);
                                 newWallet.keys = KeysRepository_1.KeysRepository.fromPriv(keys.spend.sec, keys.view.sec);
                             }
                             else {
                                 swal({
-                                    type: 'error',
-                                    title: i18n.t('global.invalidMnemonicModal.title'),
-                                    text: i18n.t('global.invalidMnemonicModal.content'),
-                                    confirmButtonText: i18n.t('global.invalidMnemonicModal.confirmText'),
+                                    type: "error",
+                                    title: i18n.t("global.invalidMnemonicModal.title"),
+                                    text: i18n.t("global.invalidMnemonicModal.content"),
+                                    confirmButtonText: i18n.t("global.invalidMnemonicModal.confirmText"),
                                 });
                                 return;
                             }
                         }
                         else {
                             swal({
-                                type: 'error',
-                                title: i18n.t('global.invalidMnemonicModal.title'),
-                                text: i18n.t('global.invalidMnemonicModal.content'),
-                                confirmButtonText: i18n.t('global.invalidMnemonicModal.confirmText'),
+                                type: "error",
+                                title: i18n.t("global.invalidMnemonicModal.title"),
+                                text: i18n.t("global.invalidMnemonicModal.content"),
+                                confirmButtonText: i18n.t("global.invalidMnemonicModal.confirmText"),
                             });
                             return;
                         }
                     }
-                    else if (self.privateSpendKey !== null) {
-                        var viewkey = self.privateViewKey !== null ? self.privateViewKey : '';
-                        if (viewkey === '') {
-                            viewkey = Cn_1.Cn.generate_keys(Cn_1.CnUtils.cn_fast_hash(self.privateSpendKey)).sec;
+                    else if (_this.privateSpendKey !== null) {
+                        var viewkey = _this.privateViewKey !== null ? _this.privateViewKey : "";
+                        if (viewkey === "") {
+                            viewkey = Cn_1.Cn.generate_keys(Cn_1.CnUtils.cn_fast_hash(_this.privateSpendKey)).sec;
                         }
-                        newWallet.keys = KeysRepository_1.KeysRepository.fromPriv(self.privateSpendKey, viewkey);
+                        newWallet.keys = KeysRepository_1.KeysRepository.fromPriv(_this.privateSpendKey, viewkey);
                     }
-                    else if (self.privateSpendKey === null && self.privateViewKey !== null && self.publicAddress !== null) {
-                        var decodedPublic = Cn_1.Cn.decode_address(self.publicAddress);
+                    else if (_this.privateSpendKey === null &&
+                        _this.privateViewKey !== null &&
+                        _this.publicAddress !== null) {
+                        var decodedPublic = Cn_1.Cn.decode_address(_this.publicAddress);
                         newWallet.keys = {
                             priv: {
-                                spend: '',
-                                view: self.privateViewKey
+                                spend: "",
+                                view: _this.privateViewKey,
                             },
                             pub: {
                                 spend: decodedPublic.spend,
                                 view: decodedPublic.view,
-                            }
+                            },
                         };
                     }
-                    var height = self.importHeight; //never trust a perfect value from the user
+                    var height = _this.importHeight; //never trust a perfect value from the user
                     if (height >= currentHeight) {
                         height = currentHeight - 1;
                     }
@@ -126,43 +135,44 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                         height = currentHeight;
                     newWallet.lastHeight = height;
                     newWallet.creationHeight = newWallet.lastHeight;
-                    AppState_1.AppState.openWallet(newWallet, self.password);
-                    window.location.href = '#account';
-                }).catch(function (err) {
+                    AppState_1.AppState.openWallet(newWallet, _this.password);
+                    window.location.href = "#account";
+                })
+                    .catch(function (err) {
                     console.log(err);
-                    $('#pageLoading').hide();
+                    $("#pageLoading").hide();
                 });
-            }).catch(function (err) {
+            })
+                .catch(function (err) {
                 console.log(err);
-                $('#pageLoading').hide();
+                $("#pageLoading").hide();
             });
         };
         ImportView.prototype.initQr = function () {
             this.stopScan();
             this.qrReader = new QRReader_1.QRReader();
-            this.qrReader.init('/lib/');
+            this.qrReader.init("/lib/");
         };
         ImportView.prototype.startScan = function () {
             var _this = this;
-            var self = this;
             this.scanSuccess = false; // Reset scan success state
-            if (typeof window.QRScanner !== 'undefined') {
+            if (typeof window.QRScanner !== "undefined") {
                 window.QRScanner.scan(function (err, result) {
                     if (err) {
-                        if (err.name === 'SCAN_CANCELED') {
+                        if (err.name === "SCAN_CANCELED") {
                         }
                         else {
                             alert(JSON.stringify(err));
                         }
                     }
                     else {
-                        self.handleScanResult(result);
+                        _this.handleScanResult(result);
                     }
                 });
                 window.QRScanner.show();
-                $('body').addClass('transparent');
-                $('#appContent').hide();
-                $('#nativeCameraPreview').show();
+                $("body").addClass("transparent");
+                $("#appContent").hide();
+                $("#nativeCameraPreview").show();
             }
             else {
                 this.initQr();
@@ -180,35 +190,35 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             try {
                 var txDetails = CoinUri_1.CoinUri.decodeWallet(result);
                 if (txDetails !== null &&
-                    (typeof txDetails.spendKey !== 'undefined' || typeof txDetails.mnemonicSeed !== 'undefined')) {
-                    if (typeof txDetails.spendKey !== 'undefined')
+                    (typeof txDetails.spendKey !== "undefined" ||
+                        typeof txDetails.mnemonicSeed !== "undefined")) {
+                    if (typeof txDetails.spendKey !== "undefined")
                         this.privateSpendKey = txDetails.spendKey;
-                    if (typeof txDetails.mnemonicSeed !== 'undefined')
+                    if (typeof txDetails.mnemonicSeed !== "undefined")
                         this.mnemonicSeed = txDetails.mnemonicSeed;
-                    if (typeof txDetails.viewKey !== 'undefined')
+                    if (typeof txDetails.viewKey !== "undefined")
                         this.privateViewKey = txDetails.viewKey;
-                    if (typeof txDetails.height !== 'undefined')
-                        this.importHeight = parseInt('' + txDetails.height);
-                    if (typeof txDetails.address !== 'undefined')
+                    if (typeof txDetails.height !== "undefined")
+                        this.importHeight = parseInt("" + txDetails.height);
+                    if (typeof txDetails.address !== "undefined")
                         this.publicAddress = txDetails.address;
                     this.scanSuccess = true;
                     return true;
                 }
             }
-            catch (e) {
-            }
+            catch (e) { }
             this.scanSuccess = false;
             return false;
         };
         ImportView.prototype.stopScan = function () {
-            if (typeof window.QRScanner !== 'undefined') {
+            if (typeof window.QRScanner !== "undefined") {
                 window.QRScanner.cancelScan(function (status) {
                     //console.log(status);
                 });
                 window.QRScanner.hide();
-                $('body').removeClass('transparent');
-                $('#appContent').show();
-                $('#nativeCameraPreview').hide();
+                $("body").removeClass("transparent");
+                $("#appContent").show();
+                $("#nativeCameraPreview").hide();
             }
             else {
                 if (this.qrReader !== null) {
@@ -226,21 +236,21 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 this.insecurePassword = false;
         };
         ImportView.prototype.importHeightWatch = function () {
-            if (this.importHeight === '')
+            if (this.importHeight === "")
                 this.importHeight = 0;
             if (this.importHeight < 0) {
                 this.importHeight = 0;
             }
-            this.importHeight = parseInt('' + this.importHeight);
+            this.importHeight = parseInt("" + this.importHeight);
         };
         ImportView.prototype.forceInsecurePasswordCheck = function () {
             this.forceInsecurePassword = true;
         };
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], ImportView.prototype, "password", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], ImportView.prototype, "password2", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
@@ -265,5 +275,5 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         ], ImportView.prototype, "importHeightWatch", null);
         return ImportView;
     }(DestructableView_1.DestructableView));
-    new ImportView('#app');
+    new ImportView("#app");
 });

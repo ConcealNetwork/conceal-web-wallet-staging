@@ -81,24 +81,24 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
         function TxQueue(wallet, processingCallback) {
             var _this = this;
             this.initWorker = function () {
-                _this.workerProcess = new Worker('./workers/ParseTransactionsEntrypoint.js');
+                _this.workerProcess = new Worker("./workers/ParseTransactionsEntrypoint.js");
                 _this.workerProcess.onmessage = function (data) {
                     var message = data.data;
-                    if (message === 'ready') {
-                        logDebugMsg('worker ready...');
+                    if (message === "ready") {
+                        logDebugMsg("worker ready...");
                         // post the wallet to the worker
                         _this.workerProcess.postMessage({
-                            type: 'initWallet'
+                            type: "initWallet",
                         });
                     }
                     else if (message === "missing_wallet") {
                         logDebugMsg("Wallet is missing for the worker...");
                     }
                     else if (message.type) {
-                        if (message.type === 'readyWallet') {
+                        if (message.type === "readyWallet") {
                             _this.setIsReady(true);
                         }
-                        else if (message.type === 'processed') {
+                        else if (message.type === "processed") {
                             if (message.transactions.length > 0) {
                                 for (var _i = 0, _a = message.transactions; _i < _a.length; _i++) {
                                     var txData = _a[_i];
@@ -126,7 +126,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                     //we destroy the worker in charge of decoding the transactions every 5k transactions to ensure the memory is not corrupted
                     //cnUtil bug, see https://github.com/mymonero/mymonero-core-js/issues/8
                     if (_this.countProcessed >= 5 * 1000) {
-                        logDebugMsg('Recreated parseWorker..');
+                        logDebugMsg("Recreated parseWorker..");
                         _this.restartWorker();
                         setTimeout(function () {
                             _this.runProcessLoop();
@@ -139,14 +139,15 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                         var txQueueItem = _this.processingQueue.shift();
                         if (txQueueItem) {
                             // increase the number of transactions we actually processed
-                            _this.countProcessed = _this.countProcessed + txQueueItem.transactions.length;
+                            _this.countProcessed =
+                                _this.countProcessed + txQueueItem.transactions.length;
                             if (txQueueItem.transactions.length > 0) {
                                 //console.log(`sending ${txQueueItem.transactions.length} transactions to process. Last block ${txQueueItem.maxBlockNum}. All count ${this.countProcessed}`);
                                 _this.workerProcess.postMessage({
                                     transactions: txQueueItem.transactions,
                                     maxBlock: txQueueItem.maxBlockNum,
                                     wallet: _this.wallet.exportToRaw(),
-                                    type: 'process'
+                                    type: "process",
                                 });
                             }
                             else {
@@ -171,7 +172,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
             this.addTransactions = function (transactions, maxBlockNum) {
                 var txQueueItem = {
                     transactions: transactions,
-                    maxBlockNum: maxBlockNum
+                    maxBlockNum: maxBlockNum,
                 };
                 _this.processingQueue.push(txQueueItem);
                 _this.runProcessLoop();
@@ -219,15 +220,16 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                     endBlock: endBlock,
                     finished: false,
                     timestamp: new Date(),
-                    transactions: []
+                    transactions: [],
                 };
                 if (_this.blocks.length > 0) {
                     for (var i = _this.blocks.length - 1; i >= 0; i--) {
-                        if ((startBlock === _this.blocks[i].startBlock) && (endBlock === _this.blocks[i].endBlock)) {
+                        if (startBlock === _this.blocks[i].startBlock &&
+                            endBlock === _this.blocks[i].endBlock) {
                             return;
                         }
                         else if (endBlock > _this.blocks[i].endBlock) {
-                            if (i = _this.blocks.length) {
+                            if ((i = _this.blocks.length)) {
                                 _this.blocks.push(rangeData);
                             }
                             else {
@@ -276,7 +278,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                 for (var i = 0; i < _this.blocks.length; ++i) {
                     if (!_this.blocks[i].finished) {
                         var timeDiff = new Date().getTime() - _this.blocks[i].timestamp.getTime();
-                        if ((timeDiff / 1000) > 30) {
+                        if (timeDiff / 1000 > 30) {
                             if (reset) {
                                 _this.blocks[i].timestamp = new Date();
                             }
@@ -317,26 +319,26 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
         function ParseWorker(wallet, watchdog, blockList, parseTxCallback) {
             var _this = this;
             this.initWorker = function () {
-                _this.workerProcess = new Worker('./workers/TransferProcessingEntrypoint.js');
+                _this.workerProcess = new Worker("./workers/TransferProcessingEntrypoint.js");
                 _this.workerProcess.onmessage = function (data) {
                     var message = data.data;
-                    if (message === 'ready') {
-                        logDebugMsg('worker ready...');
+                    if (message === "ready") {
+                        logDebugMsg("worker ready...");
                         // signal the wallet update
                         _this.watchdog.checkMempool();
                         // post the wallet to the worker
                         _this.workerProcess.postMessage({
-                            type: 'initWallet'
+                            type: "initWallet",
                         });
                     }
                     else if (message === "missing_wallet") {
                         logDebugMsg("Wallet is are missing for the worker...");
                     }
                     else if (message.type) {
-                        if (message.type === 'readyWallet') {
+                        if (message.type === "readyWallet") {
                             _this.setIsReady(true);
                         }
-                        else if (message.type === 'processed') {
+                        else if (message.type === "processed") {
                             // we are done processing now
                             _this.blockList.finishBlockRange(message.maxHeight, message.transactions);
                             _this.setIsWorking(false);
@@ -384,17 +386,21 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
             this.fetchBlocks = function (startBlock, endBlock) {
                 _this.isWorking = true;
                 return new Promise(function (resolve, reject) {
-                    _this.explorer.getTransactionsForBlocks(startBlock, endBlock, _this.wallet.options.checkMinerTx).then(function (transactions) {
+                    _this.explorer
+                        .getTransactionsForBlocks(startBlock, endBlock, _this.wallet.options.checkMinerTx)
+                        .then(function (transactions) {
                         resolve({
                             transactions: transactions,
-                            lastBlock: endBlock
+                            lastBlock: endBlock,
                         });
-                    }).catch(function (err) {
+                    })
+                        .catch(function (err) {
                         reject({
                             transactions: [],
-                            lastBlock: endBlock
+                            lastBlock: endBlock,
                         });
-                    }).finally(function () {
+                    })
+                        .finally(function () {
                         _this.isWorking = false;
                     });
                 });
@@ -439,7 +445,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                 _this.remoteNodes = Math.min(config.maxRemoteNodes, config.nodeList.length, _this.cpuCores);
             };
             this.signalWalletUpdate = function () {
-                logDebugMsg('wallet update in progress');
+                logDebugMsg("wallet update in progress");
                 // reset the last block loading
                 _this.lastBlockLoading = -1; //reset scanning
                 _this.checkMempool();
@@ -452,7 +458,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                     }
                     _this.intervalMempool = setInterval(function () {
                         _this.checkMempool();
-                    }, config.avgBlockTime / 4 * 1000);
+                    }, (config.avgBlockTime / 4) * 1000);
                 }
                 _this.checkMempool();
             };
@@ -466,7 +472,8 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                 }
                 if (workingCount < _this.cpuCores) {
                     for (var i = 0; i < _this.parseWorkers.length; ++i) {
-                        if (!_this.parseWorkers[i].getIsWorking() && _this.parseWorkers[i].getIsReady()) {
+                        if (!_this.parseWorkers[i].getIsWorking() &&
+                            _this.parseWorkers[i].getIsReady()) {
                             return _this.parseWorkers[i];
                         }
                     }
@@ -491,21 +498,26 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
             };
             this.checkMempool = function () {
                 logDebugMsg("checkMempool", _this.lastMaximumHeight, _this.wallet.lastHeight);
-                if (((_this.lastMaximumHeight - _this.wallet.lastHeight) > 1) && (_this.lastMaximumHeight > 0)) { //only check memory pool if the user is up to date to ensure outs & ins will be found in the wallet
+                if (_this.lastMaximumHeight - _this.wallet.lastHeight > 1 &&
+                    _this.lastMaximumHeight > 0) {
+                    //only check memory pool if the user is up to date to ensure outs & ins will be found in the wallet
                     return false;
                 }
                 _this.wallet.clearMemTx();
-                _this.explorer.getTransactionPool().then(function (pool) {
-                    if (typeof pool !== 'undefined') {
+                _this.explorer
+                    .getTransactionPool()
+                    .then(function (pool) {
+                    if (typeof pool !== "undefined") {
                         for (var _i = 0, pool_1 = pool; _i < pool_1.length; _i++) {
                             var rawTx = pool_1[_i];
                             var txData = TransactionsExplorer_1.TransactionsExplorer.parse(rawTx, _this.wallet);
-                            if ((txData !== null) && (txData.transaction !== null)) {
+                            if (txData !== null && txData.transaction !== null) {
                                 _this.wallet.addNewMemTx(txData.transaction);
                             }
                         }
                     }
-                }).catch(function (err) {
+                })
+                    .catch(function (err) {
                     if (err) {
                         console.error("checkMempool error:", err);
                     }
@@ -527,7 +539,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                                 readMinersTx: _this.wallet.options.checkMinerTx,
                                 maxBlock: transactionsToProcess.lastBlock,
                                 wallet: _this.wallet.exportToRaw(),
-                                type: 'process',
+                                type: "process",
                             });
                         }
                     }
@@ -561,113 +573,117 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                 return _this.lastBlockLoading;
             };
             this.startSyncLoop = function () { return __awaiter(_this, void 0, void 0, function () {
+                var _this = this;
                 return __generator(this, function (_a) {
-                    (function (self) {
-                        return __awaiter(this, void 0, void 0, function () {
-                            var height, freeWorker, idleRange, startBlock, endBlock, err_1;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        if (!!self.stopped) return [3 /*break*/, 20];
-                                        _a.label = 1;
-                                    case 1:
-                                        _a.trys.push([1, 17, , 19]);
-                                        if (self.lastBlockLoading === -1) {
-                                            self.lastBlockLoading = self.wallet.lastHeight;
+                    (function (self) { return __awaiter(_this, void 0, void 0, function () {
+                        var height, freeWorker, idleRange, startBlock, endBlock, err_1;
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    if (!!self.stopped) return [3 /*break*/, 20];
+                                    _a.label = 1;
+                                case 1:
+                                    _a.trys.push([1, 17, , 19]);
+                                    if (self.lastBlockLoading === -1) {
+                                        self.lastBlockLoading = self.wallet.lastHeight;
+                                    }
+                                    if (!(self.transactionsToProcess.length > 500)) return [3 /*break*/, 3];
+                                    logDebugMsg("Having more then 500 TX packets in FIFO queue", self.transactionsToProcess.length);
+                                    return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 5000); })];
+                                case 2:
+                                    _a.sent();
+                                    return [3 /*break*/, 0];
+                                case 3: return [4 /*yield*/, self.explorer.getHeight()];
+                                case 4:
+                                    height = _a.sent();
+                                    // make sure we are not ahead of chain
+                                    if (self.lastBlockLoading > height) {
+                                        self.lastBlockLoading = height;
+                                    }
+                                    if (!(height > self.lastMaximumHeight)) return [3 /*break*/, 5];
+                                    self.lastMaximumHeight = height;
+                                    return [3 /*break*/, 7];
+                                case 5:
+                                    if (!(self.wallet.lastHeight >= self.lastMaximumHeight)) return [3 /*break*/, 7];
+                                    return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 1000); })];
+                                case 6:
+                                    _a.sent();
+                                    return [3 /*break*/, 0];
+                                case 7:
+                                    freeWorker = self.getFreeWorker();
+                                    if (!freeWorker) return [3 /*break*/, 14];
+                                    idleRange = self.blockList.getFirstIdleRange(true);
+                                    startBlock = 0;
+                                    endBlock = 0;
+                                    if (!idleRange) return [3 /*break*/, 8];
+                                    startBlock = idleRange.startBlock;
+                                    endBlock = idleRange.endBlock;
+                                    return [3 /*break*/, 13];
+                                case 8:
+                                    if (!(self.lastBlockLoading < height)) return [3 /*break*/, 11];
+                                    if (!(self.blockList.getSize() >= config.maxBlockQueue)) return [3 /*break*/, 10];
+                                    logDebugMsg("Block range list is to big", self.blockList.getSize());
+                                    return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 500); })];
+                                case 9:
+                                    _a.sent();
+                                    return [3 /*break*/, 0];
+                                case 10:
+                                    startBlock = Math.max(0, Number(self.lastBlockLoading));
+                                    endBlock = startBlock + config.syncBlockCount;
+                                    // make sure endBlock is not over current height
+                                    endBlock = Math.min(endBlock, height + 1);
+                                    if (startBlock > self.lastMaximumHeight) {
+                                        startBlock = self.lastMaximumHeight;
+                                    }
+                                    // add the blocks to be processed to the block list
+                                    self.blockList.addBlockRange(startBlock, endBlock, height);
+                                    self.lastBlockLoading = Math.max(self.lastBlockLoading, endBlock);
+                                    return [3 /*break*/, 13];
+                                case 11: return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 10 * 1000); })];
+                                case 12:
+                                    _a.sent();
+                                    return [3 /*break*/, 0];
+                                case 13:
+                                    // try to fetch the block range with a currently selected sync worker
+                                    freeWorker
+                                        .fetchBlocks(startBlock, endBlock)
+                                        .then(function (blockData) {
+                                        if (blockData.transactions.length > 0) {
+                                            self.processTransactions(blockData.transactions, blockData.lastBlock);
                                         }
-                                        if (!(self.transactionsToProcess.length > 500)) return [3 /*break*/, 3];
-                                        logDebugMsg("Having more then 500 TX packets in FIFO queue", self.transactionsToProcess.length);
-                                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 5000); })];
-                                    case 2:
-                                        _a.sent();
-                                        return [3 /*break*/, 0];
-                                    case 3: return [4 /*yield*/, self.explorer.getHeight()];
-                                    case 4:
-                                        height = _a.sent();
-                                        // make sure we are not ahead of chain
-                                        if (self.lastBlockLoading > height) {
-                                            self.lastBlockLoading = height;
+                                        else {
+                                            self.blockList.finishBlockRange(blockData.lastBlock, []);
                                         }
-                                        if (!(height > self.lastMaximumHeight)) return [3 /*break*/, 5];
-                                        self.lastMaximumHeight = height;
-                                        return [3 /*break*/, 7];
-                                    case 5:
-                                        if (!(self.wallet.lastHeight >= self.lastMaximumHeight)) return [3 /*break*/, 7];
-                                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 1000); })];
-                                    case 6:
-                                        _a.sent();
-                                        return [3 /*break*/, 0];
-                                    case 7:
-                                        freeWorker = self.getFreeWorker();
-                                        if (!freeWorker) return [3 /*break*/, 14];
-                                        idleRange = self.blockList.getFirstIdleRange(true);
-                                        startBlock = 0;
-                                        endBlock = 0;
-                                        if (!idleRange) return [3 /*break*/, 8];
-                                        startBlock = idleRange.startBlock;
-                                        endBlock = idleRange.endBlock;
-                                        return [3 /*break*/, 13];
-                                    case 8:
-                                        if (!(self.lastBlockLoading < height)) return [3 /*break*/, 11];
-                                        if (!(self.blockList.getSize() >= config.maxBlockQueue)) return [3 /*break*/, 10];
-                                        logDebugMsg('Block range list is to big', self.blockList.getSize());
-                                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 500); })];
-                                    case 9:
-                                        _a.sent();
-                                        return [3 /*break*/, 0];
-                                    case 10:
-                                        startBlock = Math.max(0, Number(self.lastBlockLoading));
-                                        endBlock = startBlock + config.syncBlockCount;
-                                        // make sure endBlock is not over current height
-                                        endBlock = Math.min(endBlock, height + 1);
-                                        if (startBlock > self.lastMaximumHeight) {
-                                            startBlock = self.lastMaximumHeight;
-                                        }
-                                        // add the blocks to be processed to the block list
-                                        self.blockList.addBlockRange(startBlock, endBlock, height);
-                                        self.lastBlockLoading = Math.max(self.lastBlockLoading, endBlock);
-                                        return [3 /*break*/, 13];
-                                    case 11: return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 10 * 1000); })];
-                                    case 12:
-                                        _a.sent();
-                                        return [3 /*break*/, 0];
-                                    case 13:
-                                        // try to fetch the block range with a currently selected sync worker
-                                        freeWorker.fetchBlocks(startBlock, endBlock).then(function (blockData) {
-                                            if (blockData.transactions.length > 0) {
-                                                self.processTransactions(blockData.transactions, blockData.lastBlock);
-                                            }
-                                            else {
-                                                self.blockList.finishBlockRange(blockData.lastBlock, []);
-                                            }
-                                        }).catch(function (blockData) {
-                                            self.blockList.markIdleBlockRange(blockData.lastBlock);
-                                        });
-                                        return [3 /*break*/, 16];
-                                    case 14: return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 500); })];
-                                    case 15:
-                                        _a.sent();
-                                        _a.label = 16;
-                                    case 16: return [3 /*break*/, 19];
-                                    case 17:
-                                        err_1 = _a.sent();
-                                        console.error("Error occured in startSyncLoop...", err_1);
-                                        return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 30 * 1000); })];
-                                    case 18:
-                                        _a.sent(); //retry 30s later if an error occurred
-                                        return [3 /*break*/, 19];
-                                    case 19: return [3 /*break*/, 0];
-                                    case 20: return [2 /*return*/];
-                                }
-                            });
+                                    })
+                                        .catch(function (blockData) {
+                                        self.blockList.markIdleBlockRange(blockData.lastBlock);
+                                    });
+                                    return [3 /*break*/, 16];
+                                case 14: return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 500); })];
+                                case 15:
+                                    _a.sent();
+                                    _a.label = 16;
+                                case 16: return [3 /*break*/, 19];
+                                case 17:
+                                    err_1 = _a.sent();
+                                    console.error("Error occured in startSyncLoop...", err_1);
+                                    return [4 /*yield*/, new Promise(function (r) { return setTimeout(r, 30 * 1000); })];
+                                case 18:
+                                    _a.sent(); //retry 30s later if an error occurred
+                                    return [3 /*break*/, 19];
+                                case 19: return [3 /*break*/, 0];
+                                case 20: return [2 /*return*/];
+                            }
                         });
-                    })(this);
+                    }); })(this);
                     return [2 /*return*/];
                 });
             }); };
-            console.log('WalletWatchdog');
+            console.log("WalletWatchdog");
             // by default we use all cores but limited up to config.maxWorkerCores
-            this.maxCpuCores = Math.min(window.navigator.hardwareConcurrency ? (Math.max(window.navigator.hardwareConcurrency - 1, 1)) : 1, config.maxWorkerCores);
+            this.maxCpuCores = Math.min(window.navigator.hardwareConcurrency
+                ? Math.max(window.navigator.hardwareConcurrency - 1, 1)
+                : 1, config.maxWorkerCores);
             this.wallet = wallet;
             this.explorer = explorer;
             this.blockList = new BlockList(wallet, this);

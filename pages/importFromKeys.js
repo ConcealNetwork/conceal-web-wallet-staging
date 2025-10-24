@@ -48,7 +48,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         ImportView.prototype.formValid = function () {
             if (this.password != this.password2)
                 return false;
-            if (!(this.password !== '' && (!this.insecurePassword || this.forceInsecurePassword)))
+            if (!(this.password !== "" &&
+                (!this.insecurePassword || this.forceInsecurePassword)))
                 return false;
             if (!((!this.viewOnly && this.validPrivateSpendKey) ||
                 (this.viewOnly && this.validPublicAddress && this.validPrivateViewKey)))
@@ -56,36 +57,40 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             return true;
         };
         ImportView.prototype.importWallet = function () {
-            var self = this;
-            $('#pageLoading').show();
-            blockchainExplorer.initialize().then(function (success) {
-                blockchainExplorer.getHeight().then(function (currentHeight) {
-                    $('#pageLoading').hide();
+            var _this = this;
+            $("#pageLoading").show();
+            blockchainExplorer
+                .initialize()
+                .then(function (success) {
+                blockchainExplorer
+                    .getHeight()
+                    .then(function (currentHeight) {
+                    $("#pageLoading").hide();
                     var newWallet = new Wallet_1.Wallet();
-                    if (self.viewOnly) {
-                        var decodedPublic = Cn_1.Cn.decode_address(self.publicAddress.trim());
+                    if (_this.viewOnly) {
+                        var decodedPublic = Cn_1.Cn.decode_address(_this.publicAddress.trim());
                         newWallet.keys = {
                             priv: {
-                                spend: '',
-                                view: self.privateViewKey.trim()
+                                spend: "",
+                                view: _this.privateViewKey.trim(),
                             },
                             pub: {
                                 spend: decodedPublic.spend,
                                 view: decodedPublic.view,
-                            }
+                            },
                         };
                     }
                     else {
                         //console.log(1);
-                        var viewkey = self.privateViewKey.trim();
-                        if (viewkey === '') {
-                            viewkey = Cn_1.Cn.generate_keys(Cn_1.CnUtils.cn_fast_hash(self.privateSpendKey.trim())).sec;
+                        var viewkey = _this.privateViewKey.trim();
+                        if (viewkey === "") {
+                            viewkey = Cn_1.Cn.generate_keys(Cn_1.CnUtils.cn_fast_hash(_this.privateSpendKey.trim())).sec;
                         }
                         //console.log(1, viewkey);
-                        newWallet.keys = KeysRepository_1.KeysRepository.fromPriv(self.privateSpendKey.trim(), viewkey);
+                        newWallet.keys = KeysRepository_1.KeysRepository.fromPriv(_this.privateSpendKey.trim(), viewkey);
                         //console.log(1);
                     }
-                    var height = self.importHeight; //never trust a perfect value from the user
+                    var height = _this.importHeight; //never trust a perfect value from the user
                     if (height >= currentHeight) {
                         height = currentHeight - 1;
                     }
@@ -96,15 +101,17 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                         height = currentHeight;
                     newWallet.lastHeight = height;
                     newWallet.creationHeight = newWallet.lastHeight;
-                    AppState_1.AppState.openWallet(newWallet, self.password);
-                    window.location.href = '#account';
-                }).catch(function (err) {
+                    AppState_1.AppState.openWallet(newWallet, _this.password);
+                    window.location.href = "#account";
+                })
+                    .catch(function (err) {
                     console.log(err);
-                    $('#pageLoading').hide();
+                    $("#pageLoading").hide();
                 });
-            }).catch(function (err) {
+            })
+                .catch(function (err) {
                 console.log(err);
-                $('#pageLoading').hide();
+                $("#pageLoading").hide();
             });
         };
         ImportView.prototype.passwordWatch = function () {
@@ -115,18 +122,20 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 this.insecurePassword = false;
         };
         ImportView.prototype.importHeightWatch = function () {
-            if (this.importHeight === '')
+            if (this.importHeight === "")
                 this.importHeight = 0;
             if (this.importHeight < 0) {
                 this.importHeight = 0;
             }
-            this.importHeight = parseInt('' + this.importHeight);
+            this.importHeight = parseInt("" + this.importHeight);
         };
         ImportView.prototype.privateSpendKeyWatch = function () {
             this.validPrivateSpendKey = this.privateSpendKey.trim().length == 64;
         };
         ImportView.prototype.privateViewKeyWatch = function () {
-            this.validPrivateViewKey = this.privateViewKey.trim().length == 64 || (!this.viewOnly && this.privateViewKey.trim().length == 0);
+            this.validPrivateViewKey =
+                this.privateViewKey.trim().length == 64 ||
+                    (!this.viewOnly && this.privateViewKey.trim().length == 0);
         };
         ImportView.prototype.publicAddressWatch = function () {
             try {
@@ -138,35 +147,34 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }
         };
         ImportView.prototype.forceInsecurePasswordCheck = function () {
-            var self = this;
-            self.forceInsecurePassword = true;
+            this.forceInsecurePassword = true;
         };
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
         ], ImportView.prototype, "viewOnly", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], ImportView.prototype, "privateSpendKey", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
         ], ImportView.prototype, "validPrivateSpendKey", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], ImportView.prototype, "privateViewKey", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
         ], ImportView.prototype, "validPrivateViewKey", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], ImportView.prototype, "publicAddress", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
         ], ImportView.prototype, "validPublicAddress", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], ImportView.prototype, "password", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], ImportView.prototype, "password2", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
@@ -194,5 +202,5 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         ], ImportView.prototype, "publicAddressWatch", null);
         return ImportView;
     }(DestructableView_1.DestructableView));
-    new ImportView('#app');
+    new ImportView("#app");
 });

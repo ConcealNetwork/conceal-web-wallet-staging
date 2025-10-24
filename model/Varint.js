@@ -23,12 +23,12 @@ define(["require", "exports"], function (require, exports) {
     var MSBALL = ~REST;
     var INT = Math.pow(2, 31);
     var TWO_POWER_SEVEN = Math.pow(2, 7);
-    exports.encode = function (num, out, offset) {
+    exports.encode = (function (num, out, offset) {
         if (out === void 0) { out = []; }
         if (offset === void 0) { offset = 0; }
         if (Number.MAX_SAFE_INTEGER && num > Number.MAX_SAFE_INTEGER) {
             exports.encode.bytes = 0;
-            throw new RangeError('Could not encode varint');
+            throw new RangeError("Could not encode varint");
         }
         var oldOffset = offset;
         while (num >= INT) {
@@ -42,15 +42,15 @@ define(["require", "exports"], function (require, exports) {
         out[offset] = num | 0;
         exports.encode.bytes = offset - oldOffset + 1;
         return out;
-    };
-    exports.decode = function (buf, offset) {
+    });
+    exports.decode = (function (buf, offset) {
         if (offset === void 0) { offset = 0; }
         var res = 0, shift = 1, counter = offset, b;
-        var l = Math.pow(TWO_POWER_SEVEN, buf.length - offset < 8 ? (buf.length - offset) * 7 : 49);
+        var l = Math.pow(TWO_POWER_SEVEN, (buf.length - offset < 8 ? (buf.length - offset) * 7 : 49));
         do {
             if (shift > l) {
                 exports.decode.bytes = 0;
-                throw new RangeError('Could not decode varint');
+                throw new RangeError("Could not decode varint");
             }
             b = buf[counter++];
             res += (b & REST) * shift;
@@ -58,5 +58,5 @@ define(["require", "exports"], function (require, exports) {
         } while (b >= MSB);
         exports.decode.bytes = counter - offset;
         return res;
-    };
+    });
 });

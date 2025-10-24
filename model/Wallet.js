@@ -74,17 +74,17 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
             this.checkMinerTx = false;
             this.readSpeed = 10;
             this.customNode = false;
-            this.nodeUrl = 'https://node.conceal.network:16000/';
+            this.nodeUrl = "https://node.conceal.network:16000/";
         }
         WalletOptions.fromRaw = function (raw) {
             var options = new WalletOptions();
-            if (typeof raw.checkMinerTx !== 'undefined')
+            if (typeof raw.checkMinerTx !== "undefined")
                 options.checkMinerTx = raw.checkMinerTx;
-            if (typeof raw.readSpeed !== 'undefined')
+            if (typeof raw.readSpeed !== "undefined")
                 options.readSpeed = raw.readSpeed;
-            if (typeof raw.customNode !== 'undefined')
+            if (typeof raw.customNode !== "undefined")
                 options.customNode = raw.customNode;
-            if (typeof raw.nodeUrl !== 'undefined')
+            if (typeof raw.nodeUrl !== "undefined")
                 options.nodeUrl = raw.nodeUrl;
             return options;
         };
@@ -93,7 +93,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 readSpeed: this.readSpeed,
                 checkMinerTx: this.checkMinerTx,
                 customNode: this.customNode,
-                nodeUrl: this.nodeUrl
+                nodeUrl: this.nodeUrl,
             };
             return data;
         };
@@ -143,9 +143,9 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     transactions: transactions,
                     txPrivateKeys: _this.txPrivateKeys,
                     lastHeight: _this._lastHeight,
-                    nonce: '',
+                    nonce: "",
                     options: _this._options,
-                    coinAddressPrefix: _this.coinAddressPrefix
+                    coinAddressPrefix: _this.coinAddressPrefix,
                 };
                 data.keys = _this.keys;
                 if (_this.creationHeight !== 0) {
@@ -154,7 +154,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 return data;
             };
             _this.isViewOnly = function () {
-                return _this.keys.priv.spend === '';
+                return _this.keys.priv.spend === "";
             };
             _this.getAll = function (forceReload) {
                 if (forceReload === void 0) { forceReload = false; }
@@ -185,7 +185,9 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                     // Preserve fusion flag when replacing
                                     transaction.fusion = _this.transactions[tr].fusion;
                                     // Preserve messageViewed flag when replacing
-                                    transaction.messageViewed = _this.transactions[tr].messageViewed || transaction.messageViewed;
+                                    transaction.messageViewed =
+                                        _this.transactions[tr].messageViewed ||
+                                            transaction.messageViewed;
                                     _this.keyLookupMap.set(transaction.txPubKey, transaction);
                                     _this.txLookupMap.set(transaction.hash, transaction);
                                     _this.transactions[tr] = transaction;
@@ -198,7 +200,8 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                             // Preserve fusion flag from mempool
                             transaction.fusion = existMem.fusion;
                             // Preserve messageViewed flag from mempool
-                            transaction.messageViewed = existMem.messageViewed || transaction.messageViewed;
+                            transaction.messageViewed =
+                                existMem.messageViewed || transaction.messageViewed;
                             var trIndex = _this.txsMem.indexOf(existMem);
                             if (trIndex != -1) {
                                 _this.txsMem.splice(trIndex, 1);
@@ -216,11 +219,12 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
              * Only updates the specified fields, does not replace the transaction object.
              */
             _this.updateTransactionFlags = function (txPubKeyOrHash, flags) {
-                var tx = _this.findWithTxPubKey(txPubKeyOrHash) || _this.findWithTxHash(txPubKeyOrHash);
+                var tx = _this.findWithTxPubKey(txPubKeyOrHash) ||
+                    _this.findWithTxHash(txPubKeyOrHash);
                 if (tx) {
-                    if (typeof flags.fusion !== 'undefined')
+                    if (typeof flags.fusion !== "undefined")
                         tx.fusion = flags.fusion;
-                    if (typeof flags.messageViewed !== 'undefined')
+                    if (typeof flags.messageViewed !== "undefined")
                         tx.messageViewed = flags.messageViewed;
                     _this.signalChanged();
                     _this.notify();
@@ -236,7 +240,8 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
             _this.addDeposit = function (deposit) {
                 var foundMatch = false;
                 for (var i = 0; i < _this.deposits.length; ++i) {
-                    if (_this.deposits[i].txHash == deposit.txHash) { // only check txHash
+                    if (_this.deposits[i].txHash == deposit.txHash) {
+                        // only check txHash
                         _this.deposits[i] = deposit;
                         foundMatch = true;
                         break;
@@ -251,7 +256,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
             _this.updateDepositFlags = function (txHashOrPubKey, flags) {
                 var deposit = _this.deposits.find(function (d) { return d.txHash === txHashOrPubKey || d.txPubKey === txHashOrPubKey; });
                 if (deposit) {
-                    if (typeof flags.withdrawPending !== 'undefined')
+                    if (typeof flags.withdrawPending !== "undefined")
                         deposit.withdrawPending = flags.withdrawPending;
                     _this.signalChanged();
                     _this.notify();
@@ -367,7 +372,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 return null;
             };
             _this.findTxPrivateKeyWithHash = function (hash) {
-                if (typeof _this.txPrivateKeys[hash] !== 'undefined')
+                if (typeof _this.txPrivateKeys[hash] !== "undefined")
                     return _this.txPrivateKeys[hash];
                 return null;
             };
@@ -433,7 +438,8 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     var transaction = _a[_i];
                     if (!transaction.isFullyChecked())
                         continue;
-                    if (transaction.isConfirmed(currentBlockHeight) || currentBlockHeight === -1) {
+                    if (transaction.isConfirmed(currentBlockHeight) ||
+                        currentBlockHeight === -1) {
                         for (var _b = 0, _c = transaction.outs; _b < _c.length; _b++) {
                             var nout = _c[_b];
                             if (nout.type !== "03") {
@@ -450,7 +456,8 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 }
                 for (var _f = 0, _g = _this.txsMem; _f < _g.length; _f++) {
                     var transaction = _g[_f];
-                    if (transaction.isConfirmed(currentBlockHeight) || currentBlockHeight === -1) {
+                    if (transaction.isConfirmed(currentBlockHeight) ||
+                        currentBlockHeight === -1) {
                         for (var _h = 0, _j = transaction.outs; _h < _j.length; _h++) {
                             var nout = _j[_h];
                             if (nout.type !== "03") {
@@ -474,7 +481,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     //if (!deposit.tx?.isFullyChecked()) {
                     //  continue;
                     //}
-                    if ((deposit.blockHeight + deposit.term) > currHeight) {
+                    if (deposit.blockHeight + deposit.term > currHeight) {
                         amount += deposit.amount;
                     }
                 }
@@ -487,7 +494,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     //if (!deposit.tx?.isFullyChecked()) {
                     //	continue;
                     //}
-                    if (deposit.blockHeight + (deposit.term) <= currHeight) {
+                    if (deposit.blockHeight + deposit.term <= currHeight) {
                         if (!deposit.spentTx) {
                             amount += deposit.amount;
                         }
@@ -504,13 +511,13 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     var deposit = _a[_i];
                     var status_1 = deposit.getStatus(currHeight);
                     switch (status_1) {
-                        case 'Locked':
+                        case "Locked":
                             futureLockedInterest += deposit.interest;
                             break;
-                        case 'Unlocked':
+                        case "Unlocked":
                             futureUnlockedInterest += deposit.interest;
                             break;
-                        case 'Spent':
+                        case "Spent":
                             spentInterest += deposit.interest;
                             break;
                     }
@@ -519,7 +526,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     spent: spentInterest,
                     locked: futureLockedInterest,
                     unlocked: futureUnlockedInterest,
-                    total: futureLockedInterest + futureUnlockedInterest
+                    total: futureLockedInterest + futureUnlockedInterest,
                 };
             };
             // Returns the deposit with the earliest unlock date (not spent)
@@ -551,13 +558,13 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                         var needDerivation = false;
                         for (var _b = 0, _c = tx.outs; _b < _c.length; _b++) {
                             var out = _c[_b];
-                            if (out.keyImage === '') {
+                            if (out.keyImage === "") {
                                 needDerivation = true;
                                 break;
                             }
                         }
                         if (needDerivation) {
-                            var derivation = '';
+                            var derivation = "";
                             try {
                                 derivation = Cn_1.CnNativeBride.generate_key_derivation(tx.txPubKey, _this.keys.priv.view);
                             }
@@ -566,7 +573,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                             }
                             for (var _d = 0, _e = tx.outs; _d < _e.length; _d++) {
                                 var out = _e[_d];
-                                if (out.keyImage === '') {
+                                if (out.keyImage === "") {
                                     var m_key_image = Cn_1.CnTransactions.generate_key_image_helper({
                                         view_secret_key: _this.keys.priv.view,
                                         spend_secret_key: _this.keys.priv.spend,
@@ -605,7 +612,8 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                 }
                             }
                         }
-                        if (_this.transactions[iTx].outs.length === 0 && _this.transactions[iTx].ins.length === 0) {
+                        if (_this.transactions[iTx].outs.length === 0 &&
+                            _this.transactions[iTx].ins.length === 0) {
                             _this.transactions.splice(iTx, 1);
                             --iTx;
                         }
@@ -628,7 +636,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 for (var _i = 0, unspentOuts_1 = unspentOuts; _i < unspentOuts_1.length; _i++) {
                     var out = unspentOuts_1[_i];
                     var result = Currency_1.Currency.isAmountApplicableInFusionTransactionInput(out.amount, threshold, blockchainHeight);
-                    if (result.applicable && typeof result.amountPowerOfTen === 'number') {
+                    if (result.applicable && typeof result.amountPowerOfTen === "number") {
                         if (result.amountPowerOfTen < NUM_BUCKETS) {
                             bucketSizes[result.amountPowerOfTen]++;
                         }
@@ -682,11 +690,11 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 for (var i = 0; i < selectedBucket; ++i) {
                     lowerBound *= 10;
                 }
-                var upperBound = selectedBucket === NUM_BUCKETS - 1 ? Number.MAX_SAFE_INTEGER : lowerBound * 10;
+                var upperBound = selectedBucket === NUM_BUCKETS - 1
+                    ? Number.MAX_SAFE_INTEGER
+                    : lowerBound * 10;
                 // Select outputs within bounds
-                var selectedOuts = allFusionReadyOuts.filter(function (out) {
-                    return out.amount >= lowerBound && out.amount < upperBound;
-                });
+                var selectedOuts = allFusionReadyOuts.filter(function (out) { return out.amount >= lowerBound && out.amount < upperBound; });
                 // Ensure we have enough outputs for fusion
                 if (selectedOuts.length < minInputCount) {
                     return [];
@@ -712,16 +720,15 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 if (unspentOutsCount < config.optimizeOutputs) {
                     return {
                         numOutputs: unspentOutsCount,
-                        isNeeded: false
+                        isNeeded: false,
                     };
                 }
-                ;
                 var balance = _this.availableAmount(blockchainHeight);
                 //threshold = config.optimizeThreshold;
                 var fusionReady = false;
                 while (threshold <= balance && !fusionReady) {
                     var estimation = _this.estimateFusionReadyness(threshold, blockchainHeight);
-                    if (estimation.fusionReadyCount > (config.optimizeOutputs / 2)) {
+                    if (estimation.fusionReadyCount > config.optimizeOutputs / 2) {
                         fusionReady = true;
                         break;
                     }
@@ -737,7 +744,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 }
                 return {
                     numOutputs: unspentOutsCount,
-                    isNeeded: isNeeded
+                    isNeeded: isNeeded,
                 };
             };
             _this.createFusionTransaction = function (blockchainHeight, threshold, blockchainExplorer, obtainMixOutsCallback) {
@@ -755,7 +762,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                     throw new Error("Threshold is too low");
                                 }
                                 destinationAddress = this.getPublicAddress();
-                                if (destinationAddress === '') {
+                                if (destinationAddress === "") {
                                     throw new Error("Destination address is not set");
                                 }
                                 estimateFusionInputsCount = Currency_1.Currency.getApproximateMaximumInputCount(Currency_1.Currency.fusionTxMaxSize, MAX_FUSION_OUTPUTS, config.defaultMixin);
@@ -783,11 +790,13 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                 _a.label = 3;
                             case 3:
                                 inputsAmount = fusionInputs.reduce(function (sum, input) { return sum + input.amount; }, 0);
-                                dsts = [{
+                                dsts = [
+                                    {
                                         address: destinationAddress,
-                                        amount: (inputsAmount - neededFee)
-                                    }];
-                                return [4 /*yield*/, TransactionsExplorer_1.TransactionsExplorer.createRawTx(dsts, this, false, fusionInputs, false, mixinResult, config.defaultMixin, neededFee, '', '', 0, 'regular', 0)];
+                                        amount: inputsAmount - neededFee,
+                                    },
+                                ];
+                                return [4 /*yield*/, TransactionsExplorer_1.TransactionsExplorer.createRawTx(dsts, this, false, fusionInputs, false, mixinResult, config.defaultMixin, neededFee, "", "", 0, "regular", 0)];
                             case 4:
                                 data = _a.sent();
                                 transactionSize = Currency_1.Currency.getApproximateTransactionSize(data.signed.vin.length, data.signed.vout.length, config.defaultMixin);
@@ -795,7 +804,8 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                 round_1++;
                                 _a.label = 5;
                             case 5:
-                                if (transactionSize > Currency_1.Currency.fusionTxMaxSize && fusionInputs.length >= Currency_1.Currency.fusionTxMinInputCount) return [3 /*break*/, 1];
+                                if (transactionSize > Currency_1.Currency.fusionTxMaxSize &&
+                                    fusionInputs.length >= Currency_1.Currency.fusionTxMinInputCount) return [3 /*break*/, 1];
                                 _a.label = 6;
                             case 6:
                                 // Final validation
@@ -812,14 +822,15 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                     throw new Error("Maximum output count exceeded");
                                 }
                                 // Send transaction and add to mempool
-                                return [4 /*yield*/, blockchainExplorer.sendRawTx(fusionTransaction_1.raw.raw)
+                                return [4 /*yield*/, blockchainExplorer
+                                        .sendRawTx(fusionTransaction_1.raw.raw)
                                         .then(function () {
                                         // Save the transaction private key
                                         _this.addTxPrivateKeyWithTxHashAndFusion(fusionTransaction_1.raw.hash, fusionTransaction_1.raw.prvkey, true);
                                         return swal({
-                                            type: 'success',
-                                            title: i18n.t('global.optimize.success'),
-                                            confirmButtonText: i18n.t('global.optimize.confirmText')
+                                            type: "success",
+                                            title: i18n.t("global.optimize.success"),
+                                            confirmButtonText: i18n.t("global.optimize.confirmText"),
                                         });
                                     })
                                         .then(function () {
@@ -828,10 +839,10 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                         .catch(function (error) {
                                         reject(error);
                                         return swal({
-                                            type: 'error',
-                                            title: i18n.t('global.optimize.error'),
+                                            type: "error",
+                                            title: i18n.t("global.optimize.error"),
                                             text: error.message,
-                                            confirmButtonText: i18n.t('global.optimize.confirmText')
+                                            confirmButtonText: i18n.t("global.optimize.confirmText"),
                                         });
                                     })];
                             case 7:
@@ -842,10 +853,10 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                 error_1 = _a.sent();
                                 reject(error_1);
                                 return [2 /*return*/, swal({
-                                        type: 'info',
-                                        title: i18n.t('global.optimize.errorInfo'),
+                                        type: "info",
+                                        title: i18n.t("global.optimize.errorInfo"),
                                         text: error_1.message,
-                                        confirmButtonText: i18n.t('global.optimize.confirmText')
+                                        confirmButtonText: i18n.t("global.optimize.confirmText"),
                                     })];
                             case 9: return [2 /*return*/];
                         }
@@ -900,7 +911,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 }
             }
             wallet._lastHeight = raw.lastHeight;
-            if (typeof raw.encryptedKeys === 'string' && raw.encryptedKeys !== '') {
+            if (typeof raw.encryptedKeys === "string" && raw.encryptedKeys !== "") {
                 if (raw.encryptedKeys.length === 128) {
                     var privView = raw.encryptedKeys.substr(0, 64);
                     var privSpend = raw.encryptedKeys.substr(64, 64);
@@ -913,29 +924,29 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     wallet.keys = {
                         pub: {
                             view: pubViewKey,
-                            spend: pubSpendKey
+                            spend: pubSpendKey,
                         },
                         priv: {
                             view: privView,
-                            spend: '',
-                        }
+                            spend: "",
+                        },
                     };
                 }
             }
-            else if (typeof raw.keys !== 'undefined') {
+            else if (typeof raw.keys !== "undefined") {
                 wallet.keys = raw.keys;
             }
-            if (typeof raw.creationHeight !== 'undefined')
+            if (typeof raw.creationHeight !== "undefined")
                 wallet.creationHeight = raw.creationHeight;
-            if (typeof raw.options !== 'undefined')
+            if (typeof raw.options !== "undefined")
                 wallet._options = WalletOptions.fromRaw(raw.options);
-            if (typeof raw.txPrivateKeys !== 'undefined')
+            if (typeof raw.txPrivateKeys !== "undefined")
                 wallet.txPrivateKeys = raw.txPrivateKeys;
-            if (typeof raw.coinAddressPrefix !== 'undefined')
+            if (typeof raw.coinAddressPrefix !== "undefined")
                 wallet.coinAddressPrefix = raw.coinAddressPrefix;
             else
                 wallet.coinAddressPrefix = config.addressPrefix;
-            if (typeof raw.coinAddressPrefix !== 'undefined')
+            if (typeof raw.coinAddressPrefix !== "undefined")
                 wallet.coinAddressPrefix = raw.coinAddressPrefix;
             else
                 wallet.coinAddressPrefix = config.addressPrefix;
@@ -974,7 +985,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 var transaction = _a[_i];
                 for (var _b = 0, _c = transaction.outs; _b < _c.length; _b++) {
                     var out = _c[_b];
-                    if (out.keyImage !== null && out.keyImage !== '')
+                    if (out.keyImage !== null && out.keyImage !== "")
                         keys.push(out.keyImage);
                     if (out.globalIndex !== 0)
                         indexes.push(out.globalIndex);
@@ -994,7 +1005,8 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     var tx = _a[_i];
                     for (var _b = 0, _c = tx.outs; _b < _c.length; _b++) {
                         var out = _c[_b];
-                        if (out.type === "03" && (out.globalIndex === undefined || out.globalIndex === 0)) {
+                        if (out.type === "03" &&
+                            (out.globalIndex === undefined || out.globalIndex === 0)) {
                             return true;
                         }
                     }

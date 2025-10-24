@@ -35,12 +35,16 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
             return _super.prototype.destruct.call(this);
         };
         CreateViewWallet.prototype.generateWallet = function () {
-            var self = this;
+            var _this = this;
             setTimeout(function () {
-                $('#pageLoading').show();
-                blockchainExplorer.initialize().then(function (success) {
-                    blockchainExplorer.getHeight().then(function (currentHeight) {
-                        $('#pageLoading').hide();
+                $("#pageLoading").show();
+                blockchainExplorer
+                    .initialize()
+                    .then(function (success) {
+                    blockchainExplorer
+                        .getHeight()
+                        .then(function (currentHeight) {
+                        $("#pageLoading").hide();
                         var seed = Cn_1.CnNativeBride.sc_reduce32(Cn_1.CnRandom.rand_32());
                         var keys = Cn_1.Cn.create_address(seed);
                         var newWallet = new Wallet_1.Wallet();
@@ -50,9 +54,9 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                             height = 0;
                         newWallet.lastHeight = height;
                         newWallet.creationHeight = height;
-                        self.newWallet = newWallet;
+                        _this.newWallet = newWallet;
                         Translations_1.Translations.getLang().then(function (userLang) {
-                            var langToExport = 'english';
+                            var langToExport = "english";
                             for (var _i = 0, _a = MnemonicLang_1.MnemonicLang.getLangs(); _i < _a.length; _i++) {
                                 var lang = _a[_i];
                                 if (lang.shortLang === userLang) {
@@ -62,17 +66,19 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                             }
                             var phrase = Mnemonic_1.Mnemonic.mn_encode(newWallet.keys.priv.spend, langToExport);
                             if (phrase !== null)
-                                self.mnemonicPhrase = phrase;
+                                _this.mnemonicPhrase = phrase;
                         });
                         setTimeout(function () {
-                            self.step = 1;
+                            _this.step = 1;
                         }, 2000);
-                    }).catch(function (err) {
-                        $('#pageLoading').hide();
+                    })
+                        .catch(function (err) {
+                        $("#pageLoading").hide();
                         console.log(err);
                     });
-                }).catch(function (err) {
-                    $('#pageLoading').hide();
+                })
+                    .catch(function (err) {
+                    $("#pageLoading").hide();
                     console.log(err);
                 });
             }, 0);
@@ -88,22 +94,22 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
             $("html, body").animate({ scrollTop: 0 }, "fast");
         };
         CreateViewWallet.prototype.forceInsecurePasswordCheck = function () {
-            var self = this;
             /*swal({
-                title: 'Are you sure?',
-                text: "You won't be able to revert this!",
-                type: 'warning',
-                showCancelButton: true,
-                reverseButtons:true,
-                confirmButtonText: 'Yes'
-            }).then((result:{value:boolean}) => {
-                if (result.value) {*/
-            self.forceInsecurePassword = true;
+                    title: 'Are you sure?',
+                    text: "You won't be able to revert this!",
+                    type: 'warning',
+                    showCancelButton: true,
+                    reverseButtons:true,
+                    confirmButtonText: 'Yes'
+                }).then((result:{value:boolean}) => {
+                    if (result.value) {*/
+            this.forceInsecurePassword = true;
             // }
             // });
         };
         CreateViewWallet.prototype.exportStep = function () {
-            if (this.walletPassword !== '' && (!this.insecurePassword || this.forceInsecurePassword)) {
+            if (this.walletPassword !== "" &&
+                (!this.insecurePassword || this.forceInsecurePassword)) {
                 this.step = 2;
             }
         };
@@ -115,17 +121,17 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
         CreateViewWallet.prototype.finish = function () {
             if (this.newWallet !== null) {
                 AppState_1.AppState.openWallet(this.newWallet, this.walletPassword);
-                window.location.href = '#account';
+                window.location.href = "#account";
             }
         };
         __decorate([
             (0, VueAnnotate_1.VueVar)(0)
         ], CreateViewWallet.prototype, "step", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], CreateViewWallet.prototype, "walletPassword", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], CreateViewWallet.prototype, "walletPassword2", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
@@ -140,7 +146,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
             (0, VueAnnotate_1.VueVar)(null)
         ], CreateViewWallet.prototype, "newWallet", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], CreateViewWallet.prototype, "mnemonicPhrase", void 0);
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
@@ -150,5 +156,5 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
         ], CreateViewWallet.prototype, "stepWatch", null);
         return CreateViewWallet;
     }(DestructableView_1.DestructableView));
-    new CreateViewWallet('#app');
+    new CreateViewWallet("#app");
 });

@@ -77,7 +77,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numbersLab/VueAnnotate", "../model/TransactionsExplorer", "../lib/numbersLab/DependencyInjector", "../model/Wallet", "../utils/Url", "../model/CoinUri", "../model/QRReader", "../model/AppState", "../providers/BlockchainExplorerProvider", "../model/Nfc", "../model/Cn", "../model/WalletWatchdog"], function (require, exports, DestructableView_1, VueAnnotate_1, TransactionsExplorer_1, DependencyInjector_1, Wallet_1, Url_1, CoinUri_1, QRReader_1, AppState_1, BlockchainExplorerProvider_1, Nfc_1, Cn_1, WalletWatchdog_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var wallet = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(Wallet_1.Wallet.name, 'default', false);
+    var wallet = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(Wallet_1.Wallet.name, "default", false);
     var blockchainExplorer = BlockchainExplorerProvider_1.BlockchainExplorerProvider.getInstance();
     AppState_1.AppState.enableLeftMenu();
     var SendView = /** @class */ (function (_super) {
@@ -89,14 +89,18 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             _this.redirectUrlAfterSend = null;
             _this.ndefListener = null;
             _this.refresh = function () {
-                blockchainExplorer.getHeight().then(function (height) {
+                blockchainExplorer
+                    .getHeight()
+                    .then(function (height) {
                     _this.blockchainHeight = height;
-                    _this.isWalletSyncing = (wallet.lastHeight + 2) < _this.blockchainHeight;
-                    if ((_this.oldIsWalletSyncing !== _this.isWalletSyncing) && !_this.isWalletSyncing) {
+                    _this.isWalletSyncing = wallet.lastHeight + 2 < _this.blockchainHeight;
+                    if (_this.oldIsWalletSyncing !== _this.isWalletSyncing &&
+                        !_this.isWalletSyncing) {
                         _this.checkOptimization();
                     }
                     _this.oldIsWalletSyncing = _this.isWalletSyncing;
-                }).catch(function (err) {
+                })
+                    .catch(function (err) {
                     // in case of error do nothing
                 });
             };
@@ -109,159 +113,166 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             };
             _this.send = function () {
                 var self = _this;
-                blockchainExplorer.getHeight().then(function (blockchainHeight) {
-                    return __awaiter(this, void 0, void 0, function () {
-                        var amount, amountToSend, destinationAddress_1, mixinToSendWith_1, destination_1;
-                        return __generator(this, function (_a) {
-                            amount = parseFloat(self.amountToSend);
-                            if (self.destinationAddress !== null) {
-                                //todo use BigInteger
-                                if (amount * Math.pow(10, config.coinUnitPlaces) > wallet.availableAmount(blockchainHeight)) {
-                                    swal({
-                                        type: 'error',
-                                        title: i18n.t('sendPage.notEnoughMoneyModal.title'),
-                                        text: i18n.t('sendPage.notEnoughMoneyModal.content'),
-                                        confirmButtonText: i18n.t('sendPage.notEnoughMoneyModal.confirmText'),
-                                    });
-                                    return [2 /*return*/];
-                                }
-                                amountToSend = amount * Math.pow(10, config.coinUnitPlaces);
-                                destinationAddress_1 = self.destinationAddress;
+                blockchainExplorer
+                    .getHeight()
+                    .then(function (blockchainHeight) { return __awaiter(_this, void 0, void 0, function () {
+                    var amount, amountToSend, destinationAddress_1, mixinToSendWith_1, destination_1;
+                    return __generator(this, function (_a) {
+                        amount = parseFloat(self.amountToSend);
+                        if (self.destinationAddress !== null) {
+                            //todo use BigInteger
+                            if (amount * Math.pow(10, config.coinUnitPlaces) >
+                                wallet.availableAmount(blockchainHeight)) {
                                 swal({
-                                    title: i18n.t('sendPage.creatingTransferModal.title'),
-                                    html: i18n.t('sendPage.creatingTransferModal.content'),
-                                    onOpen: function () {
-                                        swal.showLoading();
-                                    }
+                                    type: "error",
+                                    title: i18n.t("sendPage.notEnoughMoneyModal.title"),
+                                    text: i18n.t("sendPage.notEnoughMoneyModal.content"),
+                                    confirmButtonText: i18n.t("sendPage.notEnoughMoneyModal.confirmText"),
                                 });
-                                mixinToSendWith_1 = config.defaultMixin;
-                                destination_1 = [{ address: destinationAddress_1, amount: amountToSend }];
-                                // Get fee address from session node for remote node fee
-                                blockchainExplorer.getSessionNodeFeeAddress().then(function (remoteFeeAddress) {
-                                    if (remoteFeeAddress !== wallet.getPublicAddress()) {
-                                        if (remoteFeeAddress !== '') {
-                                            destination_1.push({ address: remoteFeeAddress, amount: config.remoteNodeFee });
-                                        }
-                                        else {
-                                            destination_1.push({ address: config.donationAddress, amount: config.remoteNodeFee });
-                                        }
-                                    }
-                                    TransactionsExplorer_1.TransactionsExplorer.createTx(destination_1, self.paymentId, wallet, blockchainHeight, function (amounts, numberOuts) {
-                                        return blockchainExplorer.getRandomOuts(amounts, numberOuts);
-                                    }, function (amount, feesAmount) {
-                                        if (amount + feesAmount > wallet.availableAmount(blockchainHeight)) {
-                                            swal({
-                                                type: 'error',
-                                                title: i18n.t('sendPage.notEnoughMoneyModal.title'),
-                                                text: i18n.t('sendPage.notEnoughMoneyModal.content'),
-                                                confirmButtonText: i18n.t('sendPage.notEnoughMoneyModal.confirmText'),
-                                                onOpen: function () {
-                                                    swal.hideLoading();
-                                                }
-                                            });
-                                            throw '';
-                                        }
-                                        return new Promise(function (resolve, reject) {
-                                            setTimeout(function () {
-                                                var feeInfo = '';
-                                                if (remoteFeeAddress !== wallet.getPublicAddress()) {
-                                                    feeInfo = '<br><br><span style="font-size: 0.8em; font-style: italic; color: #666;">' + '(' + i18n.t('sendPage.confirmTransactionModal.remoteNodeFee', {
-                                                        fee: config.remoteNodeFee / Math.pow(10, config.coinUnitPlaces),
-                                                        symbol: config.coinSymbol
-                                                    }) + ')' + '</span>';
-                                                }
-                                                swal({
-                                                    title: i18n.t('sendPage.confirmTransactionModal.title'),
-                                                    html: i18n.t('sendPage.confirmTransactionModal.content', {
-                                                        amount: amount / Math.pow(10, config.coinUnitPlaces),
-                                                        fees: feesAmount / Math.pow(10, config.coinUnitPlaces),
-                                                        total: (amount + feesAmount) / Math.pow(10, config.coinUnitPlaces),
-                                                    }) + feeInfo,
-                                                    showCancelButton: true,
-                                                    confirmButtonText: i18n.t('sendPage.confirmTransactionModal.confirmText'),
-                                                    cancelButtonText: i18n.t('sendPage.confirmTransactionModal.cancelText'),
-                                                }).then(function (result) {
-                                                    if (result.dismiss) {
-                                                        reject('');
-                                                    }
-                                                    else {
-                                                        swal({
-                                                            title: i18n.t('sendPage.finalizingTransferModal.title'),
-                                                            html: i18n.t('sendPage.finalizingTransferModal.content'),
-                                                            onOpen: function () {
-                                                                swal.showLoading();
-                                                            }
-                                                        });
-                                                        resolve();
-                                                    }
-                                                }).catch(reject);
-                                            }, 1);
+                                return [2 /*return*/];
+                            }
+                            amountToSend = amount * Math.pow(10, config.coinUnitPlaces);
+                            destinationAddress_1 = self.destinationAddress;
+                            swal({
+                                title: i18n.t("sendPage.creatingTransferModal.title"),
+                                html: i18n.t("sendPage.creatingTransferModal.content"),
+                                onOpen: function () {
+                                    swal.showLoading();
+                                },
+                            });
+                            mixinToSendWith_1 = config.defaultMixin;
+                            destination_1 = [
+                                { address: destinationAddress_1, amount: amountToSend },
+                            ];
+                            // Get fee address from session node for remote node fee
+                            blockchainExplorer
+                                .getSessionNodeFeeAddress()
+                                .then(function (remoteFeeAddress) {
+                                if (remoteFeeAddress !== wallet.getPublicAddress()) {
+                                    if (remoteFeeAddress !== "") {
+                                        destination_1.push({
+                                            address: remoteFeeAddress,
+                                            amount: config.remoteNodeFee,
                                         });
-                                    }, mixinToSendWith_1, self.message, 0, "regular", 0).then(function (rawTxData) {
-                                        blockchainExplorer.sendRawTx(rawTxData.raw.raw).then(function () {
-                                            //save the tx private key
-                                            wallet.addTxPrivateKeyWithTxHashAndFusion(rawTxData.raw.hash, rawTxData.raw.prvkey, false);
-                                            //force a mempool check so the user is up to date
-                                            var watchdog = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(WalletWatchdog_1.WalletWatchdog.name);
-                                            if (watchdog !== null)
-                                                watchdog.checkMempool();
-                                            var promise = Promise.resolve();
-                                            if (destinationAddress_1 === 'ccx7NzuofXxcypov8Yqm2A118xT17HereBFjp3RScjzM7wncf8BRcnHZbACy63sWD71L7NmkJRgQKXFE3weCfAh31RAVFHgttf' ||
-                                                destinationAddress_1 === 'ccx7V4LeUXy2eZ9waDXgsLS7Uc11e2CpNSCWVdxEqSRFAm6P6NQhSb7XMG1D6VAZKmJeaJP37WYQg84zbNrPduTX2whZ5pacfj' ||
-                                                destinationAddress_1 === 'ccx7YZ4RC97fqMh1bmzrFtDoSSiEgvEYzhaLE53SR9bh4QrDBUhGUH3TCmXqv8MTLjJDtnCeeaT5bLC2ZSzp3ZmQ19DoiPLLXS') {
-                                                promise = swal({
-                                                    type: 'success',
-                                                    title: i18n.t('sendPage.thankYouDonationModal.title'),
-                                                    text: i18n.t('sendPage.thankYouDonationModal.content'),
-                                                    confirmButtonText: i18n.t('sendPage.thankYouDonationModal.confirmText'),
-                                                    onClose: function () {
-                                                        window.location.href = '#!account';
-                                                    }
-                                                });
+                                    }
+                                    else {
+                                        destination_1.push({
+                                            address: config.donationAddress,
+                                            amount: config.remoteNodeFee,
+                                        });
+                                    }
+                                }
+                                TransactionsExplorer_1.TransactionsExplorer.createTx(destination_1, self.paymentId, wallet, blockchainHeight, function (amounts, numberOuts) {
+                                    return blockchainExplorer.getRandomOuts(amounts, numberOuts);
+                                }, function (amount, feesAmount) {
+                                    if (amount + feesAmount >
+                                        wallet.availableAmount(blockchainHeight)) {
+                                        swal({
+                                            type: "error",
+                                            title: i18n.t("sendPage.notEnoughMoneyModal.title"),
+                                            text: i18n.t("sendPage.notEnoughMoneyModal.content"),
+                                            confirmButtonText: i18n.t("sendPage.notEnoughMoneyModal.confirmText"),
+                                            onOpen: function () {
+                                                swal.hideLoading();
+                                            },
+                                        });
+                                        throw "";
+                                    }
+                                    return new Promise(function (resolve, reject) {
+                                        setTimeout(function () {
+                                            //prevent bug with swal when code is too fast
+                                            var feeInfo = "";
+                                            if (remoteFeeAddress !== wallet.getPublicAddress()) {
+                                                feeInfo =
+                                                    '<br><br><span style="font-size: 0.8em; font-style: italic; color: #666;">' +
+                                                        "(" +
+                                                        i18n.t("sendPage.confirmTransactionModal.remoteNodeFee", {
+                                                            fee: config.remoteNodeFee /
+                                                                Math.pow(10, config.coinUnitPlaces),
+                                                            symbol: config.coinSymbol,
+                                                        }) +
+                                                        ")" +
+                                                        "</span>";
                                             }
-                                            else
-                                                promise = swal({
-                                                    type: 'success',
-                                                    title: i18n.t('sendPage.transferSentModal.title'),
-                                                    confirmButtonText: i18n.t('sendPage.transferSentModal.confirmText'),
-                                                    onClose: function () {
-                                                        window.location.href = '#!account';
-                                                    }
-                                                });
-                                            promise.then(function () {
-                                                if (self.redirectUrlAfterSend !== null) {
-                                                    window.location.href = window.encodeURIComponent(self.redirectUrlAfterSend.replace('{TX_HASH}', rawTxData.raw.hash));
-                                                }
-                                            });
-                                        }).catch(function (error) {
-                                            //console.log(error);
-                                            if (error && error !== '') {
-                                                var errorMessage = '';
-                                                var errorTitle = i18n.t('sendPage.transferExceptionModal.title');
-                                                if (typeof error === 'string') {
-                                                    errorMessage = error;
-                                                }
-                                                else if (error instanceof Error) {
-                                                    errorMessage = error.message;
+                                            swal({
+                                                title: i18n.t("sendPage.confirmTransactionModal.title"),
+                                                html: i18n.t("sendPage.confirmTransactionModal.content", {
+                                                    amount: amount / Math.pow(10, config.coinUnitPlaces),
+                                                    fees: feesAmount / Math.pow(10, config.coinUnitPlaces),
+                                                    total: (amount + feesAmount) /
+                                                        Math.pow(10, config.coinUnitPlaces),
+                                                }) + feeInfo,
+                                                showCancelButton: true,
+                                                confirmButtonText: i18n.t("sendPage.confirmTransactionModal.confirmText"),
+                                                cancelButtonText: i18n.t("sendPage.confirmTransactionModal.cancelText"),
+                                            })
+                                                .then(function (result) {
+                                                if (result.dismiss) {
+                                                    reject("");
                                                 }
                                                 else {
-                                                    errorMessage = JSON.stringify(error);
+                                                    swal({
+                                                        title: i18n.t("sendPage.finalizingTransferModal.title"),
+                                                        html: i18n.t("sendPage.finalizingTransferModal.content"),
+                                                        onOpen: function () {
+                                                            swal.showLoading();
+                                                        },
+                                                    });
+                                                    resolve();
                                                 }
-                                                swal({
-                                                    type: 'error',
-                                                    title: errorTitle,
-                                                    html: i18n.t('sendPage.transferExceptionModal.content', { details: errorMessage }),
-                                                    confirmButtonText: i18n.t('sendPage.transferExceptionModal.confirmText'),
-                                                });
+                                            })
+                                                .catch(reject);
+                                        }, 1);
+                                    });
+                                }, mixinToSendWith_1, self.message, 0, "regular", 0)
+                                    .then(function (rawTxData) {
+                                    blockchainExplorer
+                                        .sendRawTx(rawTxData.raw.raw)
+                                        .then(function () {
+                                        //save the tx private key
+                                        wallet.addTxPrivateKeyWithTxHashAndFusion(rawTxData.raw.hash, rawTxData.raw.prvkey, false);
+                                        //force a mempool check so the user is up to date
+                                        var watchdog = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(WalletWatchdog_1.WalletWatchdog.name);
+                                        if (watchdog !== null)
+                                            watchdog.checkMempool();
+                                        var promise = Promise.resolve();
+                                        if (destinationAddress_1 ===
+                                            "ccx7NzuofXxcypov8Yqm2A118xT17HereBFjp3RScjzM7wncf8BRcnHZbACy63sWD71L7NmkJRgQKXFE3weCfAh31RAVFHgttf" ||
+                                            destinationAddress_1 ===
+                                                "ccx7V4LeUXy2eZ9waDXgsLS7Uc11e2CpNSCWVdxEqSRFAm6P6NQhSb7XMG1D6VAZKmJeaJP37WYQg84zbNrPduTX2whZ5pacfj" ||
+                                            destinationAddress_1 ===
+                                                "ccx7YZ4RC97fqMh1bmzrFtDoSSiEgvEYzhaLE53SR9bh4QrDBUhGUH3TCmXqv8MTLjJDtnCeeaT5bLC2ZSzp3ZmQ19DoiPLLXS") {
+                                            promise = swal({
+                                                type: "success",
+                                                title: i18n.t("sendPage.thankYouDonationModal.title"),
+                                                text: i18n.t("sendPage.thankYouDonationModal.content"),
+                                                confirmButtonText: i18n.t("sendPage.thankYouDonationModal.confirmText"),
+                                                onClose: function () {
+                                                    window.location.href = "#!account";
+                                                },
+                                            });
+                                        }
+                                        else
+                                            promise = swal({
+                                                type: "success",
+                                                title: i18n.t("sendPage.transferSentModal.title"),
+                                                confirmButtonText: i18n.t("sendPage.transferSentModal.confirmText"),
+                                                onClose: function () {
+                                                    window.location.href = "#!account";
+                                                },
+                                            });
+                                        promise.then(function () {
+                                            if (self.redirectUrlAfterSend !== null) {
+                                                window.location.href = window.encodeURIComponent(self.redirectUrlAfterSend.replace("{TX_HASH}", rawTxData.raw.hash));
                                             }
                                         });
-                                        swal.close();
-                                    }).catch(function (error) {
+                                    })
+                                        .catch(function (error) {
                                         //console.log(error);
-                                        if (error && error !== '') {
-                                            var errorMessage = '';
-                                            var errorTitle = i18n.t('sendPage.transferExceptionModal.title');
-                                            if (typeof error === 'string') {
+                                        if (error && error !== "") {
+                                            var errorMessage = "";
+                                            var errorTitle = i18n.t("sendPage.transferExceptionModal.title");
+                                            if (typeof error === "string") {
                                                 errorMessage = error;
                                             }
                                             else if (error instanceof Error) {
@@ -271,37 +282,66 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                                 errorMessage = JSON.stringify(error);
                                             }
                                             swal({
-                                                type: 'error',
+                                                type: "error",
                                                 title: errorTitle,
-                                                html: i18n.t('sendPage.transferExceptionModal.content', { details: errorMessage }),
-                                                confirmButtonText: i18n.t('sendPage.transferExceptionModal.confirmText'),
+                                                html: i18n.t("sendPage.transferExceptionModal.content", { details: errorMessage }),
+                                                confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
                                             });
                                         }
                                     });
-                                }).catch(function (err) {
-                                    console.error("Error getting session node fee address", err);
+                                    swal.close();
+                                })
+                                    .catch(function (error) {
+                                    //console.log(error);
+                                    if (error && error !== "") {
+                                        var errorMessage = "";
+                                        var errorTitle = i18n.t("sendPage.transferExceptionModal.title");
+                                        if (typeof error === "string") {
+                                            errorMessage = error;
+                                        }
+                                        else if (error instanceof Error) {
+                                            errorMessage = error.message;
+                                        }
+                                        else {
+                                            errorMessage = JSON.stringify(error);
+                                        }
+                                        swal({
+                                            type: "error",
+                                            title: errorTitle,
+                                            html: i18n.t("sendPage.transferExceptionModal.content", {
+                                                details: errorMessage,
+                                            }),
+                                            confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
+                                        });
+                                    }
                                 });
-                            }
-                            else {
-                                swal({
-                                    type: 'error',
-                                    title: i18n.t('sendPage.invalidAmountModal.title'),
-                                    html: i18n.t('sendPage.invalidAmountModal.content'),
-                                    confirmButtonText: i18n.t('sendPage.invalidAmountModal.confirmText'),
-                                });
-                            }
-                            return [2 /*return*/];
-                        });
+                            })
+                                .catch(function (err) {
+                                console.error("Error getting session node fee address", err);
+                            });
+                        }
+                        else {
+                            swal({
+                                type: "error",
+                                title: i18n.t("sendPage.invalidAmountModal.title"),
+                                html: i18n.t("sendPage.invalidAmountModal.content"),
+                                confirmButtonText: i18n.t("sendPage.invalidAmountModal.confirmText"),
+                            });
+                        }
+                        return [2 /*return*/];
                     });
-                }).catch(function (err) {
+                }); })
+                    .catch(function (err) {
                     console.error("Error trying to send funds", err);
                 });
             };
             _this.checkOptimization = function () {
-                blockchainExplorer.getHeight().then(function (blockchainHeight) {
+                blockchainExplorer
+                    .getHeight()
+                    .then(function (blockchainHeight) {
                     var optimizeInfo = wallet.optimizationNeeded(blockchainHeight, config.optimizeThreshold);
                     logDebugMsg("optimizeInfo.numOutputs", optimizeInfo.numOutputs);
-                    logDebugMsg('optimizeInfo.isNeeded', optimizeInfo.isNeeded);
+                    logDebugMsg("optimizeInfo.isNeeded", optimizeInfo.isNeeded);
                     _this.optimizeIsNeeded = optimizeInfo.isNeeded;
                     _this.showOptimizePanel = optimizeInfo.isNeeded;
                     if (optimizeInfo.isNeeded) {
@@ -311,16 +351,21 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                             _this.showOptimizePanel = false;
                         }, 20000);
                     }
-                }).catch(function (err) {
+                })
+                    .catch(function (err) {
                     console.error("Error in checkOptimization, calling getHeight", err);
                 });
             };
             _this.optimizeWallet = function () {
                 _this.optimizeLoading = true; // set loading state to true
-                blockchainExplorer.getHeight().then(function (blockchainHeight) {
-                    wallet.createFusionTransaction(blockchainHeight, config.optimizeThreshold, blockchainExplorer, function (amounts, numberOuts) {
+                blockchainExplorer
+                    .getHeight()
+                    .then(function (blockchainHeight) {
+                    wallet
+                        .createFusionTransaction(blockchainHeight, config.optimizeThreshold, blockchainExplorer, function (amounts, numberOuts) {
                         return blockchainExplorer.getRandomOuts(amounts, numberOuts);
-                    }).then(function (processedOuts) {
+                    })
+                        .then(function (processedOuts) {
                         var watchdog = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(WalletWatchdog_1.WalletWatchdog.name);
                         console.log("processedOuts", processedOuts);
                         //force a mempool check so the user is up to date
@@ -331,22 +376,24 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                         setTimeout(function () {
                             _this.checkOptimization(); // check if optimization is still needed
                         }, 1000);
-                    }).catch(function (err) {
+                    })
+                        .catch(function (err) {
                         console.log(err);
                         _this.optimizeLoading = false; // set loading state to false
                         setTimeout(function () {
                             _this.checkOptimization(); // check if optimization is still needed
                         }, 1000);
                     });
-                }).catch(function (err) {
+                })
+                    .catch(function (err) {
                     console.error("Error in optimizeWallet, calling getHeight", err);
                 });
             };
-            var sendAddress = Url_1.Url.getHashSearchParameter('address');
-            var amount = Url_1.Url.getHashSearchParameter('amount');
-            var destinationName = Url_1.Url.getHashSearchParameter('destName');
-            var description = Url_1.Url.getHashSearchParameter('txDesc');
-            var redirect = Url_1.Url.getHashSearchParameter('redirect');
+            var sendAddress = Url_1.Url.getHashSearchParameter("address");
+            var amount = Url_1.Url.getHashSearchParameter("amount");
+            var destinationName = Url_1.Url.getHashSearchParameter("destName");
+            var description = Url_1.Url.getHashSearchParameter("txDesc");
+            var redirect = Url_1.Url.getHashSearchParameter("redirect");
             if (sendAddress !== null)
                 _this.destinationAddressUser = sendAddress.substr(0, 256);
             if (amount !== null)
@@ -371,9 +418,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         }
         SendView.prototype.reset = function () {
             this.lockedForm = false;
-            this.destinationAddressUser = '';
-            this.destinationAddress = '';
-            this.amountToSend = '0';
+            this.destinationAddressUser = "";
+            this.destinationAddress = "";
+            this.amountToSend = "0";
             this.destinationAddressValid = false;
             this.openAliasValid = false;
             this.qrScanning = false;
@@ -385,23 +432,22 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         SendView.prototype.startNfcScan = function () {
             var _this = this;
-            var self = this;
             if (this.ndefListener === null) {
                 this.ndefListener = function (data) {
                     if (data.text)
-                        self.handleScanResult(data.text.content);
+                        _this.handleScanResult(data.text.content);
                     swal.close();
                 };
                 this.nfc.listenNdef(this.ndefListener);
                 swal({
-                    title: i18n.t('sendPage.waitingNfcModal.title'),
-                    html: i18n.t('sendPage.waitingNfcModal.content'),
+                    title: i18n.t("sendPage.waitingNfcModal.title"),
+                    html: i18n.t("sendPage.waitingNfcModal.content"),
                     onOpen: function () {
                         swal.showLoading();
                     },
                     onClose: function () {
                         _this.stopNfcScan();
-                    }
+                    },
                 }).then(function (result) {
                     // do nothing
                 });
@@ -415,84 +461,80 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         SendView.prototype.initQr = function () {
             this.stopScan();
             this.qrReader = new QRReader_1.QRReader();
-            this.qrReader.init('/lib/');
+            this.qrReader.init("/lib/");
         };
         SendView.prototype.startScan = function () {
-            var self = this;
-            if (typeof window.QRScanner !== 'undefined') {
+            var _this = this;
+            if (typeof window.QRScanner !== "undefined") {
                 window.QRScanner.scan(function (err, result) {
                     if (err) {
-                        if (err.name === 'SCAN_CANCELED') {
+                        if (err.name === "SCAN_CANCELED") {
                         }
                         else {
                             alert(JSON.stringify(err));
                         }
                     }
                     else {
-                        self.handleScanResult(result);
+                        _this.handleScanResult(result);
                     }
                 });
                 window.QRScanner.show();
-                $('body').addClass('transparent');
-                $('#appContent').hide();
-                $('#nativeCameraPreview').show();
+                $("body").addClass("transparent");
+                $("#appContent").hide();
+                $("#nativeCameraPreview").show();
             }
             else {
                 this.initQr();
                 if (this.qrReader) {
                     this.qrScanning = true;
                     this.qrReader.scan(function (result) {
-                        self.qrScanning = false;
-                        self.handleScanResult(result);
+                        _this.qrScanning = false;
+                        _this.handleScanResult(result);
                     });
                 }
             }
         };
         SendView.prototype.handleScanResult = function (result) {
-            //console.log('Scan result:', result);
-            var self = this;
             var parsed = false;
             try {
                 var txDetails = CoinUri_1.CoinUri.decodeTx(result);
                 if (txDetails !== null) {
-                    self.destinationAddressUser = txDetails.address;
-                    if (typeof txDetails.description !== 'undefined')
-                        self.txDescription = txDetails.description;
-                    if (typeof txDetails.recipientName !== 'undefined')
-                        self.txDestinationName = txDetails.recipientName;
-                    if (typeof txDetails.amount !== 'undefined') {
-                        self.amountToSend = txDetails.amount;
-                        self.lockedForm = true;
+                    this.destinationAddressUser = txDetails.address;
+                    if (typeof txDetails.description !== "undefined")
+                        this.txDescription = txDetails.description;
+                    if (typeof txDetails.recipientName !== "undefined")
+                        this.txDestinationName = txDetails.recipientName;
+                    if (typeof txDetails.amount !== "undefined") {
+                        this.amountToSend = txDetails.amount;
+                        this.lockedForm = true;
                     }
-                    if (typeof txDetails.paymentId !== 'undefined')
-                        self.paymentId = txDetails.paymentId;
+                    if (typeof txDetails.paymentId !== "undefined")
+                        this.paymentId = txDetails.paymentId;
                     parsed = true;
                 }
             }
-            catch (e) {
-            }
+            catch (e) { }
             try {
                 var txDetails = CoinUri_1.CoinUri.decodeWallet(result);
                 if (txDetails !== null) {
-                    self.destinationAddressUser = txDetails.address;
+                    this.destinationAddressUser = txDetails.address;
                     parsed = true;
                 }
             }
-            catch (e) {
-            }
+            catch (e) { }
             if (!parsed)
-                self.destinationAddressUser = result;
-            self.stopScan();
+                this.destinationAddressUser = result;
+            this.stopScan();
         };
         SendView.prototype.stopScan = function () {
-            if (typeof window.QRScanner !== 'undefined') {
+            if (typeof window.QRScanner !== "undefined") {
                 window.QRScanner.cancelScan(function (status) {
                     //console.log(status);
                 });
                 window.QRScanner.hide();
-                $('body').removeClass('transparent');
-                $('#appContent').show();
-                $('#nativeCameraPreview').hide();
+                $("body").removeClass("transparent");
+                $("#appContent").show();
+                $("#nativeCameraPreview").hide();
             }
             else {
                 if (this.qrReader !== null) {
@@ -503,28 +545,31 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }
         };
         SendView.prototype.destinationAddressUserWatch = function () {
-            if (this.destinationAddressUser.indexOf('.') !== -1) {
-                var self_1 = this;
+            var _this = this;
+            if (this.destinationAddressUser.indexOf(".") !== -1) {
                 if (this.timeoutResolveAlias !== 0)
                     clearTimeout(this.timeoutResolveAlias);
                 this.timeoutResolveAlias = setTimeout(function () {
-                    blockchainExplorer.resolveOpenAlias(self_1.destinationAddressUser).then(function (data) {
+                    blockchainExplorer
+                        .resolveOpenAlias(_this.destinationAddressUser)
+                        .then(function (data) {
                         try {
                             Cn_1.Cn.decode_address(data.address);
-                            self_1.txDestinationName = data.name;
-                            self_1.destinationAddress = data.address;
-                            self_1.domainAliasAddress = data.address;
-                            self_1.destinationAddressValid = true;
-                            self_1.openAliasValid = true;
+                            _this.txDestinationName = data.name;
+                            _this.destinationAddress = data.address;
+                            _this.domainAliasAddress = data.address;
+                            _this.destinationAddressValid = true;
+                            _this.openAliasValid = true;
                         }
                         catch (e) {
-                            self_1.destinationAddressValid = false;
-                            self_1.openAliasValid = false;
+                            _this.destinationAddressValid = false;
+                            _this.openAliasValid = false;
                         }
-                        self_1.timeoutResolveAlias = 0;
-                    }).catch(function () {
-                        self_1.openAliasValid = false;
-                        self_1.timeoutResolveAlias = 0;
+                        _this.timeoutResolveAlias = 0;
+                    })
+                        .catch(function () {
+                        _this.openAliasValid = false;
+                        _this.timeoutResolveAlias = 0;
                     });
                 }, 400);
             }
@@ -542,7 +587,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         SendView.prototype.amountToSendWatch = function () {
             // Allow only numbers and at most one dot
-            this.amountToSend = this.amountToSend.replace(/[^0-9.]/g, '').replace(/(\\..*)\\./g, '$1');
+            this.amountToSend = this.amountToSend
+                .replace(/[^0-9.]/g, "")
+                .replace(/(\\..*)\\./g, "$1");
             try {
                 this.amountToSendValid = !isNaN(parseFloat(this.amountToSend));
             }
@@ -552,9 +599,12 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         SendView.prototype.paymentIdWatch = function () {
             try {
-                this.paymentIdValid = this.paymentId.length === 0 ||
-                    (this.paymentId.length === 16 && (/^[0-9a-fA-F]{16}$/.test(this.paymentId))) ||
-                    (this.paymentId.length === 64 && (/^[0-9a-fA-F]{64}$/.test(this.paymentId)));
+                this.paymentIdValid =
+                    this.paymentId.length === 0 ||
+                        (this.paymentId.length === 16 &&
+                            /^[0-9a-fA-F]{16}$/.test(this.paymentId)) ||
+                        (this.paymentId.length === 64 &&
+                            /^[0-9a-fA-F]{64}$/.test(this.paymentId));
             }
             catch (e) {
                 this.paymentIdValid = false;
@@ -562,7 +612,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         SendView.prototype.messageWatch = function () {
             try {
-                this.messageValid = (this.message.length === 0) || (this.message.length <= config.maxMessageSize);
+                this.messageValid =
+                    this.message.length === 0 ||
+                        this.message.length <= config.maxMessageSize;
             }
             catch (e) {
                 this.messageValid = false;
@@ -580,26 +632,26 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }
         };
         SendView.prototype.onAmountFocus = function () {
-            this.amountPlaceholder = '';
-            if (this.amountToSend === '0')
-                this.amountToSend = '';
+            this.amountPlaceholder = "";
+            if (this.amountToSend === "0")
+                this.amountToSend = "";
         };
         SendView.prototype.onAmountBlur = function () {
-            if (this.amountToSend === '')
-                this.amountToSend = '0';
-            this.amountPlaceholder = '0';
+            if (this.amountToSend === "")
+                this.amountToSend = "0";
+            this.amountPlaceholder = "0";
         };
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], SendView.prototype, "destinationAddressUser", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], SendView.prototype, "destinationAddress", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
         ], SendView.prototype, "destinationAddressValid", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('0')
+            (0, VueAnnotate_1.VueVar)("0")
         ], SendView.prototype, "amountToSend", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
@@ -608,10 +660,10 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             (0, VueAnnotate_1.VueVar)(true)
         ], SendView.prototype, "amountToSendValid", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], SendView.prototype, "paymentId", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], SendView.prototype, "message", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(true)
@@ -620,7 +672,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             (0, VueAnnotate_1.VueVar)(true)
         ], SendView.prototype, "messageValid", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('5')
+            (0, VueAnnotate_1.VueVar)("5")
         ], SendView.prototype, "mixIn", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(true)
@@ -659,7 +711,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             (0, VueAnnotate_1.VueVar)(0)
         ], SendView.prototype, "optimizeOutputs", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('0')
+            (0, VueAnnotate_1.VueVar)("0")
         ], SendView.prototype, "amountPlaceholder", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(null)
@@ -685,15 +737,17 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         return SendView;
     }(DestructableView_1.DestructableView));
     if (wallet !== null && blockchainExplorer !== null)
-        new SendView('#app');
+        new SendView("#app");
     else {
-        AppState_1.AppState.askUserOpenWallet(false).then(function () {
-            wallet = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(Wallet_1.Wallet.name, 'default', false);
+        AppState_1.AppState.askUserOpenWallet(false)
+            .then(function () {
+            wallet = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(Wallet_1.Wallet.name, "default", false);
             if (wallet === null)
-                throw 'e';
-            new SendView('#app');
-        }).catch(function () {
-            window.location.href = '#index';
+                throw "e";
+            new SendView("#app");
+        })
+            .catch(function () {
+            window.location.href = "#index";
         });
     }
 });

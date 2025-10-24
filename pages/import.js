@@ -35,12 +35,10 @@ define(["require", "exports", "../model/AppState", "../lib/numbersLab/Destructab
     var ImportView = /** @class */ (function (_super) {
         __extends(ImportView, _super);
         function ImportView(container) {
-            var _this = _super.call(this, container) || this;
-            var self = _this;
-            return _this;
+            return _super.call(this, container) || this;
         }
         return ImportView;
     }(DestructableView_1.DestructableView));
-    new ImportView('#app');
+    new ImportView("#app");
     AppState_1.AppState.enableLeftMenu();
 });

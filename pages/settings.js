@@ -38,30 +38,37 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numbersLab/VueAnnotate", "../model/WalletRepository", "../lib/numbersLab/DependencyInjector", "../model/Wallet", "../model/AppState", "../model/Storage", "../model/Translations", "../providers/BlockchainExplorerProvider", "../model/WalletWatchdog"], function (require, exports, DestructableView_1, VueAnnotate_1, WalletRepository_1, DependencyInjector_1, Wallet_1, AppState_1, Storage_1, Translations_1, BlockchainExplorerProvider_1, WalletWatchdog_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
-    var wallet = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(Wallet_1.Wallet.name, 'default', false);
+    var wallet = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(Wallet_1.Wallet.name, "default", false);
     var blockchainExplorer = BlockchainExplorerProvider_1.BlockchainExplorerProvider.getInstance();
-    var walletWatchdog = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(WalletWatchdog_1.WalletWatchdog.name, 'default', false);
+    var walletWatchdog = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(WalletWatchdog_1.WalletWatchdog.name, "default", false);
     var SettingsView = /** @class */ (function (_super) {
         __extends(SettingsView, _super);
         function SettingsView(container) {
             var _this = _super.call(this, container) || this;
             _this.unsubscribeTicker = null;
             _this.checkOptimization = function () {
-                blockchainExplorer.getHeight().then(function (blockchainHeight) {
+                blockchainExplorer
+                    .getHeight()
+                    .then(function (blockchainHeight) {
                     var optimizeInfo = wallet.optimizationNeeded(blockchainHeight, config.optimizeThreshold);
                     _this.optimizeIsNeeded = optimizeInfo.isNeeded;
-                }).catch(function (err) {
+                })
+                    .catch(function (err) {
                     console.error("Error in checkOptimization, calling getHeight", err);
                 });
             };
             _this.optimizeWallet = function () {
                 _this.optimizeLoading = true; // set loading state to true
-                blockchainExplorer.getHeight().then(function (blockchainHeight) {
+                blockchainExplorer
+                    .getHeight()
+                    .then(function (blockchainHeight) {
                     var optimizeInfo = wallet.optimizationNeeded(blockchainHeight, config.optimizeThreshold);
                     if (optimizeInfo.isNeeded) {
-                        wallet.createFusionTransaction(blockchainHeight, config.optimizeThreshold, blockchainExplorer, function (amounts, numberOuts) {
+                        wallet
+                            .createFusionTransaction(blockchainHeight, config.optimizeThreshold, blockchainExplorer, function (amounts, numberOuts) {
                             return blockchainExplorer.getRandomOuts(amounts, numberOuts);
-                        }).then(function (processedOuts) {
+                        })
+                            .then(function (processedOuts) {
                             var watchdog = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(WalletWatchdog_1.WalletWatchdog.name);
                             //force a mempool check so the user is up to date
                             if (watchdog !== null) {
@@ -71,7 +78,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                             setTimeout(function () {
                                 _this.checkOptimization(); // check if optimization is still needed
                             }, 1000);
-                        }).catch(function (err) {
+                        })
+                            .catch(function (err) {
                             console.log(err);
                             _this.optimizeLoading = false; // set loading state to false
                             setTimeout(function () {
@@ -81,15 +89,16 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                     }
                     else {
                         swal({
-                            title: i18n.t('settingsPage.optimizeWalletModal.title'),
-                            html: i18n.t('settingsPage.optimizeWalletModal.content'),
-                            confirmButtonText: i18n.t('settingsPage.optimizeWalletModal.confirmText'),
-                            showCancelButton: false
+                            title: i18n.t("settingsPage.optimizeWalletModal.title"),
+                            html: i18n.t("settingsPage.optimizeWalletModal.content"),
+                            confirmButtonText: i18n.t("settingsPage.optimizeWalletModal.confirmText"),
+                            showCancelButton: false,
                         }).then(function (result) {
                             _this.optimizeLoading = false;
                         });
                     }
-                }).catch(function (err) {
+                })
+                    .catch(function (err) {
                     console.error("Error in optimizeWallet, calling getHeight", err);
                 });
             };
@@ -100,14 +109,15 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 }
                 return _super.prototype.destruct.call(_this);
             };
-            var self = _this;
             // Set native environment detection using the same logic as index.ts
-            var isCordovaApp = document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1;
+            var isCordovaApp = document.URL.indexOf("http://") === -1 &&
+                document.URL.indexOf("https://") === -1;
             _this.isNativeEnvironment = isCordovaApp;
             _this.readSpeed = wallet.options.readSpeed;
             _this.checkMinerTx = wallet.options.checkMinerTx;
             // Sync custom node setting from storage to ensure consistency
-            Storage_1.Storage.getItem('customNodeUrl', null).then(function (customNodeUrl) {
+            Storage_1.Storage.getItem("customNodeUrl", null)
+                .then(function (customNodeUrl) {
                 if (customNodeUrl) {
                     _this.customNode = true;
                     _this.nodeUrl = customNodeUrl;
@@ -119,7 +129,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                     _this.customNode = wallet.options.customNode;
                     _this.nodeUrl = wallet.options.nodeUrl;
                 }
-            }).catch(function () {
+            })
+                .catch(function () {
                 _this.customNode = wallet.options.customNode;
                 _this.nodeUrl = wallet.options.nodeUrl;
             });
@@ -136,29 +147,41 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 });
             });
             _this.checkOptimization();
-            blockchainExplorer.getHeight().then(function (height) {
-                self.maxHeight = height;
-            }).catch(function (err) {
+            blockchainExplorer
+                .getHeight()
+                .then(function (height) {
+                _this.maxHeight = height;
+            })
+                .catch(function (err) {
                 // do nothing
             });
-            Translations_1.Translations.getLang().then(function (userLang) {
+            Translations_1.Translations.getLang()
+                .then(function (userLang) {
                 _this.language = userLang;
-            }).catch(function (err) {
+            })
+                .catch(function (err) {
                 console.error("Error trying to get user language", err);
             });
-            //if cordova.js has been loaded properly: 
-            if (typeof window.cordova !== 'undefined' && typeof window.cordova.getAppVersion !== 'undefined') {
-                window.cordova.getAppVersion.getVersionNumber().then(function (version) {
+            //if cordova.js has been loaded properly:
+            if (typeof window.cordova !== "undefined" &&
+                typeof window.cordova.getAppVersion !== "undefined") {
+                window.cordova.getAppVersion
+                    .getVersionNumber()
+                    .then(function (version) {
                     _this.nativeVersionNumber = version;
                 });
-                window.cordova.getAppVersion.getVersionCode().then(function (version) {
+                window.cordova.getAppVersion
+                    .getVersionCode()
+                    .then(function (version) {
                     _this.nativeVersionCode = version;
                 });
             }
             // Initialize notification setting
-            Storage_1.Storage.getItem('notificationsEnabled', false).then(function (enabled) {
+            Storage_1.Storage.getItem("notificationsEnabled", false)
+                .then(function (enabled) {
                 _this.notificationsEnabled = enabled;
-            }).catch(function () {
+            })
+                .catch(function () {
                 _this.notificationsEnabled = false;
             });
             return _this;
@@ -169,39 +192,43 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         SettingsView.prototype.deleteWallet = function () {
             swal({
-                title: i18n.t('settingsPage.deleteWalletModal.title'),
-                html: i18n.t('settingsPage.deleteWalletModal.content'),
+                title: i18n.t("settingsPage.deleteWalletModal.title"),
+                html: i18n.t("settingsPage.deleteWalletModal.content"),
                 showCancelButton: true,
-                confirmButtonText: i18n.t('settingsPage.deleteWalletModal.confirmText'),
-                cancelButtonText: i18n.t('settingsPage.deleteWalletModal.cancelText'),
+                confirmButtonText: i18n.t("settingsPage.deleteWalletModal.confirmText"),
+                cancelButtonText: i18n.t("settingsPage.deleteWalletModal.cancelText"),
             }).then(function (result) {
                 if (result.value) {
                     AppState_1.AppState.disconnect();
-                    (0, DependencyInjector_1.DependencyInjectorInstance)().register(Wallet_1.Wallet.name, undefined, 'default');
+                    (0, DependencyInjector_1.DependencyInjectorInstance)().register(Wallet_1.Wallet.name, undefined, "default");
                     WalletRepository_1.WalletRepository.deleteLocalCopy();
-                    window.location.href = '#index';
+                    window.location.href = "#index";
                 }
             });
         };
         SettingsView.prototype.resetWallet = function () {
             swal({
-                title: i18n.t('settingsPage.resetWalletModal.title'),
-                html: i18n.t('settingsPage.resetWalletModal.content'),
+                title: i18n.t("settingsPage.resetWalletModal.title"),
+                html: i18n.t("settingsPage.resetWalletModal.content"),
                 showCancelButton: true,
-                confirmButtonText: i18n.t('settingsPage.resetWalletModal.confirmText'),
-                cancelButtonText: i18n.t('settingsPage.resetWalletModal.cancelText'),
+                confirmButtonText: i18n.t("settingsPage.resetWalletModal.confirmText"),
+                cancelButtonText: i18n.t("settingsPage.resetWalletModal.cancelText"),
             }).then(function (result) {
                 if (result.value) {
                     walletWatchdog.stop();
                     wallet.clearTransactions();
                     wallet.resetScanHeight();
                     walletWatchdog.start();
-                    window.location.href = '#account';
+                    window.location.href = "#account";
                 }
             });
         };
-        SettingsView.prototype.readSpeedWatch = function () { this.updateWalletOptions(); };
-        SettingsView.prototype.checkMinerTxWatch = function () { this.updateWalletOptions(); };
+        SettingsView.prototype.readSpeedWatch = function () {
+            this.updateWalletOptions();
+        };
+        SettingsView.prototype.checkMinerTxWatch = function () {
+            this.updateWalletOptions();
+        };
         //@VueWatched()	customNodeWatch(){this.updateConnectionSettings();}
         //@VueWatched()	nodeUrlWatch(){this.updateConnectionSettings();}
         SettingsView.prototype.creationHeightWatch = function () {
@@ -220,7 +247,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             Translations_1.tickerStore.setTickerPreference(this.useShortTicker);
         };
         SettingsView.prototype.notificationsEnabledWatch = function () {
-            Storage_1.Storage.setItem('notificationsEnabled', this.notificationsEnabled);
+            Storage_1.Storage.setItem("notificationsEnabled", this.notificationsEnabled);
         };
         SettingsView.prototype.updateWalletOptions = function () {
             var options = wallet.options;
@@ -243,10 +270,10 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             options.nodeUrl = this.nodeUrl;
             wallet.options = options;
             if (options.customNode) {
-                Storage_1.Storage.setItem('customNodeUrl', options.nodeUrl);
+                Storage_1.Storage.setItem("customNodeUrl", options.nodeUrl);
             }
             else {
-                Storage_1.Storage.remove('customNodeUrl');
+                Storage_1.Storage.remove("customNodeUrl");
             }
             // Update wallet watchdog with new options
             walletWatchdog.setupWorkers();
@@ -254,18 +281,18 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             // Reset nodes if custom node setting changed (enabled/disabled)
             // This ensures proper switching between custom and random nodes
             if (oldCustomNode !== this.customNode) {
-                console.log('Custom node setting changed, resetting nodes...');
+                console.log("Custom node setting changed, resetting nodes...");
                 // Reset the node connection workers with new values
                 // This will automatically clean up and reinitialize the session
                 BlockchainExplorerProvider_1.BlockchainExplorerProvider.getInstance().resetNodes();
             }
             else if (this.customNode && oldNodeUrl !== this.nodeUrl) {
                 // Only reset if custom node URL changed (when using custom node)
-                console.log('Custom node URL changed, resetting nodes...');
+                console.log("Custom node URL changed, resetting nodes...");
                 BlockchainExplorerProvider_1.BlockchainExplorerProvider.getInstance().resetNodes();
             }
             else {
-                console.log('Node configuration unchanged, skipping node reset');
+                console.log("Node configuration unchanged, skipping node reset");
             }
         };
         __decorate([
@@ -278,7 +305,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             (0, VueAnnotate_1.VueVar)(false)
         ], SettingsView.prototype, "customNode", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('https://node.conceal.network/')
+            (0, VueAnnotate_1.VueVar)("https://node.conceal.network/")
         ], SettingsView.prototype, "nodeUrl", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(0)
@@ -290,13 +317,13 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             (0, VueAnnotate_1.VueVar)(-1)
         ], SettingsView.prototype, "maxHeight", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('en')
+            (0, VueAnnotate_1.VueVar)("en")
         ], SettingsView.prototype, "language", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(0)
         ], SettingsView.prototype, "nativeVersionCode", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], SettingsView.prototype, "nativeVersionNumber", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
@@ -311,7 +338,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             (0, VueAnnotate_1.VueVar)(false)
         ], SettingsView.prototype, "useShortTicker", void 0);
         __decorate([
-            (0, VueAnnotate_1.VueVar)('')
+            (0, VueAnnotate_1.VueVar)("")
         ], SettingsView.prototype, "currentTicker", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(config)
@@ -343,7 +370,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         return SettingsView;
     }(DestructableView_1.DestructableView));
     if (wallet !== null && blockchainExplorer !== null)
-        new SettingsView('#app');
+        new SettingsView("#app");
     else
-        window.location.href = '#index';
+        window.location.href = "#index";
 });

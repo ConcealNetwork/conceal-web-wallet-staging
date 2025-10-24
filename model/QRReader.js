@@ -43,7 +43,8 @@ define(["require", "exports"], function (require, exports) {
             this.ctx = this.canvas.getContext("2d");
         };
         QRReader.prototype.support = function () {
-            return typeof navigator !== 'undefined' && typeof navigator.mediaDevices !== 'undefined';
+            return (typeof navigator !== "undefined" &&
+                typeof navigator.mediaDevices !== "undefined");
         };
         QRReader.prototype.init = function (baseUrl) {
             if (!this.inited)
@@ -67,17 +68,17 @@ define(["require", "exports"], function (require, exports) {
             if (this.canvas === null || this.webcam === null)
                 return;
             /*if (!window.iOS) {
-                // Resize webcam according to input
-                this.webcam.addEventListener("play", function (ev) {
-                    if(self.canvas !== null)
-                    if (!streaming) {
-                        self.canvas.width = window.innerWidth;
-                        self.canvas.height = window.innerHeight;
-                        streaming = true;
-                    }
-                }, false);
-            }
-            else {*/
+                    // Resize webcam according to input
+                    this.webcam.addEventListener("play", function (ev) {
+                        if(self.canvas !== null)
+                        if (!streaming) {
+                            self.canvas.width = window.innerWidth;
+                            self.canvas.height = window.innerHeight;
+                            streaming = true;
+                        }
+                    }, false);
+                }
+                else {*/
             //this.canvas.width = window.innerWidth;
             //this.canvas.height = window.innerHeight;
             // }
@@ -85,26 +86,28 @@ define(["require", "exports"], function (require, exports) {
                 // Enhanced constraints for better QR detection
                 var enhancedConstraints = {
                     audio: false,
-                    video: __assign({ facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1920 } }, constraints.video // Merge with any existing constraints
-                    )
+                    video: __assign({ facingMode: "environment", width: { ideal: 1920 }, height: { ideal: 1920 } }, constraints.video),
                 };
-                navigator.mediaDevices.getUserMedia(enhancedConstraints)
+                navigator.mediaDevices
+                    .getUserMedia(enhancedConstraints)
                     .then(function (stream) {
                     if (self.webcam !== null) {
                         self.webcam.srcObject = stream;
                         // Set video element properties for better quality
-                        self.webcam.setAttribute('playsinline', 'true'); // Important for iOS
-                        self.webcam.setAttribute('autoplay', 'true');
+                        self.webcam.setAttribute("playsinline", "true"); // Important for iOS
+                        self.webcam.setAttribute("autoplay", "true");
                     }
                 })
                     .catch(function (err) {
                     showErrorMsg(err);
                 });
             }
-            navigator.mediaDevices.enumerateDevices().then(function (devices) {
+            navigator.mediaDevices
+                .enumerateDevices()
+                .then(function (devices) {
                 var supportedConstraints = navigator.mediaDevices.getSupportedConstraints();
                 var device = devices.filter(function (device) {
-                    var deviceLabel = device.label.split(',')[1];
+                    var deviceLabel = device.label.split(",")[1];
                     if (device.kind == "videoinput") {
                         return device;
                     }
@@ -113,23 +116,24 @@ define(["require", "exports"], function (require, exports) {
                     startCapture({
                         audio: false,
                         video: {
-                            facingMode: 'environment'
-                        }
+                            facingMode: "environment",
+                        },
                     });
                 }
                 else {
                     startCapture({ video: true });
                 }
-            }).catch(function (error) {
+            })
+                .catch(function (error) {
                 showErrorMsg(error);
             });
             function showErrorMsg(error) {
-                if ('' + error === 'DOMException: Permission denied') {
+                if ("" + error === "DOMException: Permission denied") {
                     swal({
-                        type: 'error',
-                        title: i18n.t('global.permissionRequiredForCameraModal.title'),
-                        html: i18n.t('global.permissionRequiredForCameraModal.content'),
-                        confirmButtonText: i18n.t('global.permissionRequiredForCameraModal.confirmText'),
+                        type: "error",
+                        title: i18n.t("global.permissionRequiredForCameraModal.title"),
+                        html: i18n.t("global.permissionRequiredForCameraModal.content"),
+                        confirmButtonText: i18n.t("global.permissionRequiredForCameraModal.confirmText"),
                     });
                 }
                 //console.log('unable access camera');
@@ -138,7 +142,8 @@ define(["require", "exports"], function (require, exports) {
         QRReader.prototype.stop = function () {
             this.active = false;
             if (this.webcam !== null) {
-                if (this.webcam.srcObject !== null && this.webcam.srcObject instanceof MediaStream)
+                if (this.webcam.srcObject !== null &&
+                    this.webcam.srcObject instanceof MediaStream)
                     this.webcam.srcObject.getVideoTracks()[0].stop();
                 this.webcam.srcObject = null;
             }
@@ -159,7 +164,10 @@ define(["require", "exports"], function (require, exports) {
                     return;
                 }
                 lastFrameTime = now;
-                if (self.ctx === null || self.webcam === null || self.canvas === null || self.decoder === null)
+                if (self.ctx === null ||
+                    self.webcam === null ||
+                    self.canvas === null ||
+                    self.decoder === null)
                     return;
                 try {
                     // Draw the video frame to the canvas

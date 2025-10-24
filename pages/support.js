@@ -20,11 +20,10 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../model/Ap
         __extends(SupportView, _super);
         function SupportView(container) {
             var _this = _super.call(this, container) || this;
-            var self = _this;
             AppState_1.AppState.enableLeftMenu();
             return _this;
         }
         return SupportView;
     }(DestructableView_1.DestructableView));
-    new SupportView('#app');
+    new SupportView("#app");
 });
