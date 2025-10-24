@@ -180,7 +180,7 @@ export class Router {
 				const html = await response.text();
 				resolve(html);
 			} catch (error: any) {
-				console.error(`Failed to load content from ${url}:`, error.message);
+				console.error("Failed to load content from %s: %s", url, error.message);
 				reject();
 			}
 		});

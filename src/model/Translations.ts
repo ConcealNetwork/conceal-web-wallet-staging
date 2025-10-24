@@ -123,7 +123,8 @@ export class Translations {
             resolve(data);
           } catch (error: any) {
             console.error(
-              `Failed to load translation for ${lang}:`,
+              "Failed to load translation for %s: %s",
+              lang,
               error.message
             );
             reject();

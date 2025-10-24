@@ -107,7 +107,8 @@ class NodeWorker {
           reject(new Error("Request timeout"));
         } else {
           console.error(
-            `Node ${this._url} makeRequest failed: ${error.message} (errors: ${this._errors + 1})`
+            `Node ${this._url} makeRequest failed: %s (errors: ${this._errors + 1})`,
+            error.message
           );
           reject(error);
         }
@@ -173,7 +174,8 @@ class NodeWorker {
           reject(new Error("Request timeout"));
         } else {
           console.error(
-            `Node ${this._url} makeRpcRequest failed: ${error.message} (errors: ${this._errors + 1})`
+            `Node ${this._url} makeRpcRequest failed: %s (errors: ${this._errors + 1})`,
+            error.message
           );
           reject(error);
         }
@@ -589,7 +591,7 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
           })
           .catch((error: any) => {
             clearTimeout(timeoutId);
-            console.error("Failed to fetch public nodes:", error.message);
+            console.error("Failed to fetch public nodes: %s", error.message);
             return false;
           });
       } else {
