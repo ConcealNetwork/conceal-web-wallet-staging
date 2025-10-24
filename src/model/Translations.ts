@@ -108,16 +108,21 @@ export class Translations{
 		if(typeof Translations.storedTranslations[lang] !== 'undefined')
 			promise = Promise.resolve(Translations.storedTranslations[lang]);
 		else
-			promise = new Promise<{messages?: any, date?: string, number?: string }>(function (resolve, reject) {
-				$.ajax({
-					url: './translations/' + lang + '.json'
-				}).then(function (data: any) {
-					if(typeof data === 'string')data = JSON.parse(data);
+			promise = new Promise<{messages?: any, date?: string, number?: string }>(async (resolve, reject) => {
+				try {
+					const response = await fetch('./translations/' + lang + '.json');
+					
+					if (!response.ok) {
+						throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+					}
+					
+					const data = await response.json();
 					Translations.storedTranslations[lang] = data;
 					resolve(data);
-				}).fail(function () {
+				} catch (error: any) {
+					console.error(`Failed to load translation for ${lang}:`, error.message);
 					reject();
-				});
+				}
 			});
 
 		promise.then(function(data: { website?:any,messages?: any, date?: string, number?: string }){

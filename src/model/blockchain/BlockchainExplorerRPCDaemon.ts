@@ -59,21 +59,44 @@ class NodeWorker {
     this._isWorking = true;
     ++this._requests;
 
-    return new Promise<any>((resolve, reject) => {
-      $.ajax({
-        url: this._url + path,
-        method: method,
-        timeout: this.timeout,
-        data: typeof body === 'string' ? body : JSON.stringify(body)
-      }).done((raw: any) => {
-        this._isWorking = false;        
-        resolve(raw);
-      }).fail((data: any, textStatus: string) => {
-        console.error(`Node ${this._url} makeRequest failed: ${textStatus} (errors: ${this._errors + 1})`);
-        this._isWorking = false;        
+    return new Promise<any>(async (resolve, reject) => {
+      try {
+        const url = this._url + path;
+        const requestBody = typeof body === 'string' ? body : JSON.stringify(body);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        const response = await fetch(url, {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: method === 'POST' ? requestBody : undefined,
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        this._isWorking = false;
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        resolve(data);
+      } catch (error: any) {
+        this._isWorking = false;
         this.increaseErrors();
-        reject(data);
-      });
+        
+        if (error.name === 'AbortError') {
+          console.error(`Node ${this._url} makeRequest timeout after ${this.timeout}ms (errors: ${this._errors + 1})`);
+          reject(new Error('Request timeout'));
+        } else {
+          console.error(`Node ${this._url} makeRequest failed: ${error.message} (errors: ${this._errors + 1})`);
+          reject(error);
+        }
+      }
     });
   }
 
@@ -81,31 +104,56 @@ class NodeWorker {
     this._isWorking = true;
     ++this._requests;
 
-    return new Promise<any>((resolve, reject) => {
-      $.ajax({
-        url: this._url + 'json_rpc',
-        method: 'POST',
-        timeout: this.timeout,
-        data: JSON.stringify({
+    return new Promise<any>(async (resolve, reject) => {
+      try {
+        const url = this._url + 'json_rpc';
+        const requestBody = JSON.stringify({
           jsonrpc: '2.0',
           method: method,
           params: params,
           id: 0
-        }),
-        contentType: 'application/json'
-      }).done((raw: any) => {
+        });
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: requestBody,
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
         this._isWorking = false;
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const raw = await response.json();
+        
+        // Validate RPC response format
         if (typeof raw.id === 'undefined' || typeof raw.jsonrpc === 'undefined' || raw.jsonrpc !== '2.0' || typeof raw.result !== 'object') {
           this.increaseErrors();
-          reject('Daemon response is not properly formatted');
+          reject(new Error('Daemon response is not properly formatted'));
         } else {
           resolve(raw.result);
         }
-      }).fail((data: any) => {
+      } catch (error: any) {
         this._isWorking = false;
         this.increaseErrors();
-        reject(data);
-      });
+        
+        if (error.name === 'AbortError') {
+          console.error(`Node ${this._url} makeRpcRequest timeout after ${this.timeout}ms (errors: ${this._errors + 1})`);
+          reject(new Error('Request timeout'));
+        } else {
+          console.error(`Node ${this._url} makeRpcRequest failed: ${error.message} (errors: ${this._errors + 1})`);
+          reject(error);
+        }
+      }
     });
   }
 
@@ -443,11 +491,21 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
       return Promise.resolve(true);
     } else {
       if (config.publicNodes) {
-        return $.ajax({
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10 * 1000);
+
+        return fetch(config.publicNodes + '/list?hasSSL=true', {
           method: 'GET',
-          timeout: 10 * 1000,
-          url: config.publicNodes + '/list?hasSSL=true'
-        }).done((result: any) => {
+          signal: controller.signal
+        }).then(async (response) => {
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const result = await response.json();
+          
           if (result.success && (result.list.length > 0)) {
             for (let i = 0; i < result.list.length; ++i) {
               let finalUrl = "https://" + result.list[i].url.host + "/";
@@ -461,7 +519,9 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
           this.initialized = true;
           this.resetNodes();
           return true;
-        }).fail((data: any, textStatus: string) => {        
+        }).catch((error: any) => {
+          clearTimeout(timeoutId);
+          console.error('Failed to fetch public nodes:', error.message);
           return false;
         });
       } else {
