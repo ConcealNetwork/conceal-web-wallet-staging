@@ -8,13 +8,17 @@
   "scripts": {
     "start": "serve .\\src\\",
     "build": "node ./node_modules/typescript/bin/tsc --project tsconfig.prod.json && node build.js && serve .\\src\\",
-    "test": ""
+    "test": "",
+    "format": "biome format --write",
+    "format:check": "biome format",
+    "lint": "biome lint --write",
+    "lint:check": "biome lint",
+    "check": "biome check --write",
+    "check:check": "biome check"
   },
   "main": "index.js",
   "dependencies": {
-
-    "@types/node": "^24.0.13",
-
+    "@types/node": "^24.9.1",
     "dotenv": "^17.2.0",
     "typescript": "^5.8.3",
     "workbox-build": "^7.3.0"
@@ -30,8 +34,7 @@
   },
   "homepage": "https://github.com/ConcealNetwork/conceal-web-wallet#readme",
   "devDependencies": {
-
-    "@types/node": "^24.0.13"
-
+    "@biomejs/biome": "2.3.0",
+    "@types/node": "^24.9.1"
   }
 }
