@@ -3,7 +3,7 @@
   "version": "1.2.0",
   "description": "Fully client-side web-wallet for Conceal Network",
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   },
   "scripts": {
     "start": "serve .\\src\\",
