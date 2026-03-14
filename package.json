@@ -36,5 +36,8 @@
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
     "@types/node": "^25.5.0"
+  },
+  "overrides": {
+    "serialize-javascript": ">=7.0.3"
   }
 }
