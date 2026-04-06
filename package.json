@@ -18,7 +18,7 @@
   },
   "main": "index.js",
   "dependencies": {
-    "@types/node": "^25.5.0",
+    "@types/node": "^25.5.2",
     "dotenv": "^17.3.1",
     "typescript": "^5.9.3",
     "workbox-build": "^7.4.0"
@@ -35,7 +35,7 @@
   "homepage": "https://github.com/ConcealNetwork/conceal-web-wallet#readme",
   "devDependencies": {
     "@biomejs/biome": "2.4.6",
-    "@types/node": "^25.5.0"
+    "@types/node": "^25.5.2"
   },
   "overrides": {
     "serialize-javascript": ">=7.0.3"
