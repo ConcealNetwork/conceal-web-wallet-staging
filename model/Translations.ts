@@ -73,8 +73,7 @@ export const tickerStore = TickerStore.getInstance();
 
 export class Translations {
   static getBrowserLang(): string {
-    let browserUserLang =
-      "" + (navigator.language || (<any>navigator).userLanguage);
+    let browserUserLang = "" + (navigator.language || (<any>navigator).userLanguage);
     browserUserLang = browserUserLang.toLowerCase().split("-")[0];
     return browserUserLang;
   }
@@ -104,68 +103,43 @@ export class Translations {
   static loadLangTranslation(lang: string): Promise<void> {
     //console.log('setting lang to '+lang);
     let promise: Promise<{ messages?: any; date?: string; number?: string }>;
-    if (typeof Translations.storedTranslations[lang] !== "undefined")
-      promise = Promise.resolve(Translations.storedTranslations[lang]);
+    if (typeof Translations.storedTranslations[lang] !== "undefined") promise = Promise.resolve(Translations.storedTranslations[lang]);
     else
-      promise = new Promise<{ messages?: any; date?: string; number?: string }>(
-        async (resolve, reject) => {
-          try {
-            const response = await fetch("./translations/" + lang + ".json");
+      promise = new Promise<{ messages?: any; date?: string; number?: string }>(async (resolve, reject) => {
+        try {
+          const response = await fetch("./translations/" + lang + ".json");
 
-            if (!response.ok) {
-              throw new Error(
-                `HTTP ${response.status}: ${response.statusText}`
-              );
-            }
-
-            const data = await response.json();
-            Translations.storedTranslations[lang] = data;
-            resolve(data);
-          } catch (error: any) {
-            console.error(
-              "Failed to load translation for %s: %s",
-              lang,
-              error.message
-            );
-            reject();
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
           }
+
+          const data = await response.json();
+          Translations.storedTranslations[lang] = data;
+          resolve(data);
+        } catch (error: any) {
+          console.error("Failed to load translation for %s: %s", lang, error.message);
+          reject();
         }
-      );
+      });
 
-    promise.then(
-      (data: {
-        website?: any;
-        messages?: any;
-        date?: string;
-        number?: string;
-      }) => {
-        if (typeof data.date !== "undefined")
-          i18n.setDateTimeFormat(lang, data.date);
-        if (typeof data.number !== "undefined")
-          i18n.setNumberFormat(lang, data.number);
-        if (typeof data.messages !== "undefined")
-          i18n.setLocaleMessage(lang, data.messages);
+    promise.then(function (data: { website?: any; messages?: any; date?: string; number?: string }) {
+      if (typeof data.date !== "undefined") i18n.setDateTimeFormat(lang, data.date);
+      if (typeof data.number !== "undefined") i18n.setNumberFormat(lang, data.number);
+      if (typeof data.messages !== "undefined") i18n.setLocaleMessage(lang, data.messages);
 
-        i18n.locale = lang;
+      i18n.locale = lang;
 
-        $("title").html(data.website.title);
-        $('meta[property="og:title"]').attr("content", data.website.title);
-        $('meta[property="twitter:title"]').attr("content", data.website.title);
+      $("title").html(data.website.title);
+      $('meta[property="og:title"]').attr("content", data.website.title);
+      $('meta[property="twitter:title"]').attr("content", data.website.title);
 
-        $('meta[name="description"]').attr("content", data.website.description);
-        $('meta[property="og:description"]').attr(
-          "content",
-          data.website.description
-        );
-        $('meta[property="twitter:description"]').attr(
-          "content",
-          data.website.description
-        );
+      $('meta[name="description"]').attr("content", data.website.description);
+      $('meta[property="og:description"]').attr("content", data.website.description);
+      $('meta[property="twitter:description"]').attr("content", data.website.description);
 
-        let htmlDocument = document.querySelector("html");
-        if (htmlDocument !== null) htmlDocument.setAttribute("lang", lang);
-      }
-    );
+      let htmlDocument = document.querySelector("html");
+      if (htmlDocument !== null) htmlDocument.setAttribute("lang", lang);
+    });
 
     return <any>promise;
   }

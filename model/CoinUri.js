@@ -29,7 +29,7 @@ define(["require", "exports"], function (require, exports) {
                 var exploded = temp.split("?");
                 if (exploded.length == 0)
                     throw "missing_address";
-                if (exploded[0].length !== CoinUri.coinAddressLength)
+                if (exploded[0].length !== this.coinAddressLength)
                     throw "invalid_address_length";
                 var decodedUri = {
                     address: exploded[0],
@@ -68,7 +68,7 @@ define(["require", "exports"], function (require, exports) {
         };
         CoinUri.isTxValid = function (str) {
             try {
-                CoinUri.decodeTx(str);
+                this.decodeTx(str);
                 return true;
             }
             catch (e) {
@@ -81,7 +81,7 @@ define(["require", "exports"], function (require, exports) {
             if (recipientName === void 0) { recipientName = null; }
             if (description === void 0) { description = null; }
             var encoded = address; //legacy this.coinTxPrefix + address;
-            if (address.length !== CoinUri.coinAddressLength)
+            if (address.length !== this.coinAddressLength)
                 throw "invalid_address_length";
             if (paymentId !== null)
                 encoded += "?payment_id=" + paymentId;
@@ -95,11 +95,11 @@ define(["require", "exports"], function (require, exports) {
         };
         CoinUri.decodeWallet = function (str) {
             if (str.startsWith(CoinUri.coinWalletPrefix)) {
-                var data = str.replace(CoinUri.coinWalletPrefix, "").trim();
+                var data = str.replace(this.coinWalletPrefix, "").trim();
                 var exploded = data.split("?");
                 if (exploded.length == 0)
                     throw "missing_address";
-                if (exploded[0].length !== CoinUri.coinAddressLength)
+                if (exploded[0].length !== this.coinAddressLength)
                     throw "invalid_address_length";
                 var decodedUri = {
                     address: exploded[0],
@@ -131,8 +131,7 @@ define(["require", "exports"], function (require, exports) {
                 }
                 if (typeof decodedUri.mnemonicSeed !== "undefined" ||
                     typeof decodedUri.spendKey !== "undefined" ||
-                    (typeof decodedUri.viewKey !== "undefined" &&
-                        typeof decodedUri.address !== "undefined")) {
+                    (typeof decodedUri.viewKey !== "undefined" && typeof decodedUri.address !== "undefined")) {
                     return decodedUri;
                 }
                 else
@@ -142,7 +141,7 @@ define(["require", "exports"], function (require, exports) {
         };
         CoinUri.isWalletValid = function (str) {
             try {
-                CoinUri.decodeWallet(str);
+                this.decodeWallet(str);
                 return true;
             }
             catch (e) {
@@ -154,8 +153,8 @@ define(["require", "exports"], function (require, exports) {
             if (height === void 0) { height = null; }
             if (encryptMethod === void 0) { encryptMethod = null; }
             if (nonce === void 0) { nonce = null; }
-            var encoded = CoinUri.coinWalletPrefix + address;
-            if (address.length !== CoinUri.coinAddressLength)
+            var encoded = this.coinWalletPrefix + address;
+            if (address.length !== this.coinAddressLength)
                 throw "invalid_address_length";
             if (spendKey !== null)
                 encoded += "?spend_key=" + spendKey;

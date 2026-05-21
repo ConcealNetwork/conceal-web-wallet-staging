@@ -163,7 +163,7 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
                         menuView.toggle();
                 }
             }
-            if (xy <= limit) {
+            else if (xy <= limit) {
                 if (y < 0) {
                     //top
                 }
@@ -250,37 +250,28 @@ define(["require", "exports", "./lib/numbersLab/Router", "./model/Mnemonic", "./
         window.native = true;
         copyrightView.isNative = true;
         $('body').addClass('native');
-        /* legacy when we had hope to load cordova.js, but that cannot happen on a redirect
-            let timeoutCordovaLoad: any = null;
-            promiseLoadingReady = new Promise<void>(function(resolve, reject){
-                // Check if cordova is already loaded (e.g., by APK)
-                if(typeof (<any>window).cordova !== 'undefined') {
-                    console.log('Cordova already loaded, skipping cordova.js loading');
-                    resolve();
-                } else {
-                    // Load cordova.js only if not already loaded
-                    console.log('Loading cordova.js...');
-                    let cordovaJs = document.createElement('script');
-                    cordovaJs.type = 'text/javascript';
-                    cordovaJs.src = 'cordova.js';
-                    cordovaJs.onload = () => console.log('cordova.js loaded successfully');
-                    cordovaJs.onerror = () => console.log('cordova.js failed to load');
-                    document.body.appendChild(cordovaJs);
-        
-                    timeoutCordovaLoad = setTimeout(function(){
-                        resolve();
-                    }, 3*1000);
-                    
-                    document.addEventListener('deviceready', function(){
-                        resolve();
-                        if(timeoutCordovaLoad)
-                            clearTimeout(timeoutCordovaLoad);
-                    }, false);
-                }
-            });
-            */
-        // Since we're in a WebView with redirect, we can't load cordova.js
-        // Just resolve immediately for better user experience
+        /*	when we had hope to load cordova.js, but cannot happen in a redirect.
+        let promiseLoadingReadyResolve : null|Function = null;
+        let promiseLoadingReadyReject : null|Function = null;
+        promiseLoadingReady = new Promise<void>(function(resolve, reject){
+            promiseLoadingReadyResolve = resolve;
+            promiseLoadingReadyReject = reject;
+        });
+        let cordovaJs = document.createElement('script');
+        cordovaJs.type = 'text/javascript';
+        cordovaJs.src = 'cordova.js';
+        document.body.appendChild(cordovaJs);
+    
+        let timeoutCordovaLoad = setTimeout(function(){
+            if(promiseLoadingReadyResolve)
+                promiseLoadingReadyResolve();
+        }, 10*1000);
+        document.addEventListener('deviceready', function(){
+            if(promiseLoadingReadyResolve)
+                promiseLoadingReadyResolve();
+            clearInterval(timeoutCordovaLoad);
+        }, false);
+        */
         console.log('📱 Cordova WebView detected - skipping cordova.js loading');
         promiseLoadingReady = Promise.resolve();
     }

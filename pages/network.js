@@ -54,8 +54,9 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         function NetworkView(container) {
             var _this = _super.call(this, container) || this;
             _this.intervalRefreshStat = 0;
+            var self = _this;
             _this.intervalRefreshStat = setInterval(function () {
-                _this.refreshStats();
+                self.refreshStats();
             }, 30 * 1000);
             _this.refreshStats();
             return _this;

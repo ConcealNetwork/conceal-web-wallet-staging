@@ -50,7 +50,7 @@ define(["require", "exports", "../lib/numbersLab/DependencyInjector", "../model/
               document.execCommand('copy');
           } catch (err) {
           }*/
-        var inputElement = (document.getElementById(inputId));
+        var inputElement = document.getElementById(inputId);
         if (inputElement !== null) {
             inputElement.select();
         }
@@ -80,8 +80,7 @@ define(["require", "exports", "../lib/numbersLab/DependencyInjector", "../model/
         AccountView.prototype.amountWatch = function () {
             var parsedAmount = parseFloat(this.amount);
             if (!isNaN(parsedAmount)) {
-                if (this.amount.indexOf(".") !== -1 &&
-                    ("" + parsedAmount).indexOf(".") === -1)
+                if (this.amount.indexOf(".") !== -1 && ("" + parsedAmount).indexOf(".") === -1)
                     this.amount = "" + parsedAmount + ".";
                 else
                     this.amount = "" + parsedAmount;

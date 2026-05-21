@@ -44,6 +44,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
         __extends(ExportView, _super);
         function ExportView(container) {
             var _this = _super.call(this, container) || this;
+            var self = _this;
             _this.publicAddress = wallet.getPublicAddress();
             _this.nativePlatform = window.native;
             return _this;
@@ -135,9 +136,9 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
         ExportView.prototype.fileExport = function () {
             this.askUserPassword().then(function (params) {
                 if (params !== null && params.wallet !== null) {
-                    var blob = new Blob([
-                        JSON.stringify(WalletRepository_1.WalletRepository.getEncrypted(params.wallet, params.password)),
-                    ], { type: "application/json" });
+                    var blob = new Blob([JSON.stringify(WalletRepository_1.WalletRepository.getEncrypted(params.wallet, params.password))], {
+                        type: "application/json",
+                    });
                     saveAs(blob, "wallet.json");
                 }
             });

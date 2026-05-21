@@ -45,8 +45,9 @@ define(["require", "exports", "./Wallet", "./StorageOld", "./Storage", "./CoinUr
             });
         };
         WalletRepository.hasOneStored = function () {
+            var _this = this;
             return new Promise(function (resolve, reject) {
-                WalletRepository.migrateWallet()
+                _this.migrateWallet()
                     .then(function (isSuccess) {
                     Storage_1.Storage.getItem("wallet", null).then(function (wallet) {
                         resolve(wallet !== null);
@@ -107,9 +108,10 @@ define(["require", "exports", "./Wallet", "./StorageOld", "./Storage", "./CoinUr
             return null;
         };
         WalletRepository.getLocalWalletWithPassword = function (password) {
+            var _this = this;
             return Storage_1.Storage.getItem("wallet", null).then(function (existingWallet) {
                 if (existingWallet !== null) {
-                    return WalletRepository.decodeWithPassword(JSON.parse(existingWallet), password);
+                    return _this.decodeWithPassword(JSON.parse(existingWallet), password);
                 }
                 else {
                     return null;
@@ -117,7 +119,7 @@ define(["require", "exports", "./Wallet", "./StorageOld", "./Storage", "./CoinUr
             });
         };
         WalletRepository.save = function (wallet, password) {
-            return Storage_1.Storage.setItem("wallet", JSON.stringify(WalletRepository.getEncrypted(wallet, password)));
+            return Storage_1.Storage.setItem("wallet", JSON.stringify(this.getEncrypted(wallet, password)));
         };
         WalletRepository.getEncrypted = function (wallet, password) {
             if (password.length > 32)
@@ -261,11 +263,11 @@ define(["require", "exports", "./Wallet", "./StorageOld", "./Storage", "./CoinUr
             doc.text(110, 125, "over the Conceal Network to the public address.");
             doc.text(115, 132, "DO NOT REVEAL THE PRIVATE KEY");
             //adding Conceal Network logos
-            var c = (document.getElementById("canvasExport"));
+            var c = document.getElementById("canvasExport");
             if (c !== null) {
                 var ctx = c.getContext("2d");
                 // First logo (vertical)
-                var verticalLogo = (document.getElementById("verticalLogo"));
+                var verticalLogo = document.getElementById("verticalLogo");
                 if (ctx !== null && verticalLogo !== null) {
                     c.width = verticalLogo.width;
                     c.height = verticalLogo.height;
@@ -275,7 +277,7 @@ define(["require", "exports", "./Wallet", "./StorageOld", "./Storage", "./CoinUr
                     doc.addImage(c.toDataURL(), "JPEG", 224, 106 + (100 - smallHeight) / 2, 45, smallHeight);
                 }
                 // Second logo (cham)
-                var chamLogo = (document.getElementById("chamLogo"));
+                var chamLogo = document.getElementById("chamLogo");
                 if (ctx !== null && chamLogo !== null) {
                     c.width = chamLogo.width;
                     c.height = chamLogo.height;

@@ -72,14 +72,14 @@ define(["require", "exports", "../lib/numbersLab/DependencyInjector", "./Wallet"
             $("body").removeClass("viewOnlyWallet");
         };
         AppState.enableLeftMenu = function () {
-            if (!AppState.leftMenuEnabled) {
-                AppState.leftMenuEnabled = true;
+            if (!this.leftMenuEnabled) {
+                this.leftMenuEnabled = true;
                 $("body").removeClass("menuDisabled");
             }
         };
         AppState.disableLeftMenu = function () {
-            if (AppState.leftMenuEnabled) {
-                AppState.leftMenuEnabled = false;
+            if (this.leftMenuEnabled) {
+                this.leftMenuEnabled = false;
                 $("body").addClass("menuDisabled");
             }
         };
@@ -142,9 +142,17 @@ define(["require", "exports", "../lib/numbersLab/DependencyInjector", "./Wallet"
                             }
                         }, 1);
                     })
-                        .catch(reject);
+                        .catch(function (err) {
+                        console.log(err);
+                        $("#pageLoading").hide();
+                        reject(err);
+                    });
                 })
-                    .catch(reject);
+                    .catch(function (err) {
+                    console.log(err);
+                    $("#pageLoading").hide();
+                    reject(err);
+                });
             });
         };
         AppState.leftMenuEnabled = false;

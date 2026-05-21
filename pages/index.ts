@@ -16,7 +16,7 @@
  */
 
 import { WalletRepository } from "../model/WalletRepository";
-import type { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
+import { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
 import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
 import { DependencyInjectorInstance } from "../lib/numbersLab/DependencyInjector";
 import { VueRequireFilter, VueVar } from "../lib/numbersLab/VueAnnotate";
@@ -24,13 +24,8 @@ import { DestructableView } from "../lib/numbersLab/DestructableView";
 import { Wallet } from "../model/Wallet";
 import { AppState } from "../model/AppState";
 
-let wallet: Wallet = DependencyInjectorInstance().getInstance(
-  Wallet.name,
-  "default",
-  false
-);
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
+let wallet: Wallet = DependencyInjectorInstance().getInstance(Wallet.name, "default", false);
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
 if (wallet !== null) {
   window.location.href = "#account";
@@ -39,22 +34,14 @@ if (wallet !== null) {
 class IndexView extends DestructableView {
   @VueVar(false) hasLocalWallet!: boolean;
   @VueVar(false) isWalletLoaded!: boolean;
-  @VueVar(false) isNative!: boolean;
   constructor(container: string) {
     super(container);
 
-    this.isWalletLoaded =
-      DependencyInjectorInstance().getInstance(
-        Wallet.name,
-        "default",
-        false
-      ) !== null;
+    this.isWalletLoaded = DependencyInjectorInstance().getInstance(Wallet.name, "default", false) !== null;
     WalletRepository.hasOneStored().then((status: boolean) => {
       this.hasLocalWallet = status;
     });
     AppState.disableLeftMenu();
-
-    this.isNative = window.native;
   }
 
   destruct(): Promise<void> {

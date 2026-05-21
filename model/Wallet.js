@@ -185,9 +185,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                     // Preserve fusion flag when replacing
                                     transaction.fusion = _this.transactions[tr].fusion;
                                     // Preserve messageViewed flag when replacing
-                                    transaction.messageViewed =
-                                        _this.transactions[tr].messageViewed ||
-                                            transaction.messageViewed;
+                                    transaction.messageViewed = _this.transactions[tr].messageViewed || transaction.messageViewed;
                                     _this.keyLookupMap.set(transaction.txPubKey, transaction);
                                     _this.txLookupMap.set(transaction.hash, transaction);
                                     _this.transactions[tr] = transaction;
@@ -200,8 +198,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                             // Preserve fusion flag from mempool
                             transaction.fusion = existMem.fusion;
                             // Preserve messageViewed flag from mempool
-                            transaction.messageViewed =
-                                existMem.messageViewed || transaction.messageViewed;
+                            transaction.messageViewed = existMem.messageViewed || transaction.messageViewed;
                             var trIndex = _this.txsMem.indexOf(existMem);
                             if (trIndex != -1) {
                                 _this.txsMem.splice(trIndex, 1);
@@ -219,8 +216,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
              * Only updates the specified fields, does not replace the transaction object.
              */
             _this.updateTransactionFlags = function (txPubKeyOrHash, flags) {
-                var tx = _this.findWithTxPubKey(txPubKeyOrHash) ||
-                    _this.findWithTxHash(txPubKeyOrHash);
+                var tx = _this.findWithTxPubKey(txPubKeyOrHash) || _this.findWithTxHash(txPubKeyOrHash);
                 if (tx) {
                     if (typeof flags.fusion !== "undefined")
                         tx.fusion = flags.fusion;
@@ -306,8 +302,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 // 4. Update withdrawals array - fallback to amount & outputIndex if needed
                 if (!foundMatchWithdrawal) {
                     for (var i = 0; i < _this.withdrawals.length; ++i) {
-                        if (_this.withdrawals[i].amount === withdrawal.amount &&
-                            _this.withdrawals[i].globalOutputIndex === withdrawal.globalOutputIndex) {
+                        if (_this.withdrawals[i].amount === withdrawal.amount && _this.withdrawals[i].globalOutputIndex === withdrawal.globalOutputIndex) {
                             _this.withdrawals[i] = withdrawal;
                             foundMatchWithdrawal = true;
                             break;
@@ -438,8 +433,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     var transaction = _a[_i];
                     if (!transaction.isFullyChecked())
                         continue;
-                    if (transaction.isConfirmed(currentBlockHeight) ||
-                        currentBlockHeight === -1) {
+                    if (transaction.isConfirmed(currentBlockHeight) || currentBlockHeight === -1) {
                         for (var _b = 0, _c = transaction.outs; _b < _c.length; _b++) {
                             var nout = _c[_b];
                             if (nout.type !== "03") {
@@ -456,8 +450,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 }
                 for (var _f = 0, _g = _this.txsMem; _f < _g.length; _f++) {
                     var transaction = _g[_f];
-                    if (transaction.isConfirmed(currentBlockHeight) ||
-                        currentBlockHeight === -1) {
+                    if (transaction.isConfirmed(currentBlockHeight) || currentBlockHeight === -1) {
                         for (var _h = 0, _j = transaction.outs; _h < _j.length; _h++) {
                             var nout = _j[_h];
                             if (nout.type !== "03") {
@@ -612,8 +605,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                 }
                             }
                         }
-                        if (_this.transactions[iTx].outs.length === 0 &&
-                            _this.transactions[iTx].ins.length === 0) {
+                        if (_this.transactions[iTx].outs.length === 0 && _this.transactions[iTx].ins.length === 0) {
                             _this.transactions.splice(iTx, 1);
                             --iTx;
                         }
@@ -690,9 +682,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                 for (var i = 0; i < selectedBucket; ++i) {
                     lowerBound *= 10;
                 }
-                var upperBound = selectedBucket === NUM_BUCKETS - 1
-                    ? Number.MAX_SAFE_INTEGER
-                    : lowerBound * 10;
+                var upperBound = selectedBucket === NUM_BUCKETS - 1 ? Number.MAX_SAFE_INTEGER : lowerBound * 10;
                 // Select outputs within bounds
                 var selectedOuts = allFusionReadyOuts.filter(function (out) { return out.amount >= lowerBound && out.amount < upperBound; });
                 // Ensure we have enough outputs for fusion
@@ -804,8 +794,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                                 round_1++;
                                 _a.label = 5;
                             case 5:
-                                if (transactionSize > Currency_1.Currency.fusionTxMaxSize &&
-                                    fusionInputs.length >= Currency_1.Currency.fusionTxMinInputCount) return [3 /*break*/, 1];
+                                if (transactionSize > Currency_1.Currency.fusionTxMaxSize && fusionInputs.length >= Currency_1.Currency.fusionTxMinInputCount) return [3 /*break*/, 1];
                                 _a.label = 6;
                             case 6:
                                 // Final validation
@@ -1005,8 +994,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer", "./Keys
                     var tx = _a[_i];
                     for (var _b = 0, _c = tx.outs; _b < _c.length; _b++) {
                         var out = _c[_b];
-                        if (out.type === "03" &&
-                            (out.globalIndex === undefined || out.globalIndex === 0)) {
+                        if (out.type === "03" && (out.globalIndex === undefined || out.globalIndex === 0)) {
                             return true;
                         }
                     }

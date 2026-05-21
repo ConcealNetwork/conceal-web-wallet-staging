@@ -23,13 +23,12 @@ import { Wallet } from "../model/Wallet";
 import { KeysRepository } from "../model/KeysRepository";
 import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
 import { Constants } from "../model/Constants";
-import type { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
+import { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
 import { Cn, CnUtils } from "../model/Cn";
 
 AppState.enableLeftMenu();
 
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
 class ImportView extends DestructableView {
   @VueVar(false) viewOnly!: boolean;
@@ -54,82 +53,70 @@ class ImportView extends DestructableView {
   formValid() {
     if (this.password != this.password2) return false;
 
-    if (
-      !(
-        this.password !== "" &&
-        (!this.insecurePassword || this.forceInsecurePassword)
-      )
-    )
-      return false;
+    if (!(this.password !== "" && (!this.insecurePassword || this.forceInsecurePassword))) return false;
 
-    if (
-      !(
-        (!this.viewOnly && this.validPrivateSpendKey) ||
-        (this.viewOnly && this.validPublicAddress && this.validPrivateViewKey)
-      )
-    )
+    if (!((!this.viewOnly && this.validPrivateSpendKey) || (this.viewOnly && this.validPublicAddress && this.validPrivateViewKey)))
       return false;
     return true;
   }
 
   importWallet() {
+    let self = this;
     $("#pageLoading").show();
 
     blockchainExplorer
       .initialize()
-      .then((success) => {
-        blockchainExplorer
-          .getHeight()
-          .then((currentHeight) => {
-            $("#pageLoading").hide();
+      .then(() => {
+        // Add a small delay to ensure nodes are fully ready
+        setTimeout(() => {
+          blockchainExplorer
+            .getHeight()
+            .then(function (currentHeight) {
+              $("#pageLoading").hide();
 
-            let newWallet = new Wallet();
-            if (this.viewOnly) {
-              let decodedPublic = Cn.decode_address(this.publicAddress.trim());
-              newWallet.keys = {
-                priv: {
-                  spend: "",
-                  view: this.privateViewKey.trim(),
-                },
-                pub: {
-                  spend: decodedPublic.spend,
-                  view: decodedPublic.view,
-                },
-              };
-            } else {
-              //console.log(1);
-              let viewkey = this.privateViewKey.trim();
-              if (viewkey === "") {
-                viewkey = Cn.generate_keys(
-                  CnUtils.cn_fast_hash(this.privateSpendKey.trim())
-                ).sec;
+              let newWallet = new Wallet();
+              if (self.viewOnly) {
+                let decodedPublic = Cn.decode_address(self.publicAddress.trim());
+                newWallet.keys = {
+                  priv: {
+                    spend: "",
+                    view: self.privateViewKey.trim(),
+                  },
+                  pub: {
+                    spend: decodedPublic.spend,
+                    view: decodedPublic.view,
+                  },
+                };
+              } else {
+                //console.log(1);
+                let viewkey = self.privateViewKey.trim();
+                if (viewkey === "") {
+                  viewkey = Cn.generate_keys(CnUtils.cn_fast_hash(self.privateSpendKey.trim())).sec;
+                }
+                //console.log(1, viewkey);
+                newWallet.keys = KeysRepository.fromPriv(self.privateSpendKey.trim(), viewkey);
+                //console.log(1);
               }
-              //console.log(1, viewkey);
-              newWallet.keys = KeysRepository.fromPriv(
-                this.privateSpendKey.trim(),
-                viewkey
-              );
-              //console.log(1);
-            }
 
-            let height = this.importHeight; //never trust a perfect value from the user
-            if (height >= currentHeight) {
-              height = currentHeight - 1;
-            }
-            height = height - 10;
+              let height = self.importHeight; //never trust a perfect value from the user
+              if (height >= currentHeight) {
+                height = currentHeight - 1;
+              }
+              height = height - 10;
 
-            if (height < 0) height = 0;
-            if (height > currentHeight) height = currentHeight;
-            newWallet.lastHeight = height;
-            newWallet.creationHeight = newWallet.lastHeight;
+              if (height < 0) height = 0;
+              if (height > currentHeight) height = currentHeight;
+              newWallet.lastHeight = height;
+              newWallet.creationHeight = newWallet.lastHeight;
 
-            AppState.openWallet(newWallet, this.password);
-            window.location.href = "#account";
-          })
-          .catch((err) => {
-            console.log(err);
-            $("#pageLoading").hide();
-          });
+              AppState.openWallet(newWallet, self.password);
+              window.location.href = "#account";
+            })
+            .catch((err) => {
+              console.log(err);
+              $("#pageLoading").hide();
+            });
+        }, 100); // 100ms delay to ensure nodes are ready
       })
       .catch((err) => {
         console.log(err);
@@ -160,9 +147,7 @@ class ImportView extends DestructableView {
 
   @VueWatched()
   privateViewKeyWatch() {
-    this.validPrivateViewKey =
-      this.privateViewKey.trim().length == 64 ||
-      (!this.viewOnly && this.privateViewKey.trim().length == 0);
+    this.validPrivateViewKey = this.privateViewKey.trim().length == 64 || (!this.viewOnly && this.privateViewKey.trim().length == 0);
   }
 
   @VueWatched()
@@ -176,7 +161,8 @@ class ImportView extends DestructableView {
   }
 
   forceInsecurePasswordCheck() {
-    this.forceInsecurePassword = true;
+    let self = this;
+    self.forceInsecurePassword = true;
   }
 }
 

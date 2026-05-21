@@ -86,9 +86,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                             },
                         });
                         var mixinToSendWith_1 = config.defaultMixin;
-                        var destination_1 = [
-                            { address: destinationAddress, amount: amountToSend },
-                        ];
+                        var destination_1 = [{ address: destinationAddress, amount: amountToSend }];
                         // Get fee address from session node for remote node fee
                         blockchainExplorer
                             .getSessionNodeFeeAddress()
@@ -110,8 +108,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                             TransactionsExplorer_1.TransactionsExplorer.createTx(destination_1, "", wallet, blockchainHeight, function (amounts, numberOuts) {
                                 return blockchainExplorer.getRandomOuts(amounts, numberOuts);
                             }, function (amount, feesAmount) {
-                                if (amount + feesAmount >
-                                    wallet.availableAmount(blockchainHeight)) {
+                                if (amount + feesAmount > wallet.availableAmount(blockchainHeight)) {
                                     swal({
                                         type: "error",
                                         title: i18n.t("sendPage.notEnoughMoneyModal.title"),
@@ -127,14 +124,12 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                     setTimeout(function () {
                                         //prevent bug with swal when code is too fast
                                         var feeInfo = "";
-                                        if (remoteFeeAddress !== wallet.getPublicAddress() &&
-                                            ttl_1 === 0) {
+                                        if (remoteFeeAddress !== wallet.getPublicAddress() && ttl_1 === 0) {
                                             feeInfo =
                                                 '<br><br><span style="font-size: 0.8em; font-style: italic; color: #666;">' +
                                                     "(" +
                                                     i18n.t("sendPage.confirmTransactionModal.remoteNodeFee", {
-                                                        fee: config.remoteNodeFee /
-                                                            Math.pow(10, config.coinUnitPlaces),
+                                                        fee: config.remoteNodeFee / Math.pow(10, config.coinUnitPlaces),
                                                         symbol: config.coinSymbol,
                                                     }) +
                                                     ")" +
@@ -145,8 +140,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                             html: i18n.t("sendPage.confirmTransactionModal.content", {
                                                 amount: amount / Math.pow(10, config.coinUnitPlaces),
                                                 fees: feesAmount / Math.pow(10, config.coinUnitPlaces),
-                                                total: (amount + feesAmount) /
-                                                    Math.pow(10, config.coinUnitPlaces),
+                                                total: (amount + feesAmount) / Math.pow(10, config.coinUnitPlaces),
                                             }) + feeInfo,
                                             showCancelButton: true,
                                             confirmButtonText: i18n.t("sendPage.confirmTransactionModal.confirmText"),
@@ -192,8 +186,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                     });
                                     promise.then(function () {
                                         if (self.redirectUrlAfterSend !== null) {
-                                            window.location.href =
-                                                self.redirectUrlAfterSend.replace("{TX_HASH}", rawTxData.raw.hash);
+                                            window.location.href = self.redirectUrlAfterSend.replace("{TX_HASH}", rawTxData.raw.hash);
                                         }
                                     });
                                 })
@@ -271,10 +264,11 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         MessagesView.prototype.startNfcScan = function () {
             var _this = this;
+            var self = this;
             if (this.ndefListener === null) {
                 this.ndefListener = function (data) {
                     if (data.text)
-                        _this.handleScanResult(data.text.content);
+                        self.handleScanResult(data.text.content);
                     swal.close();
                 };
                 this.nfc.listenNdef(this.ndefListener);
@@ -303,7 +297,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             this.qrReader.init("/lib/");
         };
         MessagesView.prototype.startScan = function () {
-            var _this = this;
+            var self = this;
             if (typeof window.QRScanner !== "undefined") {
                 window.QRScanner.scan(function (err, result) {
                     if (err) {
@@ -314,7 +308,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                         }
                     }
                     else {
-                        _this.handleScanResult(result);
+                        self.handleScanResult(result);
                     }
                 });
                 window.QRScanner.show();
@@ -327,37 +321,43 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 if (this.qrReader) {
                     this.qrScanning = true;
                     this.qrReader.scan(function (result) {
-                        _this.qrScanning = false;
-                        _this.handleScanResult(result);
+                        self.qrScanning = false;
+                        self.handleScanResult(result);
                     });
                 }
             }
         };
         MessagesView.prototype.handleScanResult = function (result) {
+            //console.log('Scan result:', result);
+            var self = this;
             var parsed = false;
             try {
                 var txDetails = CoinUri_1.CoinUri.decodeTx(result);
                 if (txDetails !== null) {
-                    this.destinationAddressUser = txDetails.address;
+                    self.destinationAddressUser = txDetails.address;
                     if (typeof txDetails.description !== "undefined")
-                        this.txDescription = txDetails.description;
+                        self.txDescription = txDetails.description;
                     if (typeof txDetails.recipientName !== "undefined")
-                        this.txDestinationName = txDetails.recipientName;
+                        self.txDestinationName = txDetails.recipientName;
                     parsed = true;
                 }
             }
-            catch (e) { }
+            catch (e) {
+                console.error("Error handling scan result", e);
+            }
             try {
                 var txDetails = CoinUri_1.CoinUri.decodeWallet(result);
                 if (txDetails !== null) {
-                    this.destinationAddressUser = txDetails.address;
+                    self.destinationAddressUser = txDetails.address;
                     parsed = true;
                 }
             }
-            catch (e) { }
+            catch (e) {
+                console.error("Error handling scan result", e);
+            }
             if (!parsed)
-                this.destinationAddressUser = result;
-            this.stopScan();
+                self.destinationAddressUser = result;
+            self.stopScan();
         };
         MessagesView.prototype.stopScan = function () {
             if (typeof window.QRScanner !== "undefined") {
@@ -378,31 +378,31 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }
         };
         MessagesView.prototype.destinationAddressUserWatch = function () {
-            var _this = this;
             if (this.destinationAddressUser.indexOf(".") !== -1) {
+                var self_1 = this;
                 if (this.timeoutResolveAlias !== 0)
                     clearTimeout(this.timeoutResolveAlias);
                 this.timeoutResolveAlias = setTimeout(function () {
                     blockchainExplorer
-                        .resolveOpenAlias(_this.destinationAddressUser)
+                        .resolveOpenAlias(self_1.destinationAddressUser)
                         .then(function (data) {
                         try {
                             Cn_1.Cn.decode_address(data.address);
-                            _this.txDestinationName = data.name;
-                            _this.destinationAddress = data.address;
-                            _this.domainAliasAddress = data.address;
-                            _this.destinationAddressValid = true;
-                            _this.openAliasValid = true;
+                            self_1.txDestinationName = data.name;
+                            self_1.destinationAddress = data.address;
+                            self_1.domainAliasAddress = data.address;
+                            self_1.destinationAddressValid = true;
+                            self_1.openAliasValid = true;
                         }
                         catch (e) {
-                            _this.destinationAddressValid = false;
-                            _this.openAliasValid = false;
+                            self_1.destinationAddressValid = false;
+                            self_1.openAliasValid = false;
                         }
-                        _this.timeoutResolveAlias = 0;
+                        self_1.timeoutResolveAlias = 0;
                     })
                         .catch(function () {
-                        _this.openAliasValid = false;
-                        _this.timeoutResolveAlias = 0;
+                        self_1.openAliasValid = false;
+                        self_1.timeoutResolveAlias = 0;
                     });
                 }, 400);
             }
@@ -420,9 +420,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         MessagesView.prototype.messageWatch = function () {
             try {
-                this.messageValid =
-                    this.message.length === 0 ||
-                        this.message.length <= config.maxMessageSize;
+                this.messageValid = this.message.length === 0 || this.message.length <= config.maxMessageSize;
             }
             catch (e) {
                 this.messageValid = false;
@@ -460,7 +458,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             // Replace "* " with bullet point
             formatted = formatted.replace(/\*\s/g, "&nbsp;&nbsp•&nbsp");
             // Replace any two spaces with <br>
-            formatted = formatted.replace(/ {2}/g, "<br>");
+            formatted = formatted.replace(/  /g, "<br>");
             return formatted;
         };
         MessagesView.prototype.formatTTL = function (minutes) {
@@ -472,9 +470,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             return "".concat(hours.toString().padStart(2, "0"), ":").concat(mins.toString().padStart(2, "0"));
         };
         MessagesView.prototype.getTTLCountdown = function (transaction) {
-            if (!transaction.ttl ||
-                transaction.ttl === 0 ||
-                transaction.blockHeight !== 0) {
+            if (!transaction.ttl || transaction.ttl === 0 || transaction.blockHeight !== 0) {
                 return "";
             }
             var currentTimestamp = Math.floor(Date.now() / 1000);
@@ -497,8 +493,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         MessagesView.prototype.markMessageSeen = function (txHash) {
             var _a;
-            if (((_a = this.transactions.find(function (tx) { return tx.hash === txHash; })) === null || _a === void 0 ? void 0 : _a.messageViewed) ===
-                false) {
+            if (((_a = this.transactions.find(function (tx) { return tx.hash === txHash; })) === null || _a === void 0 ? void 0 : _a.messageViewed) === false) {
                 wallet.updateTransactionFlags(txHash, { messageViewed: true });
             }
         };
@@ -525,9 +520,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         });
         Object.defineProperty(MessagesView.prototype, "showPreview", {
             get: function () {
-                return (this.message.includes("  ") ||
-                    this.message.includes("*") ||
-                    this.message.includes("`"));
+                return this.message.includes("  ") || this.message.includes("*") || this.message.includes("`");
             },
             enumerable: false,
             configurable: true

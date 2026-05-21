@@ -48,8 +48,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
     var CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX = config.subAddressPrefix;
     if (config.testnet === true) {
         CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX = config.addressPrefixTestnet;
-        CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX =
-            config.integratedAddressPrefixTestnet;
+        CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX = config.integratedAddressPrefixTestnet;
         CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX = config.subAddressPrefixTestnet;
     }
     var UINT64_MAX = new JSBigInt(2).pow(64);
@@ -97,72 +96,38 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         CnVars.I = "0100000000000000000000000000000000000000000000000000000000000000"; //identity element
         CnVars.Z = "0000000000000000000000000000000000000000000000000000000000000000"; //zero scalar
         //H2 object to speed up some operations
-        CnVars.H2 = [
-            "8b655970153799af2aeadc9ff1add0ea6c7251d54154cfa92c173a0dd39c1f94",
-            "8faa448ae4b3e2bb3d4d130909f55fcd79711c1c83cdbccadd42cbe1515e8712",
-            "12a7d62c7791654a57f3e67694ed50b49a7d9e3fc1e4c7a0bde29d187e9cc71d",
-            "789ab9934b49c4f9e6785c6d57a498b3ead443f04f13df110c5427b4f214c739",
-            "771e9299d94f02ac72e38e44de568ac1dcb2edc6edb61f83ca418e1077ce3de8",
-            "73b96db43039819bdaf5680e5c32d741488884d18d93866d4074a849182a8a64",
-            "8d458e1c2f68ebebccd2fd5d379f5e58f8134df3e0e88cad3d46701063a8d412",
-            "09551edbe494418e81284455d64b35ee8ac093068a5f161fa6637559177ef404",
-            "d05a8866f4df8cee1e268b1d23a4c58c92e760309786cdac0feda1d247a9c9a7",
-            "55cdaad518bd871dd1eb7bc7023e1dc0fdf3339864f88fdd2de269fe9ee1832d",
-            "e7697e951a98cfd5712b84bbe5f34ed733e9473fcb68eda66e3788df1958c306",
-            "f92a970bae72782989bfc83adfaa92a4f49c7e95918b3bba3cdc7fe88acc8d47",
-            "1f66c2d491d75af915c8db6a6d1cb0cd4f7ddcd5e63d3ba9b83c866c39ef3a2b",
-            "3eec9884b43f58e93ef8deea260004efea2a46344fc5965b1a7dd5d18997efa7",
-            "b29f8f0ccb96977fe777d489d6be9e7ebc19c409b5103568f277611d7ea84894",
-            "56b1f51265b9559876d58d249d0c146d69a103636699874d3f90473550fe3f2c",
-            "1d7a36575e22f5d139ff9cc510fa138505576b63815a94e4b012bfd457caaada",
-            "d0ac507a864ecd0593fa67be7d23134392d00e4007e2534878d9b242e10d7620",
-            "f6c6840b9cf145bb2dccf86e940be0fc098e32e31099d56f7fe087bd5deb5094",
-            "28831a3340070eb1db87c12e05980d5f33e9ef90f83a4817c9f4a0a33227e197",
-            "87632273d629ccb7e1ed1a768fa2ebd51760f32e1c0b867a5d368d5271055c6e",
-            "5c7b29424347964d04275517c5ae14b6b5ea2798b573fc94e6e44a5321600cfb",
-            "e6945042d78bc2c3bd6ec58c511a9fe859c0ad63fde494f5039e0e8232612bd5",
-            "36d56907e2ec745db6e54f0b2e1b2300abcb422e712da588a40d3f1ebbbe02f6",
-            "34db6ee4d0608e5f783650495a3b2f5273c5134e5284e4fdf96627bb16e31e6b",
-            "8e7659fb45a3787d674ae86731faa2538ec0fdf442ab26e9c791fada089467e9",
-            "3006cf198b24f31bb4c7e6346000abc701e827cfbb5df52dcfa42e9ca9ff0802",
-            "f5fd403cb6e8be21472e377ffd805a8c6083ea4803b8485389cc3ebc215f002a",
-            "3731b260eb3f9482e45f1c3f3b9dcf834b75e6eef8c40f461ea27e8b6ed9473d",
-            "9f9dab09c3f5e42855c2de971b659328a2dbc454845f396ffc053f0bb192f8c3",
-            "5e055d25f85fdb98f273e4afe08464c003b70f1ef0677bb5e25706400be620a5",
-            "868bcf3679cb6b500b94418c0b8925f9865530303ae4e4b262591865666a4590",
-            "b3db6bd3897afbd1df3f9644ab21c8050e1f0038a52f7ca95ac0c3de7558cb7a",
-            "8119b3a059ff2cac483e69bcd41d6d27149447914288bbeaee3413e6dcc6d1eb",
-            "10fc58f35fc7fe7ae875524bb5850003005b7f978c0c65e2a965464b6d00819c",
-            "5acd94eb3c578379c1ea58a343ec4fcff962776fe35521e475a0e06d887b2db9",
-            "33daf3a214d6e0d42d2300a7b44b39290db8989b427974cd865db011055a2901",
-            "cfc6572f29afd164a494e64e6f1aeb820c3e7da355144e5124a391d06e9f95ea",
-            "d5312a4b0ef615a331f6352c2ed21dac9e7c36398b939aec901c257f6cbc9e8e",
-            "551d67fefc7b5b9f9fdbf6af57c96c8a74d7e45a002078a7b5ba45c6fde93e33",
-            "d50ac7bd5ca593c656928f38428017fc7ba502854c43d8414950e96ecb405dc3",
-            "0773e18ea1be44fe1a97e239573cfae3e4e95ef9aa9faabeac1274d3ad261604",
-            "e9af0e7ca89330d2b8615d1b4137ca617e21297f2f0ded8e31b7d2ead8714660",
-            "7b124583097f1029a0c74191fe7378c9105acc706695ed1493bb76034226a57b",
-            "ec40057b995476650b3db98e9db75738a8cd2f94d863b906150c56aac19caa6b",
-            "01d9ff729efd39d83784c0fe59c4ae81a67034cb53c943fb818b9d8ae7fc33e5",
-            "00dfb3c696328c76424519a7befe8e0f6c76f947b52767916d24823f735baf2e",
-            "461b799b4d9ceea8d580dcb76d11150d535e1639d16003c3fb7e9d1fd13083a8",
-            "ee03039479e5228fdc551cbde7079d3412ea186a517ccc63e46e9fcce4fe3a6c",
-            "a8cfb543524e7f02b9f045acd543c21c373b4c9b98ac20cec417a6ddb5744e94",
-            "932b794bf89c6edaf5d0650c7c4bad9242b25626e37ead5aa75ec8c64e09dd4f",
-            "16b10c779ce5cfef59c7710d2e68441ea6facb68e9b5f7d533ae0bb78e28bf57",
-            "0f77c76743e7396f9910139f4937d837ae54e21038ac5c0b3fd6ef171a28a7e4",
-            "d7e574b7b952f293e80dde905eb509373f3f6cd109a02208b3c1e924080a20ca",
-            "45666f8c381e3da675563ff8ba23f83bfac30c34abdde6e5c0975ef9fd700cb9",
-            "b24612e454607eb1aba447f816d1a4551ef95fa7247fb7c1f503020a7177f0dd",
-            "7e208861856da42c8bb46a7567f8121362d9fb2496f131a4aa9017cf366cdfce",
-            "5b646bff6ad1100165037a055601ea02358c0f41050f9dfe3c95dccbd3087be0",
-            "746d1dccfed2f0ff1e13c51e2d50d5324375fbd5bf7ca82a8931828d801d43ab",
-            "cb98110d4a6bb97d22feadbc6c0d8930c5f8fc508b2fc5b35328d26b88db19ae",
-            "60b626a033b55f27d7676c4095eababc7a2c7ede2624b472e97f64f96b8cfc0e",
-            "e5b52bc927468df71893eb8197ef820cf76cb0aaf6e8e4fe93ad62d803983104",
-            "056541ae5da9961be2b0a5e895e5c5ba153cbb62dd561a427bad0ffd41923199",
-            "f8fef05a3fa5c9f3eba41638b247b711a99f960fe73aa2f90136aeb20329b888",
-        ];
+        CnVars.H2 = ["8b655970153799af2aeadc9ff1add0ea6c7251d54154cfa92c173a0dd39c1f94", "8faa448ae4b3e2bb3d4d130909f55fcd79711c1c83cdbccadd42cbe1515e8712",
+            "12a7d62c7791654a57f3e67694ed50b49a7d9e3fc1e4c7a0bde29d187e9cc71d", "789ab9934b49c4f9e6785c6d57a498b3ead443f04f13df110c5427b4f214c739",
+            "771e9299d94f02ac72e38e44de568ac1dcb2edc6edb61f83ca418e1077ce3de8", "73b96db43039819bdaf5680e5c32d741488884d18d93866d4074a849182a8a64",
+            "8d458e1c2f68ebebccd2fd5d379f5e58f8134df3e0e88cad3d46701063a8d412", "09551edbe494418e81284455d64b35ee8ac093068a5f161fa6637559177ef404",
+            "d05a8866f4df8cee1e268b1d23a4c58c92e760309786cdac0feda1d247a9c9a7", "55cdaad518bd871dd1eb7bc7023e1dc0fdf3339864f88fdd2de269fe9ee1832d",
+            "e7697e951a98cfd5712b84bbe5f34ed733e9473fcb68eda66e3788df1958c306", "f92a970bae72782989bfc83adfaa92a4f49c7e95918b3bba3cdc7fe88acc8d47",
+            "1f66c2d491d75af915c8db6a6d1cb0cd4f7ddcd5e63d3ba9b83c866c39ef3a2b", "3eec9884b43f58e93ef8deea260004efea2a46344fc5965b1a7dd5d18997efa7",
+            "b29f8f0ccb96977fe777d489d6be9e7ebc19c409b5103568f277611d7ea84894", "56b1f51265b9559876d58d249d0c146d69a103636699874d3f90473550fe3f2c",
+            "1d7a36575e22f5d139ff9cc510fa138505576b63815a94e4b012bfd457caaada", "d0ac507a864ecd0593fa67be7d23134392d00e4007e2534878d9b242e10d7620",
+            "f6c6840b9cf145bb2dccf86e940be0fc098e32e31099d56f7fe087bd5deb5094", "28831a3340070eb1db87c12e05980d5f33e9ef90f83a4817c9f4a0a33227e197",
+            "87632273d629ccb7e1ed1a768fa2ebd51760f32e1c0b867a5d368d5271055c6e", "5c7b29424347964d04275517c5ae14b6b5ea2798b573fc94e6e44a5321600cfb",
+            "e6945042d78bc2c3bd6ec58c511a9fe859c0ad63fde494f5039e0e8232612bd5", "36d56907e2ec745db6e54f0b2e1b2300abcb422e712da588a40d3f1ebbbe02f6",
+            "34db6ee4d0608e5f783650495a3b2f5273c5134e5284e4fdf96627bb16e31e6b", "8e7659fb45a3787d674ae86731faa2538ec0fdf442ab26e9c791fada089467e9",
+            "3006cf198b24f31bb4c7e6346000abc701e827cfbb5df52dcfa42e9ca9ff0802", "f5fd403cb6e8be21472e377ffd805a8c6083ea4803b8485389cc3ebc215f002a",
+            "3731b260eb3f9482e45f1c3f3b9dcf834b75e6eef8c40f461ea27e8b6ed9473d", "9f9dab09c3f5e42855c2de971b659328a2dbc454845f396ffc053f0bb192f8c3",
+            "5e055d25f85fdb98f273e4afe08464c003b70f1ef0677bb5e25706400be620a5", "868bcf3679cb6b500b94418c0b8925f9865530303ae4e4b262591865666a4590",
+            "b3db6bd3897afbd1df3f9644ab21c8050e1f0038a52f7ca95ac0c3de7558cb7a", "8119b3a059ff2cac483e69bcd41d6d27149447914288bbeaee3413e6dcc6d1eb",
+            "10fc58f35fc7fe7ae875524bb5850003005b7f978c0c65e2a965464b6d00819c", "5acd94eb3c578379c1ea58a343ec4fcff962776fe35521e475a0e06d887b2db9",
+            "33daf3a214d6e0d42d2300a7b44b39290db8989b427974cd865db011055a2901", "cfc6572f29afd164a494e64e6f1aeb820c3e7da355144e5124a391d06e9f95ea",
+            "d5312a4b0ef615a331f6352c2ed21dac9e7c36398b939aec901c257f6cbc9e8e", "551d67fefc7b5b9f9fdbf6af57c96c8a74d7e45a002078a7b5ba45c6fde93e33",
+            "d50ac7bd5ca593c656928f38428017fc7ba502854c43d8414950e96ecb405dc3", "0773e18ea1be44fe1a97e239573cfae3e4e95ef9aa9faabeac1274d3ad261604",
+            "e9af0e7ca89330d2b8615d1b4137ca617e21297f2f0ded8e31b7d2ead8714660", "7b124583097f1029a0c74191fe7378c9105acc706695ed1493bb76034226a57b",
+            "ec40057b995476650b3db98e9db75738a8cd2f94d863b906150c56aac19caa6b", "01d9ff729efd39d83784c0fe59c4ae81a67034cb53c943fb818b9d8ae7fc33e5",
+            "00dfb3c696328c76424519a7befe8e0f6c76f947b52767916d24823f735baf2e", "461b799b4d9ceea8d580dcb76d11150d535e1639d16003c3fb7e9d1fd13083a8",
+            "ee03039479e5228fdc551cbde7079d3412ea186a517ccc63e46e9fcce4fe3a6c", "a8cfb543524e7f02b9f045acd543c21c373b4c9b98ac20cec417a6ddb5744e94",
+            "932b794bf89c6edaf5d0650c7c4bad9242b25626e37ead5aa75ec8c64e09dd4f", "16b10c779ce5cfef59c7710d2e68441ea6facb68e9b5f7d533ae0bb78e28bf57",
+            "0f77c76743e7396f9910139f4937d837ae54e21038ac5c0b3fd6ef171a28a7e4", "d7e574b7b952f293e80dde905eb509373f3f6cd109a02208b3c1e924080a20ca",
+            "45666f8c381e3da675563ff8ba23f83bfac30c34abdde6e5c0975ef9fd700cb9", "b24612e454607eb1aba447f816d1a4551ef95fa7247fb7c1f503020a7177f0dd",
+            "7e208861856da42c8bb46a7567f8121362d9fb2496f131a4aa9017cf366cdfce", "5b646bff6ad1100165037a055601ea02358c0f41050f9dfe3c95dccbd3087be0",
+            "746d1dccfed2f0ff1e13c51e2d50d5324375fbd5bf7ca82a8931828d801d43ab", "cb98110d4a6bb97d22feadbc6c0d8930c5f8fc508b2fc5b35328d26b88db19ae",
+            "60b626a033b55f27d7676c4095eababc7a2c7ede2624b472e97f64f96b8cfc0e", "e5b52bc927468df71893eb8197ef820cf76cb0aaf6e8e4fe93ad62d803983104",
+            "056541ae5da9961be2b0a5e895e5c5ba153cbb62dd561a427bad0ffd41923199", "f8fef05a3fa5c9f3eba41638b247b711a99f960fe73aa2f90136aeb20329b888"];
     })(CnVars || (exports.CnVars = CnVars = {}));
     var CnRandom;
     (function (CnRandom) {
@@ -262,10 +227,10 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         // hexadecimal to integer
         function h2d(hex) {
             /*let vali = 0;
-                 for (let j = 7; j >= 0; j--) {
-                     vali = (vali * 256 + test[j].charCodeAt(0));
-                 }
-                 return vali;*/
+            for (let j = 7; j >= 0; j--) {
+                vali = (vali * 256 + test[j].charCodeAt(0));
+            }
+            return vali;*/
             // return JSBigInt.parse(test,16);
             // let bytes = Crypto.hextobin(test);
             // logDebugMsg('bytes',bytes, test,swapEndianC(test));
@@ -274,7 +239,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             var vali = 0;
             for (var j = 7; j >= 0; j--) {
                 // logDebugMsg(vali,vali*256,bytes[j]);
-                vali = vali * 256 + parseInt(hex.slice(j * 2, j * 2 + 2), 16);
+                vali = (vali * 256 + parseInt(hex.slice(j * 2, j * 2 + 2), 16));
             }
             return vali;
         }
@@ -315,9 +280,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             if (point.length !== 64) {
                 throw "expected 64 char hex string";
             }
-            return (point.slice(0, 62) +
-                ((parseInt(point.slice(62, 63), 16) + 8) % 16).toString(16) +
-                point.slice(63, 64));
+            return point.slice(0, 62) + ((parseInt(point.slice(62, 63), 16) + 8) % 16).toString(16) + point.slice(63, 64);
         }
         CnUtils.ge_neg = ge_neg;
         //order matters
@@ -344,7 +307,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         CnUtils.ge_scalarmult_base = ge_scalarmult_base;
         function derivation_to_scalar(derivation, output_index) {
             var buf = "";
-            if (derivation.length !== STRUCT_SIZES.EC_POINT * 2) {
+            if (derivation.length !== (STRUCT_SIZES.EC_POINT * 2)) {
                 throw "Invalid derivation length!";
             }
             buf += derivation;
@@ -358,7 +321,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         CnUtils.derivation_to_scalar = derivation_to_scalar;
         function encode_varint(i) {
             var j = new JSBigInt(i);
-            var out = "";
+            var out = '';
             // While i >= b10000000
             while (j.compare(0x80) >= 0) {
                 // out.append i & b01111111 | b10000000
@@ -396,11 +359,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         }
         CnUtils.cn_fast_hash = cn_fast_hash;
         function hex_xor(hex1, hex2) {
-            if (!hex1 ||
-                !hex2 ||
-                hex1.length !== hex2.length ||
-                hex1.length % 2 !== 0 ||
-                hex2.length % 2 !== 0) {
+            if (!hex1 || !hex2 || hex1.length !== hex2.length || hex1.length % 2 !== 0 || hex2.length % 2 !== 0) {
                 throw "Hex string(s) is/are invalid!";
             }
             var bin1 = hextobin(hex1);
@@ -433,10 +392,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         }
         CnUtils.ge_double_scalarmult_base_vartime = ge_double_scalarmult_base_vartime;
         function ge_double_scalarmult_postcomp_vartime(r, P, c, I) {
-            if (c.length !== 64 ||
-                P.length !== 64 ||
-                r.length !== 64 ||
-                I.length !== 64) {
+            if (c.length !== 64 || P.length !== 64 || r.length !== 64 || I.length !== 64) {
                 throw "Invalid input length!";
             }
             var Pb = CnNativeBride.hash_to_ec_2(P);
@@ -513,7 +469,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         }
         CnNativeBride.derive_secret_key = derive_secret_key;
         function hash_to_ec(key) {
-            if (key.length !== KEY_SIZE * 2) {
+            if (key.length !== (KEY_SIZE * 2)) {
                 throw "Invalid input length";
             }
             var h_m = Module._malloc(HASH_SIZE);
@@ -535,7 +491,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         CnNativeBride.hash_to_ec = hash_to_ec;
         //returns a 32 byte point via "ge_p3_tobytes" rather than a 160 byte "p3", otherwise same as above;
         function hash_to_ec_2(key) {
-            if (key.length !== KEY_SIZE * 2) {
+            if (key.length !== (KEY_SIZE * 2)) {
                 throw "Invalid input length";
             }
             var h_m = Module._malloc(HASH_SIZE);
@@ -623,12 +579,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         CnNativeBride.sc_sub = sc_sub;
         //res = c - (ab) mod l; argument names copied from the signature implementation
         function sc_mulsub(sigc, sec, k) {
-            if (k.length !== KEY_SIZE * 2 ||
-                sigc.length !== KEY_SIZE * 2 ||
-                sec.length !== KEY_SIZE * 2 ||
-                !CnUtils.valid_hex(k) ||
-                !CnUtils.valid_hex(sigc) ||
-                !CnUtils.valid_hex(sec)) {
+            if (k.length !== KEY_SIZE * 2 || sigc.length !== KEY_SIZE * 2 || sec.length !== KEY_SIZE * 2 || !CnUtils.valid_hex(k) || !CnUtils.valid_hex(sigc) || !CnUtils.valid_hex(sec)) {
                 throw "bad scalar";
             }
             var sec_m = Module._malloc(KEY_SIZE);
@@ -673,54 +624,24 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             if (sec.length !== KEY_SIZE * 2) {
                 throw "Invalid secret key length";
             }
-            if (prefix_hash.length !== HASH_SIZE * 2 ||
-                !CnUtils.valid_hex(prefix_hash)) {
+            if (prefix_hash.length !== HASH_SIZE * 2 || !CnUtils.valid_hex(prefix_hash)) {
                 throw "Invalid prefix hash";
             }
             if (real_index >= keys.length || real_index < 0) {
                 throw "real_index is invalid";
             }
             var _ge_tobytes = Module.cwrap("ge_tobytes", "void", ["number", "number"]);
-            var _ge_p3_tobytes = Module.cwrap("ge_p3_tobytes", "void", [
-                "number",
-                "number",
-            ]);
-            var _ge_scalarmult_base = Module.cwrap("ge_scalarmult_base", "void", [
-                "number",
-                "number",
-            ]);
-            var _ge_scalarmult = Module.cwrap("ge_scalarmult", "void", [
-                "number",
-                "number",
-                "number",
-            ]);
-            var _sc_add = Module.cwrap("sc_add", "void", [
-                "number",
-                "number",
-                "number",
-            ]);
-            var _sc_sub = Module.cwrap("sc_sub", "void", [
-                "number",
-                "number",
-                "number",
-            ]);
-            var _sc_mulsub = Module.cwrap("sc_mulsub", "void", [
-                "number",
-                "number",
-                "number",
-                "number",
-            ]);
+            var _ge_p3_tobytes = Module.cwrap("ge_p3_tobytes", "void", ["number", "number"]);
+            var _ge_scalarmult_base = Module.cwrap("ge_scalarmult_base", "void", ["number", "number"]);
+            var _ge_scalarmult = Module.cwrap("ge_scalarmult", "void", ["number", "number", "number"]);
+            var _sc_add = Module.cwrap("sc_add", "void", ["number", "number", "number"]);
+            var _sc_sub = Module.cwrap("sc_sub", "void", ["number", "number", "number"]);
+            var _sc_mulsub = Module.cwrap("sc_mulsub", "void", ["number", "number", "number", "number"]);
             var _sc_0 = Module.cwrap("sc_0", "void", ["number"]);
             var _ge_double_scalarmult_base_vartime = Module.cwrap("ge_double_scalarmult_base_vartime", "void", ["number", "number", "number", "number"]);
             var _ge_double_scalarmult_precomp_vartime = Module.cwrap("ge_double_scalarmult_precomp_vartime", "void", ["number", "number", "number", "number", "number"]);
-            var _ge_frombytes_vartime = Module.cwrap("ge_frombytes_vartime", "number", [
-                "number",
-                "number",
-            ]);
-            var _ge_dsm_precomp = Module.cwrap("ge_dsm_precomp", "void", [
-                "number",
-                "number",
-            ]);
+            var _ge_frombytes_vartime = Module.cwrap("ge_frombytes_vartime", "number", ["number", "number"]);
+            var _ge_dsm_precomp = Module.cwrap("ge_dsm_precomp", "void", ["number", "number"]);
             var buf_size = STRUCT_SIZES.EC_POINT * 2 * keys.length;
             var buf_m = Module._malloc(buf_size);
             var sig_size = STRUCT_SIZES.SIGNATURE * keys.length;
@@ -820,15 +741,14 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         function generate_signature(prefixHash, publicKey, secretKey) {
             try {
                 // Validate input lengths
-                if (prefixHash.length !== HASH_SIZE * 2 ||
-                    !CnUtils.valid_hex(prefixHash)) {
-                    throw new Error("Invalid prefix hash length or format");
+                if (prefixHash.length !== HASH_SIZE * 2 || !CnUtils.valid_hex(prefixHash)) {
+                    throw new Error('Invalid prefix hash length or format');
                 }
                 if (publicKey.length !== KEY_SIZE * 2 || !CnUtils.valid_hex(publicKey)) {
-                    throw new Error("Invalid public key length or format");
+                    throw new Error('Invalid public key length or format');
                 }
                 if (secretKey.length !== KEY_SIZE * 2 || !CnUtils.valid_hex(secretKey)) {
-                    throw new Error("Invalid secret key length or format");
+                    throw new Error('Invalid secret key length or format');
                 }
                 // Convert inputs to binary format
                 var prefixHashBin = CnUtils.hextobin(prefixHash);
@@ -837,18 +757,18 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 // Check if secret key is a valid scalar, in the C++ code that is only for DEBUG MODE
                 var secBuf = Module._malloc(KEY_SIZE);
                 if (!secBuf) {
-                    throw new Error("Failed to allocate secBuf buffer");
+                    throw new Error('Failed to allocate secBuf buffer');
                 }
                 try {
                     Module.HEAPU8.set(secretKeyBin, secBuf);
                     if (Module.ccall("sc_check", "number", ["number"], [secBuf]) !== 0) {
                         //console.log('Secret key is not a valid scalar');
-                        throw new Error("Invalid secret key: not a valid scalar");
+                        throw new Error('Invalid secret key: not a valid scalar');
                     }
                     // Verify that secret key corresponds to public key
                     var tmp3_1 = Module._malloc(STRUCT_SIZES.GE_P3);
                     if (!tmp3_1) {
-                        throw new Error("Failed to allocate tmp3 buffer");
+                        throw new Error('Failed to allocate tmp3 buffer');
                     }
                     try {
                         // Calculate public key from secret key
@@ -856,7 +776,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         // Get the calculated public key
                         var calculatedPubBuf = Module._malloc(KEY_SIZE);
                         if (!calculatedPubBuf) {
-                            throw new Error("Failed to allocate calculatedPubBuf buffer");
+                            throw new Error('Failed to allocate calculatedPubBuf buffer');
                         }
                         try {
                             Module.ccall("ge_p3_tobytes", "void", ["number", "number"], [calculatedPubBuf, tmp3_1]);
@@ -864,7 +784,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                             // Compare calculated public key with provided public key
                             if (calculatedPub !== publicKey) {
                                 //console.log('Secret key does not correspond to public key');
-                                throw new Error("Invalid key pair: secret key does not correspond to public key");
+                                throw new Error('Invalid key pair: secret key does not correspond to public key');
                             }
                         }
                         finally {
@@ -878,7 +798,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 finally {
                     Module._free(secBuf);
                 }
-                // random k
+                // random k 
                 var k = void 0;
                 k = CnRandom.random_scalar();
                 // console.log('check_scalar', k, 'true'); // debug for crypto-test.cpp
@@ -886,12 +806,12 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 // Allocate memory for temporary buffers
                 var tmp3 = Module._malloc(STRUCT_SIZES.GE_P3);
                 if (!tmp3) {
-                    throw new Error("Failed to allocate tmp3 buffer");
+                    throw new Error('Failed to allocate tmp3 buffer');
                 }
                 try {
                     var k_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
                     if (!k_m) {
-                        throw new Error("Failed to allocate k_m buffer");
+                        throw new Error('Failed to allocate k_m buffer');
                     }
                     try {
                         Module.HEAPU8.set(kBin, k_m);
@@ -900,7 +820,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         // Create buffer with proper structure (prefix_hash + pub + comm)
                         var buf = Module._malloc(HASH_SIZE + KEY_SIZE + KEY_SIZE);
                         if (!buf) {
-                            throw new Error("Failed to allocate buffer");
+                            throw new Error('Failed to allocate buffer');
                         }
                         try {
                             // Make sure the order matches the C++ s_comm struct
@@ -934,7 +854,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         }
         CnNativeBride.generate_signature = generate_signature;
         function generate_key_derivation(pub, sec) {
-            var generate_key_derivation_bind = self.Module_native.cwrap("generate_key_derivation", null, ["number", "number", "number"]);
+            var generate_key_derivation_bind = self.Module_native.cwrap('generate_key_derivation', null, ['number', 'number', 'number']);
             var pub_b = CnUtils.hextobin(pub);
             var sec_b = CnUtils.hextobin(sec);
             var Module_native = self.Module_native;
@@ -952,7 +872,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         }
         CnNativeBride.generate_key_derivation = generate_key_derivation;
         function derive_public_key(derivation, output_idx_in_tx, pubSpend) {
-            var derive_public_key_bind = self.Module_native.cwrap("derive_public_key", null, ["number", "number", "number", "number"]);
+            var derive_public_key_bind = self.Module_native.cwrap('derive_public_key', null, ['number', 'number', 'number', 'number']);
             var derivation_b = CnUtils.hextobin(derivation);
             var pub_spend_b = CnUtils.hextobin(pubSpend);
             var Module_native = self.Module_native;
@@ -978,15 +898,13 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         function verify_signature(prefixHash, publicKey, signature) {
             try {
                 // Validate input lengths
-                if (prefixHash.length !== HASH_SIZE * 2 ||
-                    !CnUtils.valid_hex(prefixHash)) {
+                if (prefixHash.length !== HASH_SIZE * 2 || !CnUtils.valid_hex(prefixHash)) {
                     return false;
                 }
                 if (publicKey.length !== KEY_SIZE * 2 || !CnUtils.valid_hex(publicKey)) {
                     return false;
                 }
-                if (signature.length !== STRUCT_SIZES.SIGNATURE * 2 ||
-                    !CnUtils.valid_hex(signature)) {
+                if (signature.length !== STRUCT_SIZES.SIGNATURE * 2 || !CnUtils.valid_hex(signature)) {
                     return false;
                 }
                 //console.log('check_signature', prefixHash, publicKey, signature, 'true'); // debug for crypto-test.cpp
@@ -1105,26 +1023,24 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         function checkTxProof(prefixHash, R, A, D, sig) {
             try {
                 // Validate input lengths
-                if (prefixHash.length !== HASH_SIZE * 2 ||
-                    !CnUtils.valid_hex(prefixHash)) {
-                    console.error("Invalid prefix hash length or format");
+                if (prefixHash.length !== HASH_SIZE * 2 || !CnUtils.valid_hex(prefixHash)) {
+                    console.error('Invalid prefix hash length or format');
                     return false;
                 }
                 if (R.length !== KEY_SIZE * 2 || !CnUtils.valid_hex(R)) {
-                    console.error("Invalid R length or format");
+                    console.error('Invalid R length or format');
                     return false;
                 }
                 if (A.length !== KEY_SIZE * 2 || !CnUtils.valid_hex(A)) {
-                    console.error("Invalid A length or format");
+                    console.error('Invalid A length or format');
                     return false;
                 }
                 if (D.length !== KEY_SIZE * 2 || !CnUtils.valid_hex(D)) {
-                    console.error("Invalid D length or format");
+                    console.error('Invalid D length or format');
                     return false;
                 }
-                if (sig.length !== STRUCT_SIZES.SIGNATURE * 2 ||
-                    !CnUtils.valid_hex(sig)) {
-                    console.error("Invalid signature length or format");
+                if (sig.length !== STRUCT_SIZES.SIGNATURE * 2 || !CnUtils.valid_hex(sig)) {
+                    console.error('Invalid signature length or format');
                     return false;
                 }
                 // Convert inputs to binary format
@@ -1160,13 +1076,11 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         var fromBytesResult_R = Module.ccall("ge_frombytes_vartime", "number", ["number", "number"], [tmp3_R, RBuf]);
                         var fromBytesResult_A = Module.ccall("ge_frombytes_vartime", "number", ["number", "number"], [tmp3_A, ABuf]);
                         var fromBytesResult_D = Module.ccall("ge_frombytes_vartime", "number", ["number", "number"], [tmp3_D, DBuf]);
-                        if (fromBytesResult_R !== 0 ||
-                            fromBytesResult_A !== 0 ||
-                            fromBytesResult_D !== 0) {
-                            console.error("Failed to convert public keys to points:", {
+                        if (fromBytesResult_R !== 0 || fromBytesResult_A !== 0 || fromBytesResult_D !== 0) {
+                            console.error('Failed to convert public keys to points:', {
                                 R: fromBytesResult_R,
                                 A: fromBytesResult_A,
-                                D: fromBytesResult_D,
+                                D: fromBytesResult_D
                             });
                             return false;
                         }
@@ -1193,14 +1107,14 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                                 // Compute Y = c*D + r*A
                                 Module.ccall("ge_double_scalarmult_base_vartime", "void", ["number", "number", "number", "number"], [tmp2_rA, cBuf, tmp3_D, rBuf]);
                                 /*console.log('Point computation details:', {
-                                                   cR: CnUtils.bintohex(Module.HEAPU8.subarray(tmp2_cR, tmp2_cR + STRUCT_SIZES.GE_P2)),
-                                                   rA: CnUtils.bintohex(Module.HEAPU8.subarray(tmp2_rA, tmp2_rA + STRUCT_SIZES.GE_P2))
-                                               }); */
+                                    cR: CnUtils.bintohex(Module.HEAPU8.subarray(tmp2_cR, tmp2_cR + STRUCT_SIZES.GE_P2)),
+                                    rA: CnUtils.bintohex(Module.HEAPU8.subarray(tmp2_rA, tmp2_rA + STRUCT_SIZES.GE_P2))
+                                }); */
                                 // Allocate memory for X and Y
                                 var XBuf = Module._malloc(KEY_SIZE);
                                 var YBuf = Module._malloc(KEY_SIZE);
                                 if (!XBuf || !YBuf) {
-                                    console.error("Failed to allocate X/Y buffers");
+                                    console.error('Failed to allocate X/Y buffers');
                                     return false;
                                 }
                                 try {
@@ -1214,7 +1128,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                                     // Create buffer for hash input
                                     var buf = Module._malloc(HASH_SIZE + KEY_SIZE + KEY_SIZE + KEY_SIZE);
                                     if (!buf) {
-                                        console.error("Failed to allocate hash buffer");
+                                        console.error('Failed to allocate hash buffer');
                                         return false;
                                     }
                                     try {
@@ -1336,7 +1250,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             var pub = CnUtils.sec_key_to_pub(sec);
             return {
                 sec: sec,
-                pub: pub,
+                pub: pub
             };
         }
         Cn.generate_keys = generate_keys;
@@ -1371,9 +1285,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 first = seed; //only input reduced seeds or this will not give you the result you want
             }
             keys.spend = Cn.generate_keys(first);
-            var second = seed.length !== 64
-                ? CnUtils.cn_fast_hash(first)
-                : CnUtils.cn_fast_hash(keys.spend.sec);
+            var second = seed.length !== 64 ? CnUtils.cn_fast_hash(first) : CnUtils.cn_fast_hash(keys.spend.sec);
             keys.view = Cn.generate_keys(second);
             keys.public_addr = Cn.pubkeys_to_string(keys.spend.pub, keys.view.pub);
             return keys;
@@ -1387,9 +1299,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             var expectedPrefixSub = CnUtils.encode_varint(CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX);
             var prefix = dec.slice(0, expectedPrefix.length);
             logDebugMsg(prefix, expectedPrefixInt, expectedPrefix);
-            if (prefix !== expectedPrefix &&
-                prefix !== expectedPrefixInt &&
-                prefix !== expectedPrefixSub) {
+            if (prefix !== expectedPrefix && prefix !== expectedPrefixInt && prefix !== expectedPrefixSub) {
                 throw "Invalid address prefix";
             }
             dec = dec.slice(expectedPrefix.length);
@@ -1399,12 +1309,12 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             var expectedChecksum = null;
             var intPaymentId = null;
             if (prefix === expectedPrefixInt) {
-                intPaymentId = dec.slice(128, 128 + INTEGRATED_ID_SIZE * 2);
-                checksum = dec.slice(128 + INTEGRATED_ID_SIZE * 2, 128 + INTEGRATED_ID_SIZE * 2 + ADDRESS_CHECKSUM_SIZE * 2);
+                intPaymentId = dec.slice(128, 128 + (INTEGRATED_ID_SIZE * 2));
+                checksum = dec.slice(128 + (INTEGRATED_ID_SIZE * 2), 128 + (INTEGRATED_ID_SIZE * 2) + (ADDRESS_CHECKSUM_SIZE * 2));
                 expectedChecksum = CnUtils.cn_fast_hash(prefix + spend + view + intPaymentId).slice(0, ADDRESS_CHECKSUM_SIZE * 2);
             }
             else {
-                checksum = dec.slice(128, 128 + ADDRESS_CHECKSUM_SIZE * 2);
+                checksum = dec.slice(128, 128 + (ADDRESS_CHECKSUM_SIZE * 2));
                 expectedChecksum = CnUtils.cn_fast_hash(prefix + spend + view).slice(0, ADDRESS_CHECKSUM_SIZE * 2);
             }
             if (checksum !== expectedChecksum) {
@@ -1427,7 +1337,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         function valid_keys(view_pub, view_sec, spend_pub, spend_sec) {
             var expected_view_pub = CnUtils.sec_key_to_pub(view_sec);
             var expected_spend_pub = CnUtils.sec_key_to_pub(spend_sec);
-            return expected_spend_pub === spend_pub && expected_view_pub === view_pub;
+            return (expected_spend_pub === spend_pub) && (expected_view_pub === view_pub);
         }
         Cn.valid_keys = valid_keys;
         function decrypt_payment_id(payment_id8, tx_public_key, acc_prv_view_key) {
@@ -1448,9 +1358,9 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         }
         Cn.get_account_integrated_address = get_account_integrated_address;
         function formatMoneyFull(units) {
-            var unitsStr = units.toString();
-            var symbol = unitsStr[0] === "-" ? "-" : "";
-            if (symbol === "-") {
+            var unitsStr = (units).toString();
+            var symbol = unitsStr[0] === '-' ? '-' : '';
+            if (symbol === '-') {
                 unitsStr = unitsStr.slice(1);
             }
             var decimal;
@@ -1458,12 +1368,9 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 decimal = unitsStr.substr(unitsStr.length - config.coinUnitPlaces, config.coinUnitPlaces);
             }
             else {
-                decimal = CnUtils.padLeft(unitsStr, config.coinUnitPlaces, "0");
+                decimal = CnUtils.padLeft(unitsStr, config.coinUnitPlaces, '0');
             }
-            return (symbol +
-                (unitsStr.substr(0, unitsStr.length - config.coinUnitPlaces) || "0") +
-                "." +
-                decimal);
+            return symbol + (unitsStr.substr(0, unitsStr.length - config.coinUnitPlaces) || '0') + '.' + decimal;
         }
         Cn.formatMoneyFull = formatMoneyFull;
         function formatMoneyFullSymbol(units) {
@@ -1486,10 +1393,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
     var CnTransactions;
     (function (CnTransactions) {
         function commit(amount, mask) {
-            if (!CnUtils.valid_hex(mask) ||
-                mask.length !== 64 ||
-                !CnUtils.valid_hex(amount) ||
-                amount.length !== 64) {
+            if (!CnUtils.valid_hex(mask) || mask.length !== 64 || !CnUtils.valid_hex(amount) || amount.length !== 64) {
                 throw "invalid amount or mask!";
             }
             var C = CnUtils.ge_double_scalarmult_base_vartime(amount, CnVars.H, mask);
@@ -1617,9 +1521,9 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 in_ephemeral: {
                     pub: ephemeral_pub,
                     sec: ephemeral_sec,
-                    mask: mask,
+                    mask: mask
                 },
-                image: image,
+                image: image
             };
         }
         CnTransactions.generate_key_image_helper_rct = generate_key_image_helper_rct;
@@ -1638,7 +1542,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 for (var i = 0; i < dsts.length; i++) {
                     out.push({
                         address: dsts[i].address,
-                        amount: dsts[i].amount,
+                        amount: dsts[i].amount
                     });
                 }
             }
@@ -1649,20 +1553,22 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         if (digits[j].compare(0) > 0) {
                             out.push({
                                 address: dsts[i].address,
-                                amount: digits[j],
+                                amount: digits[j]
                             });
                         }
                     }
                 }
             }
-            return out.sort(function (a, b) { return a["amount"] - b["amount"]; });
+            return out.sort(function (a, b) {
+                return a["amount"] - b["amount"];
+            });
         }
         CnTransactions.decompose_tx_destinations = decompose_tx_destinations;
         function get_payment_id_nonce(payment_id, pid_encrypt) {
             if (payment_id.length !== 64 && payment_id.length !== 16) {
                 throw "Invalid payment id";
             }
-            var res = "";
+            var res = '';
             if (pid_encrypt) {
                 res += TX_EXTRA_NONCE_TAGS.ENCRYPTED_PAYMENT_ID;
             }
@@ -1694,7 +1600,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         //TODO merge
         function add_additionnal_pub_keys_to_extra(extra, keys) {
             //do not add if there is no additional keys
-            logDebugMsg("Add additionnal keys to extra", keys);
+            logDebugMsg('Add additionnal keys to extra', keys);
             if (keys.length === 0)
                 return extra;
             extra += TX_EXTRA_TAGS.ADDITIONAL_PUBKEY;
@@ -1712,16 +1618,16 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         //TODO merge
         function add_nonce_to_extra(extra, nonce) {
             // Append extra nonce
-            if (nonce.length % 2 !== 0) {
+            if ((nonce.length % 2) !== 0) {
                 throw "Invalid extra nonce";
             }
-            if (nonce.length / 2 > TX_EXTRA_NONCE_MAX_COUNT) {
-                throw ("Extra nonce must be at most " + TX_EXTRA_NONCE_MAX_COUNT + " bytes");
+            if ((nonce.length / 2) > TX_EXTRA_NONCE_MAX_COUNT) {
+                throw "Extra nonce must be at most " + TX_EXTRA_NONCE_MAX_COUNT + " bytes";
             }
             // Add nonce tag
             extra += TX_EXTRA_TAGS.NONCE;
             // Encode length of nonce
-            extra += ("0" + (nonce.length / 2).toString(16)).slice(-2);
+            extra += ('0' + (nonce.length / 2).toString(16)).slice(-2);
             // Write nonce
             extra += nonce;
             return extra;
@@ -1737,7 +1643,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             //  vout: [{amount: uint64, target: {key: hex}},...],
             //  signatures: [[s,s,...],...]
             //}
-            logDebugMsg("serialize tx ", JSON.parse(JSON.stringify(tx)));
+            logDebugMsg('serialize tx ', JSON.parse(JSON.stringify(tx)));
             var buf = "";
             buf += CnUtils.encode_varint(tx.version);
             buf += CnUtils.encode_varint(tx.unlock_time);
@@ -1745,7 +1651,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             var i, j;
             for (i = 0; i < tx.vin.length; i++) {
                 var vin = tx.vin[i];
-                logDebugMsg("start vin", vin);
+                logDebugMsg('start vin', vin);
                 switch (vin.type) {
                     case "input_to_key":
                         buf += "02";
@@ -1768,9 +1674,9 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                     default:
                         throw "Unhandled vin type: " + vin.type;
                 }
-                logDebugMsg("end vin", vin);
+                logDebugMsg('end vin', vin);
             }
-            logDebugMsg("serialize tx ", tx);
+            logDebugMsg('serialize tx ', tx);
             buf += CnUtils.encode_varint(tx.vout.length);
             for (i = 0; i < tx.vout.length; i++) {
                 var vout = tx.vout[i];
@@ -1780,22 +1686,21 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         buf += "02";
                         buf += vout.target.data.key;
                         break;
-                    case "txout_to_deposit_key": {
+                    case "txout_to_deposit_key":
                         buf += "03";
                         var keys = vout.target.data.keys || [];
                         buf += CnUtils.encode_varint(keys.length); // varint for number of keys, only one for deposit
                         for (var i_1 = 0; i_1 < keys.length; i_1++) {
-                            buf += keys[i_1]; // vector of keys derivated using the recipient's view public key and the transaction secret key
+                            buf += keys[i_1]; // vector of keys derivated using the recipient's view public key and the transaction secret key			
                         }
                         buf += CnUtils.encode_varint(1); // requiredSignatureCount is always 1 for deposits
                         buf += CnUtils.encode_varint_term(vout.target.data.term || 0); // The term in block
                         break;
-                    }
                     default:
                         throw "Unhandled txout target type: " + vout.target.type;
                 }
             }
-            logDebugMsg("serialize tx ", tx);
+            logDebugMsg('serialize tx ', tx);
             if (!CnUtils.valid_hex(tx.extra)) {
                 throw "Tx extra has invalid hex";
             }
@@ -1910,7 +1815,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             //signature struct
             var bb = {
                 s: [],
-                ee: "",
+                ee: ""
             };
             //signature pubkey matrix
             var L = [];
@@ -1923,7 +1828,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             var index;
             var alpha = [];
             for (var i = 0; i < nrings; i++) {
-                index = parseInt("" + iv[i]);
+                index = parseInt('' + iv[i]);
                 alpha[i] = CnRandom.random_scalar();
                 L[index][i] = CnUtils.ge_scalarmult_base(alpha[i]);
                 for (var j = index + 1; j < size; j++) {
@@ -1967,17 +1872,17 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 Ci: [],
                 bsig: {
                     s: [],
-                    ee: "",
-                },
+                    ee: ''
+                }
                 //exp: exponent //doesn't exist for now
             };
             /*payload stuff - ignore for now
-                 seeds = new Array(3);
-                 for (let i = 0; i < seeds.length; i++){
-                   seeds[i] = new Array(1);
-                 }
-                 genSeeds(seeds, enc_seed);
-                 */
+            seeds = new Array(3);
+            for (let i = 0; i < seeds.length; i++){
+              seeds[i] = new Array(1);
+            }
+            genSeeds(seeds, enc_seed);
+            */
             var ai = [];
             var PM = [];
             for (var i = 0; i < size; i++) {
@@ -2000,8 +1905,8 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 mask = CnNativeBride.sc_add(mask, ai[i]);
             }
             /*
-             * some more payload stuff here
-             */
+            * some more payload stuff here
+            */
             //copy commitments to sig and sum them to commitment
             for (var i = 0; i < nrings; i++) {
                 //if (i < nrings - 1) //for later version
@@ -2009,12 +1914,12 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 C = CnUtils.ge_add(C, PM[0][i]);
             }
             /* exponent stuff - ignore for now
-                 if (exponent){
-                   n = JSBigInt(10);
-                   n = n.pow(exponent).toString();
-                   mask = sc_mul(mask, d2s(n)); //new sum
-                 }
-                 */
+            if (exponent){
+              n = JSBigInt(10);
+              n = n.pow(exponent).toString();
+              mask = sc_mul(mask, d2s(n)); //new sum
+            }
+            */
             sig.bsig = CnTransactions.genBorromean(ai, PM, indices, size, nrings);
             commitMaskObj.C = C;
             commitMaskObj.mask = mask;
@@ -2022,20 +1927,20 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         }
         CnTransactions.proveRange = proveRange;
         /*export function proveRangeBulletproof(commitMaskObj : {C:string,mask:string}, amount : string, nrings : number, enc_seed : number, exponent : number) : CnTransactions.RangeProveBulletproofSignature{
-               let mask = CnRandom.random_scalar();
-       
-               let proof : CnTransactions.RangeProveBulletproofSignature = bulletproof_PROVE(amount, mask);
-       
-               CHECK_AND_ASSERT_THROW_MES(proof.V.length == 1, "V has not exactly one element");
-               commitMaskObj.C = proof.V[0];
-               commitMaskObj.mask = mask;
-               return proof;
-           }
-           export function verBulletproof(proof : CnTransactions.RangeProveBulletproofSignature) : boolean{
-               try { return bulletproof_VERIFY(proof); }
-                   // we can get deep throws from ge_frombytes_vartime if input isn't valid
-               catch (e) { return false; }
-           }*/
+            let mask = CnRandom.random_scalar();
+    
+            let proof : CnTransactions.RangeProveBulletproofSignature = bulletproof_PROVE(amount, mask);
+    
+            CHECK_AND_ASSERT_THROW_MES(proof.V.length == 1, "V has not exactly one element");
+            commitMaskObj.C = proof.V[0];
+            commitMaskObj.mask = mask;
+            return proof;
+        }
+        export function verBulletproof(proof : CnTransactions.RangeProveBulletproofSignature) : boolean{
+            try { return bulletproof_VERIFY(proof); }
+                // we can get deep throws from ge_frombytes_vartime if input isn't valid
+            catch (e) { return false; }
+        }*/
         // Gen creates a signature which proves that for some column in the keymatrix "pk"
         //   the signer knows a secret key for each row in that column
         // we presently only support matrices of 2 rows (pubkey, commitment)
@@ -2155,10 +2060,10 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 else if (p.bulletproofs.length)
                     return CnTransactions.serializeRangeProofsBulletproof(rv);
                 else
-                    throw new Error(" missing range proof or bulletproof range proof");
+                    throw new Error(' missing range proof or bulletproof range proof');
             }
             else
-                throw new Error("invalid p signature");
+                throw new Error('invalid p signature');
             return buf;
         }
         CnTransactions.serializeRangeProofs = serializeRangeProofs;
@@ -2187,10 +2092,10 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             var p = rv.p;
             if (p)
                 for (var i = 0; i < p.bulletproofs.length; i++) {
-                    throw new Error("bulletproof serialization not implemented");
+                    throw new Error('bulletproof serialization not implemented');
                 }
             else
-                throw new Error("invalid p signature. missing bulletproof range proof");
+                throw new Error('invalid p signature. missing bulletproof range proof');
             return buf;
         }
         CnTransactions.serializeRangeProofsBulletproof = serializeRangeProofsBulletproof;
@@ -2270,9 +2175,9 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                     sumout = CnNativeBride.sc_add(sumout, cmObj.mask);
                     rv.ecdhInfo[i] = CnUtils.encode_rct_ecdh({ mask: cmObj.mask, amount: CnUtils.d2s(outAmounts[i]) }, amountKeys[i]);
                 }
-                logDebugMsg("====a");
+                logDebugMsg('====a');
                 //simple
-                logDebugMsg("-----------rv type", rv.type);
+                logDebugMsg('-----------rv type', rv.type);
                 if (rv.type === CnVars.RCT_TYPE.Simple) {
                     var ai = [];
                     var sumpouts = CnVars.Z;
@@ -2307,22 +2212,18 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         function construct_tx(keys, sources, dsts, senderAddress, fee_amount /*JSBigInt*/, payment_id, pid_encrypt, realDestViewKey, unlock_time, rct, message, ttl, transactionType, term) {
             if (unlock_time === void 0) { unlock_time = 0; }
             try {
-                console.log("Starting transaction construction...");
+                console.log('Starting transaction construction...');
                 //we move payment ID stuff here, because we need txkey to encrypt
                 var txkey = Cn.random_keypair();
                 logDebugMsg(txkey);
-                var extra = "";
+                var extra = '';
                 if (payment_id) {
                     if (pid_encrypt && payment_id.length !== INTEGRATED_ID_SIZE * 2) {
-                        throw ("payment ID must be " +
-                            INTEGRATED_ID_SIZE +
-                            " bytes to be encrypted!");
+                        throw "payment ID must be " + INTEGRATED_ID_SIZE + " bytes to be encrypted!";
                     }
                     logDebugMsg("Adding payment id: " + payment_id);
-                    if (pid_encrypt && realDestViewKey) {
-                        //get the derivation from our passed viewkey, then hash that + tail to get encryption key
-                        var pid_key = CnUtils.cn_fast_hash(Cn.generate_key_derivation(realDestViewKey, txkey.sec) +
-                            ENCRYPTED_PAYMENT_ID_TAIL.toString(16)).slice(0, INTEGRATED_ID_SIZE * 2);
+                    if (pid_encrypt && realDestViewKey) { //get the derivation from our passed viewkey, then hash that + tail to get encryption key
+                        var pid_key = CnUtils.cn_fast_hash(Cn.generate_key_derivation(realDestViewKey, txkey.sec) + ENCRYPTED_PAYMENT_ID_TAIL.toString(16)).slice(0, INTEGRATED_ID_SIZE * 2);
                         logDebugMsg("Txkeys:", txkey, "Payment ID key:", pid_key);
                         payment_id = CnUtils.hex_xor(payment_id, pid_key);
                     }
@@ -2334,17 +2235,17 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                     unlock_time: unlock_time,
                     version: rct ? CURRENT_TX_VERSION : OLD_TX_VERSION,
                     extra: extra,
-                    prvkey: "",
+                    prvkey: '',
                     vin: [],
                     vout: [],
                     rct_signatures: {
                         ecdhInfo: [],
                         outPk: [],
                         pseudoOuts: [],
-                        txnFee: "",
+                        txnFee: '',
                         type: 0,
                     },
-                    signatures: [],
+                    signatures: []
                 };
                 if (rct) {
                     tx.rct_signatures = {
@@ -2384,7 +2285,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         // this only works if beckend will produce masks in get_unspent_outs for
                         // coinbaser ringct txs.
                         //is_rct_coinbases.push((sources[i].mask ? sources[i].mask === I : 0));
-                        logDebugMsg("res.in_ephemeral.pub", res, res.in_ephemeral.pub, sources, i);
+                        logDebugMsg('res.in_ephemeral.pub', res, res.in_ephemeral.pub, sources, i);
                         if (res.in_ephemeral.pub !== sources[i].outputs[sources[i].real_out].key) {
                             throw "in_ephemeral.pub != source.real_out.key";
                         }
@@ -2409,7 +2310,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                             k_image: sources[i].key_image, // NOT USED WON'T BE SERIALIZED ANYWAY
                             key_offsets: [],
                             signatures: 1,
-                            outputIndex: sources[i].real_out_in_tx,
+                            outputIndex: sources[i].real_out_in_tx
                         };
                     }
                     else {
@@ -2420,12 +2321,12 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                             key_offsets: [],
                         };
                         for (j = 0; j < sources[i].outputs.length; ++j) {
-                            logDebugMsg("add to key offsets", sources[i].outputs[j].index, j, sources[i].outputs);
+                            logDebugMsg('add to key offsets', sources[i].outputs[j].index, j, sources[i].outputs);
                             input_to_key.key_offsets.push(sources[i].outputs[j].index);
                         }
-                        logDebugMsg("key offsets before abs", input_to_key.key_offsets);
+                        logDebugMsg('key offsets before abs', input_to_key.key_offsets);
                         input_to_key.key_offsets = CnTransactions.abs_to_rel_offsets(input_to_key.key_offsets);
-                        logDebugMsg("key offsets after abs", input_to_key.key_offsets);
+                        logDebugMsg('key offsets after abs', input_to_key.key_offsets);
                     }
                     tx.vin.push(input_to_key);
                 }
@@ -2455,7 +2356,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         }
                     }
                 }
-                logDebugMsg("Destinations resume:", unique_dst_addresses, num_stdaddresses, num_subaddresses);
+                logDebugMsg('Destinations resume:', unique_dst_addresses, num_stdaddresses, num_subaddresses);
                 if (num_stdaddresses == 0 && num_subaddresses == 1) {
                     var uniqueSubaddressDecoded = Cn.decode_address(single_dest_subaddress);
                     txkey.pub = CnUtils.ge_scalarmult(uniqueSubaddressDecoded.spend, txkey.sec);
@@ -2465,10 +2366,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 var need_additional_txkeys = num_subaddresses > 0 && (num_stdaddresses > 0 || num_subaddresses > 1);
                 for (i = 0; i < dsts.length; ++i) {
                     var destKeys = Cn.decode_address(dsts[i].address);
-                    var additional_txkey = {
-                        sec: "",
-                        pub: "",
-                    };
+                    var additional_txkey = { sec: '', pub: '' };
                     if (need_additional_txkeys) {
                         additional_txkey = Cn.random_keypair();
                         if (Cn.is_subaddress(dsts[i].address)) {
@@ -2505,9 +2403,9 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                                 data: {
                                     keys: [out_ephemeral_pub],
                                     required_signatures: 1,
-                                    term: term,
-                                },
-                            },
+                                    term: term
+                                }
+                            }
                         };
                         tx.vout.push(depositOut);
                         ++out_index;
@@ -2519,16 +2417,16 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         target: {
                             type: "txout_to_key",
                             data: {
-                                key: out_ephemeral_pub,
-                            },
-                        },
+                                key: out_ephemeral_pub
+                            }
+                        }
                     };
                     tx.vout.push(out);
                     ++out_index;
                     /*
-                         tx.vout.push(out);
-                         ++out_index;
-                         */
+                    tx.vout.push(out);
+                    ++out_index;
+                    */
                 }
                 // add pub key to extra after we know whether to use R = rG or R = rD
                 tx.extra = CnTransactions.add_pub_key_to_extra(tx.extra, txkey.pub);
@@ -2540,7 +2438,6 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                     for (var i_5 = 0; i_5 < dsts.length; i_5++) {
                         if (dsts[i_5].address !== senderAddress) {
                             messageAddress = dsts[i_5].address;
-                            break; // Break after finding the first non-sender destination
                         }
                     }
                     if (messageAddress) {
@@ -2567,27 +2464,18 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         // Add message tag
                         tx.extra += TX_EXTRA_TAGS.MESSAGE_TAG;
                         // Encode length of message
-                        tx.extra += ("0" + rawMessArrFull.length.toString(16)).slice(-2);
+                        tx.extra += ('0' + (rawMessArrFull.length).toString(16)).slice(-2);
                         // Write message
                         tx.extra += encryptedMessStr;
                     }
                 }
                 if (ttl !== 0) {
-                    // Convert TTL from minutes to absolute UNIX timestamp in seconds
-                    var currentTimestamp = Math.floor(Date.now() / 1000); // Current time in seconds
-                    var ttlTimestamp = currentTimestamp + ttl * 60; // Add TTL minutes converted to seconds
-                    var ttlStr = CnUtils.encode_varint(ttlTimestamp);
+                    var ttlStr = CnUtils.encode_varint(ttl);
                     var ttlSize = CnUtils.encode_varint(ttlStr.length / 2);
                     tx.extra = tx.extra + TX_EXTRA_TAGS.TTL_TAG + ttlSize + ttlStr;
                 }
                 if (outputs_money.add(fee_amount).compare(inputs_money) > 0) {
-                    throw ("outputs money (" +
-                        Cn.formatMoneyFull(outputs_money) +
-                        ") + fee (" +
-                        Cn.formatMoneyFull(fee_amount) +
-                        ") > inputs money (" +
-                        Cn.formatMoneyFull(inputs_money) +
-                        ")");
+                    throw "outputs money (" + Cn.formatMoneyFull(outputs_money) + ") + fee (" + Cn.formatMoneyFull(fee_amount) + ") > inputs money (" + Cn.formatMoneyFull(inputs_money) + ")";
                 }
                 if (!rct) {
                     for (i = 0; i < sources.length; ++i) {
@@ -2625,32 +2513,31 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                             );
                             // Verify the signature before adding it
                             var isValidSignature = CnNativeBride.verify_signature(txPrefixHash, ephemeralPublicKey, sig);
-                            console.log("Signature verification result:", isValidSignature);
+                            console.log('Signature verification result:', isValidSignature);
                             if (!isValidSignature) {
                                 throw "Signature verification failed";
                             }
                             // Verify signature from blockchain point of view
                             /*
-                                     const isValid_2 = CnNativeBride.checkTxProof(
-                                         txPrefixHash,
-                                         sources[i].real_out_tx_key,  				// R: transaction public key
-                                         ephemeralPublicKey,  						// A: ephemeral public key
-                                         derivation,          						// D: key derivation
-                                         sig                  						// signature
-                                     );
-                                     console.log('Deposit Public key:', sources[i].keys[0]);
-                                     console.log('Signature verification from Blockchain point of view:', isValid_2);
-                                     if (!isValid_2) {
-                                         throw "Signature verification with derived key failed";
-                                     }
-                                     */
+                            const isValid_2 = CnNativeBride.checkTxProof(
+                                txPrefixHash,
+                                sources[i].real_out_tx_key,  				// R: transaction public key
+                                ephemeralPublicKey,  						// A: ephemeral public key
+                                derivation,          						// D: key derivation
+                                sig                  						// signature
+                            );
+                            console.log('Deposit Public key:', sources[i].keys[0]);
+                            console.log('Signature verification from Blockchain point of view:', isValid_2);
+                            if (!isValid_2) {
+                                throw "Signature verification with derived key failed";
+                            }
+                            */
                             // Add the signature to the transaction
                             tx.signatures.push([sig]);
                         }
                     }
                 }
-                else {
-                    //rct
+                else { //rct
                     var txnFee = fee_amount;
                     var keyimages = [];
                     var inSk = [];
@@ -2682,28 +2569,27 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         outAmounts.push(tx.vout[i].amount);
                         tx.vout[i].amount = 0; //zero out all rct outputs
                     }
-                    logDebugMsg("rc signature----");
+                    logDebugMsg('rc signature----');
                     var tx_prefix_hash = CnTransactions.get_tx_prefix_hash(tx);
-                    logDebugMsg("rc signature----");
-                    tx.rct_signatures = CnTransactions.genRct(tx_prefix_hash, inSk, keyimages, 
-                    /*destinations, */ inAmounts, outAmounts, mixRing, amountKeys, indices, txnFee);
+                    logDebugMsg('rc signature----');
+                    tx.rct_signatures = CnTransactions.genRct(tx_prefix_hash, inSk, keyimages, /*destinations, */ inAmounts, outAmounts, mixRing, amountKeys, indices, txnFee);
                 }
                 logDebugMsg(tx);
-                console.log("Transaction construction completed successfully");
+                console.log('Transaction construction completed successfully');
                 return tx;
             }
             catch (error) {
-                console.error("Error in construct_tx:", error);
+                console.error('Error in construct_tx:', error);
                 throw error;
             }
         }
         CnTransactions.construct_tx = construct_tx;
-        function create_transaction(pub_keys, sec_keys, dsts, senderAddress, outputs, mix_outs, fake_outputs_count, fee_amount /*JSBigInt*/, payment_id, pid_encrypt, realDestViewKey, unlock_time, rct, message, ttl, transactionType, term) {
+        function create_transaction(pub_keys, sec_keys, dsts, senderAddress, outputs, mix_outs, fake_outputs_count, fee_amount /*JSBigInt*/, payment_id, pid_encrypt, realDestViewKey, unlock_time, rct, message, messageTo, ttl, transactionType, term) {
             if (mix_outs === void 0) { mix_outs = []; }
             if (unlock_time === void 0) { unlock_time = 0; }
             var i, j;
             if (dsts.length === 0) {
-                throw "Destinations empty";
+                throw 'Destinations empty';
             }
             // For withdrawals, we don't need mixins
             if (transactionType === "withdraw") {
@@ -2712,27 +2598,23 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             }
             else {
                 if (mix_outs.length !== outputs.length && fake_outputs_count !== 0) {
-                    throw ("Wrong number of mix outs provided (" +
-                        outputs.length +
-                        " outputs, " +
-                        mix_outs.length +
-                        " mix outs)");
+                    throw 'Wrong number of mix outs provided (' + outputs.length + ' outputs, ' + mix_outs.length + ' mix outs)';
                 }
                 for (i = 0; i < mix_outs.length; i++) {
                     if ((mix_outs[i].outs || []).length < fake_outputs_count) {
-                        throw "Not enough outputs to mix with";
+                        throw 'Not enough outputs to mix with';
                     }
                 }
             }
             var keys = {
                 view: {
                     pub: pub_keys.view,
-                    sec: sec_keys.view,
+                    sec: sec_keys.view
                 },
                 spend: {
                     pub: pub_keys.spend,
-                    sec: sec_keys.spend,
-                },
+                    sec: sec_keys.spend
+                }
             };
             if (!Cn.valid_keys(keys.view.pub, keys.view.sec, keys.spend.pub, keys.spend.sec)) {
                 throw "Invalid secret keys!";
@@ -2746,7 +2628,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             }
             var found_money = JSBigInt.ZERO;
             var sources = [];
-            logDebugMsg("Selected transfers: ", outputs);
+            logDebugMsg('Selected transfers: ', outputs);
             for (i = 0; i < outputs.length; ++i) {
                 found_money = found_money.add(outputs[i].amount);
                 if (found_money.compare(UINT64_MAX) !== -1) {
@@ -2758,21 +2640,21 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                             {
                                 index: outputs[i].index.toString(), //.index.toString(),
                                 key: outputs[i].public_key,
-                                commit: "",
-                            },
+                                commit: ''
+                            }
                         ],
-                        amount: "",
+                        amount: '',
                         keys: outputs[i].keys || [],
                         real_out_tx_key: outputs[i].tx_pub_key, // Set the source transaction key tr.txPubKey
                         real_out: 0,
                         real_out_in_tx: outputs[i].global_index, // Set the output index will be used to generate_signature()
                         mask: null,
-                        key_image: "",
+                        key_image: '',
                         in_ephemeral: {
-                            pub: "",
-                            sec: "",
-                            mask: "",
-                        },
+                            pub: '',
+                            sec: '',
+                            mask: ''
+                        }
                     };
                     src.amount = new JSBigInt(outputs[i].amount).toString();
                     sources.push(src);
@@ -2780,56 +2662,54 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 else {
                     var src = {
                         outputs: [],
-                        amount: "",
-                        real_out_tx_key: "",
+                        amount: '',
+                        real_out_tx_key: '',
                         real_out: 0,
                         real_out_in_tx: 0,
                         mask: null,
-                        key_image: "",
+                        key_image: '',
                         in_ephemeral: {
-                            pub: "",
-                            sec: "",
-                            mask: "",
+                            pub: '',
+                            sec: '',
+                            mask: ''
                         },
-                        keys: [],
+                        keys: []
                     };
                     src.amount = new JSBigInt(outputs[i].amount).toString();
-                    if (mix_outs.length !== 0) {
-                        //if mixin
+                    if (mix_outs.length !== 0) { //if mixin
                         // Sort fake outputs by global index
-                        logDebugMsg("mix outs before sort", mix_outs[i].outs);
+                        logDebugMsg('mix outs before sort', mix_outs[i].outs);
                         mix_outs[i].outs.sort(function (a, b) {
                             return new JSBigInt(a.global_index).compare(b.global_index);
                         });
                         j = 0;
                         logDebugMsg("mix outs sorted", mix_outs[i].outs);
-                        while (src.outputs.length < fake_outputs_count &&
-                            j < mix_outs[i].outs.length) {
+                        while ((src.outputs.length < fake_outputs_count) && (j < mix_outs[i].outs.length)) {
                             var out = mix_outs[i].outs[j];
-                            logDebugMsg("chekcing mixin");
+                            logDebugMsg('chekcing mixin');
                             logDebugMsg("out: ", out);
                             logDebugMsg("output ", i, ": ", outputs[i]);
                             if (out.global_index === outputs[i].global_index) {
-                                logDebugMsg("got mixin the same as output, skipping");
+                                logDebugMsg('got mixin the same as output, skipping');
                                 j++;
                                 continue;
                             }
                             var oe = {
                                 index: out.global_index.toString(),
                                 key: out.public_key,
-                                commit: "",
+                                commit: ''
                             };
                             /*
-                                     if (rct){
-                                         if (out.rct){
-                                             oe.commit = out.rct.slice(0,64); //add commitment from rct mix outs
-                                         } else {
-                                             if (outputs[i]['rct']) {throw "mix rct outs missing commit";}
-                                             oe.commit = zeroCommit(CnUtils.d2s(src.amount)); //create identity-masked commitment for non-rct mix input
-                                         }
-                                     }
-                 
-                                      */
+                            if (rct){
+                                if (out.rct){
+                                    oe.commit = out.rct.slice(0,64); //add commitment from rct mix outs
+                                } else {
+                                    if (outputs[i]['rct']) {throw "mix rct outs missing commit";}
+                                    oe.commit = zeroCommit(CnUtils.d2s(src.amount)); //create identity-masked commitment for non-rct mix input
+                                }
+                            }
+        
+                             */
                             src.outputs.push(oe);
                             j++;
                         }
@@ -2837,20 +2717,20 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                     var real_oe = {
                         index: new JSBigInt(outputs[i].global_index || 0).toString(),
                         key: outputs[i].public_key,
-                        commit: "",
+                        commit: '',
                     };
-                    logDebugMsg("OUT FOR REAL:", outputs[i].global_index);
+                    logDebugMsg('OUT FOR REAL:', outputs[i].global_index);
                     /*
-                         if (rct){
-                             if (outputs[i].rct) {
-                                 real_oe.commit = outputs[i].rct.slice(0,64); //add commitment for real input
-                             } else {
-                                 logDebugMsg('ZERO COMMIT');
-                                 real_oe.commit = zeroCommit(CnUtils.d2s(src.amount)); //create identity-masked commitment for non-rct input
-                             }
-                         }
-             
-                          */
+                    if (rct){
+                        if (outputs[i].rct) {
+                            real_oe.commit = outputs[i].rct.slice(0,64); //add commitment for real input
+                        } else {
+                            logDebugMsg('ZERO COMMIT');
+                            real_oe.commit = zeroCommit(CnUtils.d2s(src.amount)); //create identity-masked commitment for non-rct input
+                        }
+                    }
+        
+                     */
                     var real_index = src.outputs.length;
                     for (j = 0; j < src.outputs.length; j++) {
                         if (new JSBigInt(real_oe.index).compare(src.outputs[j].index) < 0) {
@@ -2859,36 +2739,35 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                         }
                     }
                     // Add real_oe to outputs
-                    logDebugMsg("inserting real ouput at index", real_index, real_oe, outputs[i], i);
+                    logDebugMsg('inserting real ouput at index', real_index, real_oe, outputs[i], i);
                     src.outputs.splice(real_index, 0, real_oe);
                     src.real_out_tx_key = outputs[i].tx_pub_key;
                     // Real output entry index
                     src.real_out = real_index;
                     src.real_out_in_tx = outputs[i].index;
-                    logDebugMsg("check mask", outputs, rct, i);
+                    logDebugMsg('check mask', outputs, rct, i);
                     /*
-                         if (rct){
-                             if (outputs[i].rct) {
-                                 src.mask = outputs[i].rct.slice(64,128); //encrypted or idenity mask for coinbase txs.
-                             } else {
-                                 logDebugMsg('NULL MASK');
-                                 src.mask = null; //will be set by generate_key_image_helper_rct
-                             }
-                         }
-             
-                          */
+                    if (rct){
+                        if (outputs[i].rct) {
+                            src.mask = outputs[i].rct.slice(64,128); //encrypted or idenity mask for coinbase txs.
+                        } else {
+                            logDebugMsg('NULL MASK');
+                            src.mask = null; //will be set by generate_key_image_helper_rct
+                        }
+                    }
+        
+                     */
                     sources.push(src);
                 }
             }
-            logDebugMsg("found_money: ", found_money);
-            logDebugMsg("needed_money: ", needed_money);
-            logDebugMsg("sources: ", sources);
+            logDebugMsg('found_money: ', found_money);
+            logDebugMsg('needed_money: ', needed_money);
+            logDebugMsg('sources: ', sources);
             var change = {
-                amount: JSBigInt.ZERO,
+                amount: JSBigInt.ZERO
             };
             var cmp = needed_money.compare(found_money);
-            if (transactionType === "withdraw") {
-                // until we find something better
+            if (transactionType === "withdraw") { // until we find something better
                 cmp = 0;
             }
             if (cmp < 0) {
@@ -2898,11 +2777,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
                 }
             }
             else if (cmp > 0) {
-                throw ("Need more money than found! (have: " +
-                    Cn.formatMoney(found_money) +
-                    " need: " +
-                    Cn.formatMoney(needed_money) +
-                    ")");
+                throw "Need more money than found! (have: " + Cn.formatMoney(found_money) + " need: " + Cn.formatMoney(needed_money) + ")";
             }
             return CnTransactions.construct_tx(keys, sources, dsts, senderAddress, fee_amount, payment_id, pid_encrypt, realDestViewKey, unlock_time, rct, message, ttl, transactionType, term);
         }

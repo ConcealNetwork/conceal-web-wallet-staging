@@ -15,13 +15,13 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import { type RawFullyEncryptedWallet, type RawWallet, Wallet } from "./Wallet";
+import { RawFullyEncryptedWallet, RawWallet, Wallet } from "./Wallet";
 import { StorageOld } from "./StorageOld";
 import { Storage } from "./Storage";
 import { CoinUri } from "./CoinUri";
 
 export class WalletRepository {
-  static migrateWallet(): Promise<boolean> {
+  static migrateWallet(): Promise<Boolean> {
     return new Promise<boolean>((resolve, reject) => {
       StorageOld.getItem("wallet", null)
         .then((walletAsString) => {
@@ -46,9 +46,9 @@ export class WalletRepository {
 
   static hasOneStored(): Promise<boolean> {
     return new Promise<boolean>((resolve, reject) => {
-      WalletRepository.migrateWallet()
+      this.migrateWallet()
         .then((isSuccess) => {
-          Storage.getItem("wallet", null).then((wallet: any) => {
+          Storage.getItem("wallet", null).then(function (wallet: any) {
             resolve(wallet !== null);
           });
         })
@@ -58,10 +58,7 @@ export class WalletRepository {
     });
   }
 
-  static decodeWithPassword(
-    rawWallet: RawWallet | RawFullyEncryptedWallet,
-    password: string
-  ): Wallet | null {
+  static decodeWithPassword(rawWallet: RawWallet | RawFullyEncryptedWallet, password: string): Wallet | null {
     if (password.length > 32) password = password.substr(0, 32);
     if (password.length < 32) {
       password = ("00000000000000000000000000000000" + password).slice(-32);
@@ -88,9 +85,7 @@ export class WalletRepository {
       if (decrypted === null) return null;
 
       try {
-        decodedRawWallet = JSON.parse(
-          new TextDecoder("utf8").decode(decrypted)
-        );
+        decodedRawWallet = JSON.parse(new TextDecoder("utf8").decode(decrypted));
       } catch (e) {
         decodedRawWallet = null;
       }
@@ -117,10 +112,7 @@ export class WalletRepository {
   static getLocalWalletWithPassword(password: string): Promise<Wallet | null> {
     return Storage.getItem("wallet", null).then((existingWallet: any) => {
       if (existingWallet !== null) {
-        return WalletRepository.decodeWithPassword(
-          JSON.parse(existingWallet),
-          password
-        );
+        return this.decodeWithPassword(JSON.parse(existingWallet), password);
       } else {
         return null;
       }
@@ -128,16 +120,10 @@ export class WalletRepository {
   }
 
   static save(wallet: Wallet, password: string): Promise<void> {
-    return Storage.setItem(
-      "wallet",
-      JSON.stringify(WalletRepository.getEncrypted(wallet, password))
-    );
+    return Storage.setItem("wallet", JSON.stringify(this.getEncrypted(wallet, password)));
   }
 
-  static getEncrypted(
-    wallet: Wallet,
-    password: string
-  ): RawFullyEncryptedWallet {
+  static getEncrypted(wallet: Wallet, password: string): RawFullyEncryptedWallet {
     if (password.length > 32) password = password.substr(0, 32);
     if (password.length < 32) {
       password = ("00000000000000000000000000000000" + password).slice(-32);
@@ -154,15 +140,9 @@ export class WalletRepository {
     let nonce = new (<any>TextEncoder)("utf8").encode(rawNonce);
 
     let rawWallet = wallet.exportToRaw();
-    let uint8EncryptedContent = new (<any>TextEncoder)("utf8").encode(
-      JSON.stringify(rawWallet)
-    );
+    let uint8EncryptedContent = new (<any>TextEncoder)("utf8").encode(JSON.stringify(rawWallet));
 
-    let encrypted: Uint8Array = nacl.secretbox(
-      uint8EncryptedContent,
-      nonce,
-      privKey
-    );
+    let encrypted: Uint8Array = nacl.secretbox(uint8EncryptedContent, nonce, privKey);
     let tabEncrypted = [];
     for (let i = 0; i < encrypted.length; ++i) {
       tabEncrypted.push(encrypted[i]);
@@ -189,11 +169,7 @@ export class WalletRepository {
       wallet.keys.priv.view,
       wallet.creationHeight
     );
-    let coinWalletUriM = CoinUri.encodeWalletKeys(
-      wallet.getPublicAddress(),
-      wallet.keys.priv.spend,
-      wallet.keys.priv.view
-    );
+    let coinWalletUriM = CoinUri.encodeWalletKeys(wallet.getPublicAddress(), wallet.keys.priv.spend, wallet.keys.priv.view);
 
     let publicQrCode = kjua({
       render: "canvas",
@@ -272,15 +248,7 @@ export class WalletRepository {
 
     // Fill and draw inner square with rounded corners
     doc.setFillColor(220, 220, 220); // Slightly darker gray for inner square
-    doc.roundedRect(
-      innerX,
-      innerY,
-      innerSize,
-      innerSize,
-      innerRadius,
-      innerRadius,
-      "FD"
-    ); // 'FD' means Fill and Draw
+    doc.roundedRect(innerX, innerY, innerSize, innerSize, innerRadius, innerRadius, "FD"); // 'FD' means Fill and Draw
 
     // Add a combination lock dial to the safe door
     const handleX = innerX + innerSize - 9;
@@ -307,10 +275,8 @@ export class WalletRepository {
       const angle = i * 30 * (Math.PI / 180); // Convert degrees to radians
       const startX = handleX + Math.cos(angle) * markingDistance;
       const startY = handleY + Math.sin(angle) * markingDistance;
-      const endX =
-        handleX + Math.cos(angle) * (markingDistance + markingLength);
-      const endY =
-        handleY + Math.sin(angle) * (markingDistance + markingLength);
+      const endX = handleX + Math.cos(angle) * (markingDistance + markingLength);
+      const endY = handleY + Math.sin(angle) * (markingDistance + markingLength);
       doc.line(startX, startY, endX, endY);
     }
 
@@ -335,16 +301,12 @@ export class WalletRepository {
     doc.text(115, 132, "DO NOT REVEAL THE PRIVATE KEY");
 
     //adding Conceal Network logos
-    let c: HTMLCanvasElement | null = <HTMLCanvasElement>(
-      document.getElementById("canvasExport")
-    );
+    let c: HTMLCanvasElement | null = <HTMLCanvasElement>document.getElementById("canvasExport");
     if (c !== null) {
       let ctx = c.getContext("2d");
 
       // First logo (vertical)
-      let verticalLogo: ImageBitmap | null = <ImageBitmap | null>(
-        document.getElementById("verticalLogo")
-      );
+      let verticalLogo: ImageBitmap | null = <ImageBitmap | null>document.getElementById("verticalLogo");
       if (ctx !== null && verticalLogo !== null) {
         c.width = verticalLogo.width;
         c.height = verticalLogo.height;
@@ -352,20 +314,11 @@ export class WalletRepository {
 
         let ratio = verticalLogo.width / 45;
         let smallHeight = verticalLogo.height / ratio;
-        doc.addImage(
-          c.toDataURL(),
-          "JPEG",
-          224,
-          106 + (100 - smallHeight) / 2,
-          45,
-          smallHeight
-        );
+        doc.addImage(c.toDataURL(), "JPEG", 224, 106 + (100 - smallHeight) / 2, 45, smallHeight);
       }
 
       // Second logo (cham)
-      let chamLogo: ImageBitmap | null = <ImageBitmap | null>(
-        document.getElementById("chamLogo")
-      );
+      let chamLogo: ImageBitmap | null = <ImageBitmap | null>document.getElementById("chamLogo");
       if (ctx !== null && chamLogo !== null) {
         c.width = chamLogo.width;
         c.height = chamLogo.height;
@@ -374,14 +327,7 @@ export class WalletRepository {
 
         let ratio = chamLogo.width / 60;
         let smallHeight = chamLogo.height / ratio;
-        doc.addImage(
-          c.toDataURL(),
-          "JPEG",
-          120,
-          106 + (120 - smallHeight) / 2,
-          60,
-          smallHeight
-        );
+        doc.addImage(c.toDataURL(), "JPEG", 120, 106 + (120 - smallHeight) / 2, 60, smallHeight);
       }
     }
 

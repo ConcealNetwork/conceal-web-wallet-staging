@@ -43,8 +43,7 @@ define(["require", "exports"], function (require, exports) {
             this.ctx = this.canvas.getContext("2d");
         };
         QRReader.prototype.support = function () {
-            return (typeof navigator !== "undefined" &&
-                typeof navigator.mediaDevices !== "undefined");
+            return typeof navigator !== "undefined" && typeof navigator.mediaDevices !== "undefined";
         };
         QRReader.prototype.init = function (baseUrl) {
             if (!this.inited)
@@ -142,8 +141,7 @@ define(["require", "exports"], function (require, exports) {
         QRReader.prototype.stop = function () {
             this.active = false;
             if (this.webcam !== null) {
-                if (this.webcam.srcObject !== null &&
-                    this.webcam.srcObject instanceof MediaStream)
+                if (this.webcam.srcObject !== null && this.webcam.srcObject instanceof MediaStream)
                     this.webcam.srcObject.getVideoTracks()[0].stop();
                 this.webcam.srcObject = null;
             }
@@ -164,10 +162,7 @@ define(["require", "exports"], function (require, exports) {
                     return;
                 }
                 lastFrameTime = now;
-                if (self.ctx === null ||
-                    self.webcam === null ||
-                    self.canvas === null ||
-                    self.decoder === null)
+                if (self.ctx === null || self.webcam === null || self.canvas === null || self.decoder === null)
                     return;
                 try {
                     // Draw the video frame to the canvas

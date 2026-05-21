@@ -48,66 +48,67 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         ImportView.prototype.formValid = function () {
             if (this.password != this.password2)
                 return false;
-            if (!(this.password !== "" &&
-                (!this.insecurePassword || this.forceInsecurePassword)))
+            if (!(this.password !== "" && (!this.insecurePassword || this.forceInsecurePassword)))
                 return false;
-            if (!((!this.viewOnly && this.validPrivateSpendKey) ||
-                (this.viewOnly && this.validPublicAddress && this.validPrivateViewKey)))
+            if (!((!this.viewOnly && this.validPrivateSpendKey) || (this.viewOnly && this.validPublicAddress && this.validPrivateViewKey)))
                 return false;
             return true;
         };
         ImportView.prototype.importWallet = function () {
-            var _this = this;
+            var self = this;
             $("#pageLoading").show();
             blockchainExplorer
                 .initialize()
-                .then(function (success) {
-                blockchainExplorer
-                    .getHeight()
-                    .then(function (currentHeight) {
-                    $("#pageLoading").hide();
-                    var newWallet = new Wallet_1.Wallet();
-                    if (_this.viewOnly) {
-                        var decodedPublic = Cn_1.Cn.decode_address(_this.publicAddress.trim());
-                        newWallet.keys = {
-                            priv: {
-                                spend: "",
-                                view: _this.privateViewKey.trim(),
-                            },
-                            pub: {
-                                spend: decodedPublic.spend,
-                                view: decodedPublic.view,
-                            },
-                        };
-                    }
-                    else {
-                        //console.log(1);
-                        var viewkey = _this.privateViewKey.trim();
-                        if (viewkey === "") {
-                            viewkey = Cn_1.Cn.generate_keys(Cn_1.CnUtils.cn_fast_hash(_this.privateSpendKey.trim())).sec;
+                .then(function () {
+                // Add a small delay to ensure nodes are fully ready
+                setTimeout(function () {
+                    blockchainExplorer
+                        .getHeight()
+                        .then(function (currentHeight) {
+                        $("#pageLoading").hide();
+                        var newWallet = new Wallet_1.Wallet();
+                        if (self.viewOnly) {
+                            var decodedPublic = Cn_1.Cn.decode_address(self.publicAddress.trim());
+                            newWallet.keys = {
+                                priv: {
+                                    spend: "",
+                                    view: self.privateViewKey.trim(),
+                                },
+                                pub: {
+                                    spend: decodedPublic.spend,
+                                    view: decodedPublic.view,
+                                },
+                            };
                         }
-                        //console.log(1, viewkey);
-                        newWallet.keys = KeysRepository_1.KeysRepository.fromPriv(_this.privateSpendKey.trim(), viewkey);
-                        //console.log(1);
-                    }
-                    var height = _this.importHeight; //never trust a perfect value from the user
-                    if (height >= currentHeight) {
-                        height = currentHeight - 1;
-                    }
-                    height = height - 10;
-                    if (height < 0)
-                        height = 0;
-                    if (height > currentHeight)
-                        height = currentHeight;
-                    newWallet.lastHeight = height;
-                    newWallet.creationHeight = newWallet.lastHeight;
-                    AppState_1.AppState.openWallet(newWallet, _this.password);
-                    window.location.href = "#account";
-                })
-                    .catch(function (err) {
-                    console.log(err);
-                    $("#pageLoading").hide();
-                });
+                        else {
+                            //console.log(1);
+                            var viewkey = self.privateViewKey.trim();
+                            if (viewkey === "") {
+                                viewkey = Cn_1.Cn.generate_keys(Cn_1.CnUtils.cn_fast_hash(self.privateSpendKey.trim())).sec;
+                            }
+                            //console.log(1, viewkey);
+                            newWallet.keys = KeysRepository_1.KeysRepository.fromPriv(self.privateSpendKey.trim(), viewkey);
+                            //console.log(1);
+                        }
+                        var height = self.importHeight; //never trust a perfect value from the user
+                        if (height >= currentHeight) {
+                            height = currentHeight - 1;
+                        }
+                        height = height - 10;
+                        if (height < 0)
+                            height = 0;
+                        if (height > currentHeight)
+                            height = currentHeight;
+                        newWallet.lastHeight = height;
+                        newWallet.creationHeight = newWallet.lastHeight;
+                        AppState_1.AppState.openWallet(newWallet, self.password);
+                        window.location.href = "#account";
+                    })
+                        .catch(function (err) {
+                        console.log(err);
+                        $("#pageLoading").hide();
+                    });
+                }, 100); // 100ms delay to ensure nodes are ready
             })
                 .catch(function (err) {
                 console.log(err);
@@ -133,9 +134,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             this.validPrivateSpendKey = this.privateSpendKey.trim().length == 64;
         };
         ImportView.prototype.privateViewKeyWatch = function () {
-            this.validPrivateViewKey =
-                this.privateViewKey.trim().length == 64 ||
-                    (!this.viewOnly && this.privateViewKey.trim().length == 0);
+            this.validPrivateViewKey = this.privateViewKey.trim().length == 64 || (!this.viewOnly && this.privateViewKey.trim().length == 0);
         };
         ImportView.prototype.publicAddressWatch = function () {
             try {
@@ -147,7 +146,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             }
         };
         ImportView.prototype.forceInsecurePasswordCheck = function () {
-            this.forceInsecurePassword = true;
+            var self = this;
+            self.forceInsecurePassword = true;
         };
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)

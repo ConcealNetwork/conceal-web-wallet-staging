@@ -248,19 +248,16 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
                 if (_this.blockHeight === 0) {
                     return false;
                 }
-                else if (_this.isCoinbase() &&
-                    _this.blockHeight + config.txCoinbaseMinConfirms < blockchainHeight) {
+                else if (_this.isCoinbase() && _this.blockHeight + config.txCoinbaseMinConfirms < blockchainHeight) {
                     return true;
                 }
-                else if (!_this.isCoinbase() &&
-                    _this.blockHeight + config.txMinConfirms < blockchainHeight) {
+                else if (!_this.isCoinbase() && _this.blockHeight + config.txMinConfirms < blockchainHeight) {
                     return true;
                 }
                 return false;
             };
             this.isFullyChecked = function () {
-                if (_this.getAmount() === 0 ||
-                    _this.getAmount() === -1 * config.minimumFee_V2) {
+                if (_this.getAmount() === 0 || _this.getAmount() === -1 * config.minimumFee_V2) {
                     if (_this.isFusion) {
                         return true;
                     }
@@ -283,10 +280,7 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
             };
             this.hasMessage = function () {
                 var txAmount = _this.getAmount();
-                return (_this.message !== "" &&
-                    txAmount > 0 &&
-                    txAmount !== 1 * config.remoteNodeFee &&
-                    txAmount !== 10 * config.remoteNodeFee); // no envelope for a suspectedremote node fee transaction
+                return _this.message !== "" && txAmount > 0 && txAmount !== 1 * config.remoteNodeFee && txAmount !== 10 * config.remoteNodeFee; // no envelope for a suspectedremote node fee transaction
             };
             this.copy = function () {
                 var aCopy = new Transaction();
@@ -331,13 +325,10 @@ define(["require", "exports", "./Currency"], function (require, exports, Currenc
             get: function () {
                 var outputsCount = this.outs.length;
                 var inputsCount = this.ins.length;
-                if (this.outs.some(function (out) { return out.type === "03"; }) ||
-                    this.ins.some(function (input) { return input.type === "03"; })) {
+                if (this.outs.some(function (out) { return out.type === "03"; }) || this.ins.some(function (input) { return input.type === "03"; })) {
                     return false;
                 }
-                return ((inputsCount > Currency_1.Currency.fusionTxMinInputCount &&
-                    inputsCount / outputsCount > config.fusionTxMinInOutCountRatio) ||
-                    this.fusion);
+                return (inputsCount > Currency_1.Currency.fusionTxMinInputCount && inputsCount / outputsCount > config.fusionTxMinInOutCountRatio) || this.fusion;
             },
             enumerable: false,
             configurable: true

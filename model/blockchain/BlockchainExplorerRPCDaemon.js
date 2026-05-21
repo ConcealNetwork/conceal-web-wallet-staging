@@ -69,6 +69,9 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
             this.timeout = 10 * 1000;
             this.maxTempErrors = 3;
             this.maxAllErrors = 100;
+            this.destroy = function () {
+                clearInterval(_this.errorInterval);
+            };
             this.makeRequest = function (method, path, body) {
                 if (body === void 0) { body = undefined; }
                 _this._isWorking = true;
@@ -193,15 +196,13 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                 ++_this._allErrors;
             };
             this.hasToManyErrors = function () {
-                return (_this._errors >= _this.maxTempErrors || _this._allErrors >= _this.maxAllErrors);
+                return _this._errors >= _this.maxTempErrors || _this._allErrors >= _this.maxAllErrors;
             };
             this.getStatus = function () {
-                if (_this._errors < _this.maxTempErrors &&
-                    _this._allErrors < _this.maxAllErrors) {
+                if (_this._errors < _this.maxTempErrors && _this._allErrors < _this.maxAllErrors) {
                     return 0;
                 }
-                else if (_this._errors >= _this.maxTempErrors &&
-                    _this._allErrors < _this.maxAllErrors) {
+                else if (_this._errors >= _this.maxTempErrors && _this._allErrors < _this.maxAllErrors) {
                     return 1;
                 }
                 else if (_this._allErrors >= _this.maxAllErrors) {
@@ -269,9 +270,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
             this.usedNodeUrls = new Set(); // Track used nodes to avoid re-picking
             this.makeRequest = function (method, path, body) {
                 if (body === void 0) { body = undefined; }
-                return _this.executeWithSessionFailover(function (node) {
-                    return node.makeRequest(method, path, body);
-                });
+                return _this.executeWithSessionFailover(function (node) { return node.makeRequest(method, path, body); });
             };
             this.executeWithSessionFailover = function (operation) { return __awaiter(_this, void 0, void 0, function () {
                 var lastError, attempts, sessionNode, error_3;
@@ -318,14 +317,16 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
             }); };
             this.makeRpcRequest = function (method, params) {
                 if (params === void 0) { params = {}; }
-                return _this.executeWithSessionFailover(function (node) {
-                    return node.makeRpcRequest(method, params);
-                });
+                return _this.executeWithSessionFailover(function (node) { return node.makeRpcRequest(method, params); });
             };
             this.getNodes = function () {
                 return _this.nodes;
             };
             this.start = function (nodes) {
+                if (_this.nodes.length > 0) {
+                    _this.stop();
+                }
+                console.log("NodeWorkersList.start: Initializing ".concat(nodes.length, " nodes"));
                 for (var i = 0; i < nodes.length; i++) {
                     _this.nodes.push(new NodeWorker(nodes[i]));
                 }
@@ -333,6 +334,10 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                 _this.initializeSession();
             };
             this.stop = function () {
+                for (var _i = 0, _a = _this.nodes; _i < _a.length; _i++) {
+                    var node = _a[_i];
+                    node.destroy();
+                }
                 _this.nodes = [];
             };
             this.nodes = [];
@@ -367,6 +372,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                     // Last resort: try any node, even if it has errors
                     availableNodes = this.nodes;
                     if (availableNodes.length === 0) {
+                        console.error("pickRandomNode: No nodes at all!");
                         return null; // No nodes at all
                     }
                     // Filter out nodes with excessive errors even in last resort
@@ -379,13 +385,16 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
             // Shuffle the available nodes for better randomization
             var shuffledNodes = __spreadArray([], availableNodes, true).sort(function () { return Math.random() - 0.5; });
             var selectedNode = shuffledNodes[0];
-            this.usedNodeUrls.add(selectedNode.url);
+            if (selectedNode) {
+                this.usedNodeUrls.add(selectedNode.url);
+            }
+            else {
+                console.error("pickRandomNode: No node selected from ".concat(availableNodes.length, " available nodes"));
+            }
             return selectedNode;
         };
         NodeWorkersList.prototype.getSessionNode = function () {
-            if (!this.sessionNode ||
-                this.isSessionExpired() ||
-                this.sessionErrorCount >= this.maxSessionErrors) {
+            if (!this.sessionNode || this.isSessionExpired() || this.sessionErrorCount >= this.maxSessionErrors) {
                 // Need to pick a new node
                 this.sessionNode = this.pickRandomNode();
                 this.sessionStartTime = Date.now();
@@ -419,6 +428,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                                 return [2 /*return*/, response.fee_address || ""];
                             case 2:
                                 error_4 = _a.sent();
+                                console.warn("Fee address endpoint failed for node ".concat(sessionNode.url, ":"), error_4);
                                 _a.label = 3;
                             case 3:
                                 _a.trys.push([3, 5, , 6]);
@@ -428,6 +438,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                                 return [2 /*return*/, info.fee_address || ""];
                             case 5:
                                 fallbackError_1 = _a.sent();
+                                console.warn("Getinfo fallback also failed for node ".concat(sessionNode.url, ":"), fallbackError_1);
                                 // If both fail, return empty string (will use donation address)
                                 return [2 /*return*/, ""];
                             case 6: return [3 /*break*/, 7];
@@ -451,28 +462,22 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
             this.cacheHeight = 0;
             this.cacheInfo = null;
             this.getInfo = function () {
-                if (Date.now() - _this.lastTimeRetrieveInfo < 20 * 1000 &&
-                    _this.cacheInfo !== null) {
+                if (Date.now() - _this.lastTimeRetrieveInfo < 20 * 1000 && _this.cacheInfo !== null) {
                     return Promise.resolve(_this.cacheInfo);
                 }
                 _this.lastTimeRetrieveInfo = Date.now();
-                return _this.nodeWorkers
-                    .makeRequest("GET", "getinfo")
-                    .then(function (data) {
+                return _this.nodeWorkers.makeRequest("GET", "getinfo").then(function (data) {
                     _this.cacheInfo = data;
                     return data;
                 });
             };
             this.getHeight = function () {
-                if (Date.now() - _this.lastTimeRetrieveHeight < 20 * 1000 &&
-                    _this.cacheHeight !== 0) {
+                if (Date.now() - _this.lastTimeRetrieveHeight < 20 * 1000 && _this.cacheHeight !== 0) {
                     return Promise.resolve(_this.cacheHeight);
                 }
                 _this.lastTimeRetrieveHeight = Date.now();
-                return _this.nodeWorkers
-                    .makeRequest("GET", "getheight")
-                    .then(function (data) {
-                    var height = parseInt(data.height);
+                return _this.nodeWorkers.makeRequest("GET", "getheight").then(function (data) {
+                    var height = parseInt(data.height, 10);
                     _this.cacheHeight = height;
                     return height;
                 });
@@ -481,7 +486,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                 return _this.scannedHeight;
             };
             this.resetNodes = function () {
-                Storage_1.Storage.getItem("customNodeUrl", null)
+                return Storage_1.Storage.getItem("customNodeUrl", null)
                     .then(function (customNodeUrl) {
                     // Clean up current session before changing nodes
                     _this.nodeWorkers.cleanupSession();
@@ -495,83 +500,104 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                             var randomIndex = Math.floor(Math.random() * currentIndex);
                             currentIndex--;
                             // And swap it with the current element.
-                            _a = [
-                                array[randomIndex],
-                                array[currentIndex],
-                            ], array[currentIndex] = _a[0], array[randomIndex] = _a[1];
+                            _a = [array[randomIndex], array[currentIndex]], array[currentIndex] = _a[0], array[randomIndex] = _a[1];
                         }
+                    }
+                    // Ensure we have nodes to work with
+                    if (!config || !config.nodeList || config.nodeList.length === 0) {
+                        throw new Error("No nodes available in configuration");
                     }
                     if (customNodeUrl) {
                         _this.nodeWorkers.start([customNodeUrl]);
                     }
                     else {
+                        // Shuffle the node list for random selection
                         shuffle(config.nodeList);
                         _this.nodeWorkers.start(config.nodeList);
                     }
-                    // Initialize new session with the updated node configuration
-                    _this.nodeWorkers.initializeSession();
+                    // Note: initializeSession() is already called in NodeWorkersList.start()
+                    // Verify that nodes are actually available before proceeding
+                    if (_this.nodeWorkers.getNodes().length === 0) {
+                        throw new Error("Failed to initialize nodes");
+                    }
                 })
                     .catch(function (err) {
                     console.error("resetNodes failed", err);
+                    throw err;
                 });
             };
             this.isInitialized = function () {
                 return _this.initialized;
             };
-            this.initialize = function () {
-                var doesMatch = function (toCheck) {
-                    return function (element) {
-                        return element.toLowerCase() === toCheck.toLowerCase();
-                    };
-                };
-                if (_this.initialized) {
-                    return Promise.resolve(true);
-                }
-                else {
-                    if (config.publicNodes) {
-                        var controller_3 = new AbortController();
-                        var timeoutId_1 = setTimeout(function () { return controller_3.abort(); }, 10 * 1000);
-                        return fetch(config.publicNodes + "/list?hasSSL=true", {
-                            method: "GET",
-                            signal: controller_3.signal,
-                        })
-                            .then(function (response) { return __awaiter(_this, void 0, void 0, function () {
-                            var result, i, finalUrl;
-                            return __generator(this, function (_a) {
-                                switch (_a.label) {
-                                    case 0:
-                                        clearTimeout(timeoutId_1);
-                                        if (!response.ok) {
-                                            throw new Error("HTTP ".concat(response.status, ": ").concat(response.statusText));
-                                        }
-                                        return [4 /*yield*/, response.json()];
-                                    case 1:
-                                        result = _a.sent();
-                                        if (result.success && result.list.length > 0) {
-                                            for (i = 0; i < result.list.length; ++i) {
-                                                finalUrl = "https://" + result.list[i].url.host + "/";
-                                                if (config.nodeList.findIndex(doesMatch(finalUrl)) == -1) {
-                                                    config.nodeList.push(finalUrl);
-                                                }
-                                            }
-                                        }
-                                        this.initialized = true;
-                                        this.resetNodes();
-                                        return [2 /*return*/, true];
+            this.initialize = function () { return __awaiter(_this, void 0, void 0, function () {
+                var doesMatch, controller_3, timeoutId, response, result, i, finalUrl, error_5, error_6;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            doesMatch = function (toCheck) {
+                                return function (element) {
+                                    return element.toLowerCase() === toCheck.toLowerCase();
+                                };
+                            };
+                            if (this.initialized) {
+                                return [2 /*return*/, true];
+                            }
+                            _a.label = 1;
+                        case 1:
+                            _a.trys.push([1, 8, , 9]);
+                            if (!config.publicNodes) return [3 /*break*/, 6];
+                            _a.label = 2;
+                        case 2:
+                            _a.trys.push([2, 5, , 6]);
+                            controller_3 = new AbortController();
+                            timeoutId = setTimeout(function () { return controller_3.abort(); }, 10 * 1000);
+                            return [4 /*yield*/, fetch(config.publicNodes + "/list?hasSSL=true", {
+                                    method: "GET",
+                                    signal: controller_3.signal,
+                                })];
+                        case 3:
+                            response = _a.sent();
+                            clearTimeout(timeoutId);
+                            if (!response.ok) {
+                                throw new Error("HTTP ".concat(response.status, ": ").concat(response.statusText));
+                            }
+                            return [4 /*yield*/, response.json()];
+                        case 4:
+                            result = _a.sent();
+                            if (result.success && result.list.length > 0) {
+                                for (i = 0; i < result.list.length; ++i) {
+                                    finalUrl = "https://" + result.list[i].url.host + "/";
+                                    if (config.nodeList.findIndex(doesMatch(finalUrl)) === -1) {
+                                        config.nodeList.push(finalUrl);
+                                    }
                                 }
-                            });
-                        }); })
-                            .catch(function (error) {
-                            clearTimeout(timeoutId_1);
-                            console.error("Failed to fetch public nodes: %s", error.message);
-                            return false;
-                        });
+                            }
+                            return [3 /*break*/, 6];
+                        case 5:
+                            error_5 = _a.sent();
+                            console.warn("Failed to fetch public nodes, using config nodes only:", error_5);
+                            return [3 /*break*/, 6];
+                        case 6:
+                            this.initialized = true;
+                            // Wait for resetNodes to complete before returning
+                            return [4 /*yield*/, this.resetNodes()];
+                        case 7:
+                            // Wait for resetNodes to complete before returning
+                            _a.sent();
+                            // Double-check that nodes are ready
+                            if (this.nodeWorkers.getNodes().length === 0) {
+                                throw new Error("Node initialization failed - no nodes available");
+                            }
+                            console.log("Initialized with ".concat(this.nodeWorkers.getNodes().length, " nodes"));
+                            return [2 /*return*/, true];
+                        case 8:
+                            error_6 = _a.sent();
+                            console.error("Node initialization failed:", error_6);
+                            throw error_6;
+                        case 9: return [2 /*return*/];
                     }
-                    else {
-                        return Promise.resolve(true);
-                    }
-                }
-            };
+                });
+            }); };
             this.start = function (wallet) {
                 var watchdog = new WalletWatchdog_1.WalletWatchdog(wallet, _this);
                 watchdog.start();
@@ -678,14 +704,24 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                 do_not_relay: false,
             })
                 .then(function (transactions) {
-                if (!transactions.status || transactions.status !== "OK")
-                    throw transactions;
+                if (!transactions.status || transactions.status !== "OK") {
+                    var errorMessage = "Failed to send raw transaction";
+                    if (transactions.status) {
+                        errorMessage += ": ".concat(transactions.status);
+                    }
+                    if (transactions.reason) {
+                        errorMessage += " (".concat(transactions.reason, ")");
+                    }
+                    var error = new Error(errorMessage);
+                    // Attach the original response for debugging if needed
+                    error.originalResponse = transactions;
+                    throw error;
+                }
+                return transactions;
             });
         };
         BlockchainExplorerRpcDaemon.prototype.resolveOpenAlias = function (domain) {
-            return this.nodeWorkers
-                .makeRpcRequest("resolve_open_alias", { url: domain })
-                .then(function (response) {
+            return this.nodeWorkers.makeRpcRequest("resolve_open_alias", { url: domain }).then(function (response) {
                 if (response.addresses && response.addresses.length > 0)
                     return { address: response.addresses[0], name: null };
                 throw "not_found";
@@ -693,9 +729,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
         };
         BlockchainExplorerRpcDaemon.prototype.getNetworkInfo = function () {
             var _this = this;
-            return this.nodeWorkers
-                .makeRpcRequest("getlastblockheader")
-                .then(function (raw) {
+            return this.nodeWorkers.makeRpcRequest("getlastblockheader").then(function (raw) {
                 var nodeList = _this.nodeWorkers.getNodes();
                 var usedNodes = [];
                 for (var i = 0; i < nodeList.length; i++) {

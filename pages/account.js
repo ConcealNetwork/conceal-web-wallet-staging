@@ -48,9 +48,9 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
             _this.isInitialized = false;
             _this.messagesCountRecord = 0;
             _this.refreshInterval = 500;
-            _this.initMessagesCount = wallet.txsMem
-                .concat(wallet.getTransactionsCopy())
-                .filter(function (tx) { return tx.message; }).length;
+            _this.filteredTransactionsCache = null;
+            _this.filterCacheKey = "";
+            _this.initMessagesCount = wallet.txsMem.concat(wallet.getTransactionsCopy()).filter(function (tx) { return tx.message; }).length;
             _this.unsubscribeTicker = null;
             _this.optimizePanelTimeout = null;
             _this.destruct = function () {
@@ -61,6 +61,8 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                 if (_this.optimizePanelTimeout)
                     clearTimeout(_this.optimizePanelTimeout);
                 clearInterval(_this.intervalRefresh);
+                _this.filteredTransactionsCache = null;
+                _this.filterCacheKey = "";
                 return _super.prototype.destruct.call(_this);
             };
             _this.refresh = function () {
@@ -77,6 +79,28 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
             };
             _this.onFilterChanged = function () {
                 _this.refreshWallet();
+            };
+            _this.getFilterCacheKey = function () {
+                return "".concat(_this.txFilter, "|").concat(wallet.modifiedTimestamp().getTime());
+            };
+            _this.getFilteredTransactions = function (allTransactions) {
+                var cacheKey = _this.getFilterCacheKey();
+                if (_this.filteredTransactionsCache !== null && _this.filterCacheKey === cacheKey) {
+                    return _this.filteredTransactionsCache;
+                }
+                if (!_this.txFilter) {
+                    _this.filteredTransactionsCache = allTransactions;
+                }
+                else {
+                    var filterUpper_1 = _this.txFilter.toUpperCase();
+                    _this.filteredTransactionsCache = allTransactions.filter(function (tx) {
+                        return (tx.hash.toUpperCase().includes(filterUpper_1) ||
+                            tx.paymentId.toUpperCase().includes(filterUpper_1) ||
+                            tx.getAmount().toString().includes(filterUpper_1));
+                    });
+                }
+                _this.filterCacheKey = cacheKey;
+                return _this.filteredTransactionsCache;
             };
             _this.checkOptimization = function () {
                 blockchainExplorer
@@ -149,12 +173,8 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                 _this.refreshWallet(true);
             };
             _this.moreInfoOnTx = function (transaction) {
-                var explorerUrlHash = config.testnet
-                    ? config.testnetExplorerUrlHash
-                    : config.mainnetExplorerUrlHash;
-                var explorerUrlBlock = config.testnet
-                    ? config.testnetExplorerUrlBlock
-                    : config.mainnetExplorerUrlBlock;
+                var explorerUrlHash = config.testnet ? config.testnetExplorerUrlHash : config.mainnetExplorerUrlHash;
+                var explorerUrlBlock = config.testnet ? config.testnetExplorerUrlBlock : config.mainnetExplorerUrlBlock;
                 var feesHtml = "";
                 if (transaction.fees > 0) {
                     feesHtml = "<div><span class=\"txDetailsLabel\">".concat(i18n.t("accountPage.txDetails.feesOnTx"), "</span>:<span class=\"txDetailsValue\">").concat(transaction.fees / Math.pow(10, config.coinUnitPlaces), "</a></span></div>");
@@ -192,17 +212,12 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                 var filterChanged = false;
                 var oldIsWalletSyncing = _this.isWalletSyncing;
                 var timeDiff = new Date().getTime() - _this.refreshTimestamp.getTime();
-                _this.processingTxQueue = walletWatchdog
-                    .getBlockList()
-                    .getTxQueue()
-                    .getSize();
+                _this.processingTxQueue = walletWatchdog.getBlockList().getTxQueue().getSize();
                 _this.processingQueue = walletWatchdog.getBlockList().getSize();
                 _this.lastBlockLoading = walletWatchdog.getLastBlockLoading();
                 _this.currentScanBlock = wallet.lastHeight;
                 _this.isWalletSyncing = wallet.lastHeight + 2 < _this.blockchainHeight;
-                _this.isWalletProcessing =
-                    _this.isWalletSyncing ||
-                        walletWatchdog.getBlockList().getTxQueue().hasData();
+                _this.isWalletProcessing = _this.isWalletSyncing || walletWatchdog.getBlockList().getTxQueue().hasData();
                 if (oldIsWalletSyncing && !_this.isWalletSyncing) {
                     _this.checkOptimization();
                 }
@@ -211,9 +226,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                     _this.oldTxFilter = _this.txFilter;
                     filterChanged = true;
                 }
-                if (((_this.refreshTimestamp < wallet.modifiedTimestamp() ||
-                    _this.lastPending > 0) &&
-                    timeDiff > _this.refreshInterval) ||
+                if (((_this.refreshTimestamp < wallet.modifiedTimestamp() || _this.lastPending > 0) && timeDiff > _this.refreshInterval) ||
                     forceRedraw ||
                     filterChanged) {
                     logDebugMsg("refreshWallet", _this.currentScanBlock);
@@ -224,23 +237,9 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                     _this.lastPending = _this.walletAmount - _this.unlockedWalletAmount;
                     _this.futureLockedInterest = wallet.futureDepositInterest(_this.currentScanBlock).locked;
                     _this.futureUnlockedInterest = wallet.futureDepositInterest(_this.currentScanBlock).unlocked;
-                    if (_this.refreshTimestamp < wallet.modifiedTimestamp() ||
-                        forceRedraw ||
-                        filterChanged) {
+                    if (_this.refreshTimestamp < wallet.modifiedTimestamp() || forceRedraw || filterChanged) {
                         var allTransactions = wallet.txsMem.concat(wallet.getTransactionsCopy().reverse());
-                        if (_this.txFilter) {
-                            allTransactions = allTransactions.filter(function (tx) {
-                                return (tx.hash.toUpperCase().includes(_this.txFilter.toUpperCase()) ||
-                                    tx.paymentId
-                                        .toUpperCase()
-                                        .includes(_this.txFilter.toUpperCase()) ||
-                                    tx
-                                        .getAmount()
-                                        .toString()
-                                        .toUpperCase()
-                                        .includes(_this.txFilter.toUpperCase()));
-                            });
-                        }
+                        allTransactions = _this.getFilteredTransactions(allTransactions);
                         _this.transactions = allTransactions.slice(0, _this.pagesCount * _this.txPerPage);
                         _this.allTransactionsCount = allTransactions.length;
                         if (!_this.isWalletSyncing) {
@@ -283,7 +282,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
             AppState_1.AppState.enableLeftMenu();
             _this.intervalRefresh = setInterval(function () {
                 _this.refresh();
-            }, 1 * 1000);
+            }, 3 * 1000);
             _this.refresh();
             _this.showOptimizePanel = false;
             window.accountView = _this;
@@ -291,16 +290,12 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
         }
         AccountView.prototype.updateMessageNotifications = function () {
             if (!this.isInitialized) {
-                this.initMessagesCount = wallet.txsMem
-                    .concat(wallet.getTransactionsCopy())
-                    .filter(function (tx) { return tx.message; }).length;
+                this.initMessagesCount = wallet.txsMem.concat(wallet.getTransactionsCopy()).filter(function (tx) { return tx.message; }).length;
                 this.isInitialized = true;
             }
             else {
                 var previousMessagesCount = this.initMessagesCount;
-                var currentMessagesCount = wallet.txsMem
-                    .concat(wallet.getTransactionsCopy())
-                    .filter(function (tx) { return tx.message; }).length;
+                var currentMessagesCount = wallet.txsMem.concat(wallet.getTransactionsCopy()).filter(function (tx) { return tx.message; }).length;
                 var newMessagesCount = currentMessagesCount - previousMessagesCount;
                 if (newMessagesCount > this.messagesCountRecord) {
                     var messageItem = document.querySelector('#menu a[href="#!messages"]');
@@ -309,9 +304,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
                         if (messageText && messageText.textContent) {
                             messageItem.classList.add("font-bold");
                             if (messageText.textContent.includes("(+")) {
-                                messageText.textContent =
-                                    messageText.textContent.split("(")[0] +
-                                        "(+".concat(newMessagesCount, ")");
+                                messageText.textContent = messageText.textContent.split("(")[0] + "(+".concat(newMessagesCount, ")");
                             }
                             else {
                                 messageText.textContent += " (+".concat(newMessagesCount, ")");
@@ -323,9 +316,7 @@ define(["require", "exports", "../lib/numbersLab/VueAnnotate", "../lib/numbersLa
             }
         };
         AccountView.prototype.getTTLCountdown = function (transaction) {
-            if (!transaction.ttl ||
-                transaction.ttl === 0 ||
-                transaction.blockHeight !== 0) {
+            if (!transaction.ttl || transaction.ttl === 0 || transaction.blockHeight !== 0) {
                 return "";
             }
             var currentTimestamp = Math.floor(Date.now() / 1000);

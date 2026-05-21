@@ -20,16 +20,12 @@ import { VueVar, VueRequireFilter } from "../lib/numbersLab/VueAnnotate";
 import { Constants } from "../model/Constants";
 import { Wallet } from "../model/Wallet";
 import { AppState } from "../model/AppState";
-import type {
-  BlockchainExplorer,
-  NetworkInfo,
-} from "../model/blockchain/BlockchainExplorer";
+import { BlockchainExplorer, NetworkInfo } from "../model/blockchain/BlockchainExplorer";
 import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
 import { VueFilterHashrate } from "../filters/Filters";
 
 AppState.enableLeftMenu();
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
 @VueRequireFilter("hashrate", VueFilterHashrate)
 class NetworkView extends DestructableView {
@@ -45,8 +41,10 @@ class NetworkView extends DestructableView {
 
   constructor(container: string) {
     super(container);
-    this.intervalRefreshStat = <any>setInterval(() => {
-      this.refreshStats();
+
+    let self = this;
+    this.intervalRefreshStat = <any>setInterval(function () {
+      self.refreshStats();
     }, 30 * 1000);
     this.refreshStats();
   }
@@ -65,11 +63,9 @@ class NetworkView extends DestructableView {
         .then((info: NetworkInfo) => {
           this.nodeList = [...info.nodes];
           this.networkDifficulty = info.difficulty;
-          this.networkHashrate = VueFilterHashrate(
-            info.difficulty / config.avgBlockTime
-          );
+          this.networkHashrate = VueFilterHashrate(info.difficulty / config.avgBlockTime);
           this.blockchainHeight = info.height;
-          this.lastReward = info.reward / 10 ** config.coinUnitPlaces;
+          this.lastReward = info.reward / Math.pow(10, config.coinUnitPlaces);
           this.ticker = config.coinSymbol;
           this.lastBlockFound = info.timestamp;
 

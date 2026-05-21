@@ -214,7 +214,10 @@
 		"getInTouchBlock": {
 		  "title": "Restons en contact !",
 		  "content": "Si vous rencontrez des problèmes avec votre portefeuille, contactez-nous !",
-		  "discord": "Discord Officiel de Conceal"
+		  "support": "Visitez notre Centre Officiel de Support:",
+		  "supportLink": "Ouvrir un ticket",
+		  "discord": "Demandez des questions aux autres membres de la communauté, Rejoignez",
+		  "discordLink": "Conceal Discord Community"
 		}
 	  },
 	  "forgotPasswordPage": {
@@ -601,6 +604,12 @@
 		},
 		"qrScanningBlock": {
 		  "title": "Présentez le QR code"
+		},
+		"error": {
+		  "title": "Erreur",
+		  "connection": "Erreur de connexion, veuillez réessayer",
+		  "init": "Erreur d'initialisation, veuillez réessayer",
+		  "confirmText": "OK"
 		}
 	  },
 	  "exportPage": {
@@ -638,13 +647,13 @@
 		}
 	  },
 	  "importPage": {
-		"title": "Créer un portefeuille",
+		"title": "Importer un portefeuille",
 		"subtitle": "Depuis des clefs, un fichier ou une phrase mnémotechnique",
 		"chooseMethod": "Choisissez votre méthode d'importation",
-		"fromKeys": "Depuis des clefs privées",
-		"fromFile": "Depuis un fichier",
-		"fromMnemonic": "Depuis une phrase mnémotechnique",
-		"fromQr": "Depuis un QR code"
+		"fromKeys": "Clefs privées",
+		"fromFile": "Fichier",
+		"fromMnemonic": "Phrase mnémotechnique",
+		"fromQr": "QR code"
 	  },
 	  "termsOfUsePage": {
 		"title": "Conditions d'utilisations",

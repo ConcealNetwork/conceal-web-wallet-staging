@@ -59,15 +59,15 @@ class LocalStorage implements StorageInterface {
 
 class NativeStorageWrap implements StorageInterface {
   setItem(key: string, value: any): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>(function (resolve, reject) {
       if (window.NativeStorage)
         window.NativeStorage.setItem(
           key,
           value,
-          () => {
+          function () {
             resolve();
           },
-          (error: NativeNativeStorageError) => {
+          function (error: NativeNativeStorageError) {
             reject();
           }
         );
@@ -76,14 +76,14 @@ class NativeStorageWrap implements StorageInterface {
   }
 
   getItem(key: string, defaultValue: any = null): Promise<any> {
-    return new Promise<any>((resolve, reject) => {
+    return new Promise<any>(function (resolve, reject) {
       if (window.NativeStorage)
         window.NativeStorage.getItem(
           key,
-          () => {
+          function () {
             resolve(true);
           },
-          (error: NativeNativeStorageError) => {
+          function (error: NativeNativeStorageError) {
             if (error.code === 2) resolve(defaultValue);
             reject();
           }
@@ -93,13 +93,13 @@ class NativeStorageWrap implements StorageInterface {
   }
 
   keys(): Promise<string[]> {
-    return new Promise<string[]>((resolve, reject) => {
+    return new Promise<string[]>(function (resolve, reject) {
       if (window.NativeStorage)
         window.NativeStorage.keys(
-          (keys: string[]) => {
+          function (keys: string[]) {
             resolve(keys);
           },
-          (error: NativeNativeStorageError) => {
+          function (error: NativeNativeStorageError) {
             reject();
           }
         );
@@ -108,16 +108,15 @@ class NativeStorageWrap implements StorageInterface {
   }
 
   remove(key: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>(function (resolve, reject) {
       if (window.NativeStorage)
         window.NativeStorage.remove(
           key,
-          () => {
+          function () {
             resolve();
           },
-          (error: NativeNativeStorageError) => {
-            if (error.code === 2 || error.code === 3 || error.code === 4)
-              resolve();
+          function (error: NativeNativeStorageError) {
+            if (error.code === 2 || error.code === 3 || error.code === 4) resolve();
             reject();
           }
         );
@@ -126,13 +125,13 @@ class NativeStorageWrap implements StorageInterface {
   }
 
   clear(): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+    return new Promise<void>(function (resolve, reject) {
       if (window.NativeStorage)
         window.NativeStorage.clear(
-          () => {
+          function () {
             resolve();
           },
-          (error: NativeNativeStorageError) => {
+          function (error: NativeNativeStorageError) {
             reject();
           }
         );

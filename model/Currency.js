@@ -70,10 +70,7 @@ define(["require", "exports"], function (require, exports) {
         Currency.getApproximateMaximumInputCount = function (transactionSize, outputCount, mixinCount) {
             // Calculate sizes of different transaction components
             var outputsSize = outputCount * (OUTPUT_TAG_SIZE + OUTPUT_KEY_SIZE + AMOUNT_SIZE);
-            var headerSize = TRANSACTION_VERSION_SIZE +
-                TRANSACTION_UNLOCK_TIME_SIZE +
-                EXTRA_TAG_SIZE +
-                PUBLIC_KEY_SIZE;
+            var headerSize = TRANSACTION_VERSION_SIZE + TRANSACTION_UNLOCK_TIME_SIZE + EXTRA_TAG_SIZE + PUBLIC_KEY_SIZE;
             var inputSize = INPUT_TAG_SIZE +
                 AMOUNT_SIZE +
                 KEY_IMAGE_SIZE +
@@ -87,10 +84,7 @@ define(["require", "exports"], function (require, exports) {
         Currency.getApproximateTransactionSize = function (inputCount, outputCount, mixinCount) {
             // Calculate sizes of different transaction components
             var outputsSize = outputCount * (OUTPUT_TAG_SIZE + OUTPUT_KEY_SIZE + AMOUNT_SIZE);
-            var headerSize = TRANSACTION_VERSION_SIZE +
-                TRANSACTION_UNLOCK_TIME_SIZE +
-                EXTRA_TAG_SIZE +
-                PUBLIC_KEY_SIZE;
+            var headerSize = TRANSACTION_VERSION_SIZE + TRANSACTION_UNLOCK_TIME_SIZE + EXTRA_TAG_SIZE + PUBLIC_KEY_SIZE;
             var inputSize = INPUT_TAG_SIZE +
                 AMOUNT_SIZE +
                 KEY_IMAGE_SIZE +

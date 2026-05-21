@@ -109,10 +109,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 }
                 return _super.prototype.destruct.call(_this);
             };
-            // Set native environment detection using the same logic as index.ts
-            var isCordovaApp = document.URL.indexOf("http://") === -1 &&
-                document.URL.indexOf("https://") === -1;
-            _this.isNativeEnvironment = isCordovaApp;
+            var self = _this;
             _this.readSpeed = wallet.options.readSpeed;
             _this.checkMinerTx = wallet.options.checkMinerTx;
             // Sync custom node setting from storage to ensure consistency
@@ -150,7 +147,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
             blockchainExplorer
                 .getHeight()
                 .then(function (height) {
-                _this.maxHeight = height;
+                self.maxHeight = height;
             })
                 .catch(function (err) {
                 // do nothing
@@ -162,28 +159,15 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 .catch(function (err) {
                 console.error("Error trying to get user language", err);
             });
-            //if cordova.js has been loaded properly:
-            if (typeof window.cordova !== "undefined" &&
-                typeof window.cordova.getAppVersion !== "undefined") {
-                window.cordova.getAppVersion
-                    .getVersionNumber()
-                    .then(function (version) {
+            // in case cordova.js got loaded, and app-version-plugin was installed ... => that won't happen in a web view redirect scenario. Need to rethink that if we really want to display those infor in Native context.
+            if (typeof window.cordova !== "undefined" && typeof window.cordova.getAppVersion !== "undefined") {
+                window.cordova.getAppVersion.getVersionNumber().then(function (version) {
                     _this.nativeVersionNumber = version;
                 });
-                window.cordova.getAppVersion
-                    .getVersionCode()
-                    .then(function (version) {
+                window.cordova.getAppVersion.getVersionCode().then(function (version) {
                     _this.nativeVersionCode = version;
                 });
             }
-            // Initialize notification setting
-            Storage_1.Storage.getItem("notificationsEnabled", false)
-                .then(function (enabled) {
-                _this.notificationsEnabled = enabled;
-            })
-                .catch(function () {
-                _this.notificationsEnabled = false;
-            });
             return _this;
         }
         SettingsView.prototype.languageWatch = function () {
@@ -245,9 +229,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         };
         SettingsView.prototype.useShortTickerWatch = function () {
             Translations_1.tickerStore.setTickerPreference(this.useShortTicker);
-        };
-        SettingsView.prototype.notificationsEnabledWatch = function () {
-            Storage_1.Storage.setItem("notificationsEnabled", this.notificationsEnabled);
         };
         SettingsView.prototype.updateWalletOptions = function () {
             var options = wallet.options;
@@ -327,9 +308,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         ], SettingsView.prototype, "nativeVersionNumber", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
-        ], SettingsView.prototype, "isNativeEnvironment", void 0);
-        __decorate([
-            (0, VueAnnotate_1.VueVar)(false)
         ], SettingsView.prototype, "optimizeIsNeeded", void 0);
         __decorate([
             (0, VueAnnotate_1.VueVar)(false)
@@ -343,9 +321,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueVar)(config)
         ], SettingsView.prototype, "config", void 0);
-        __decorate([
-            (0, VueAnnotate_1.VueVar)(false)
-        ], SettingsView.prototype, "notificationsEnabled", void 0);
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "languageWatch", null);
@@ -364,9 +339,6 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
         __decorate([
             (0, VueAnnotate_1.VueWatched)()
         ], SettingsView.prototype, "useShortTickerWatch", null);
-        __decorate([
-            (0, VueAnnotate_1.VueWatched)()
-        ], SettingsView.prototype, "notificationsEnabledWatch", null);
         return SettingsView;
     }(DestructableView_1.DestructableView));
     if (wallet !== null && blockchainExplorer !== null)

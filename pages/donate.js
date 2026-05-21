@@ -36,7 +36,9 @@ define(["require", "exports", "../model/AppState", "../lib/numbersLab/Destructab
     var DonateView = /** @class */ (function (_super) {
         __extends(DonateView, _super);
         function DonateView(container) {
-            return _super.call(this, container) || this;
+            var _this = _super.call(this, container) || this;
+            var self = _this;
+            return _this;
         }
         return DonateView;
     }(DestructableView_1.DestructableView));

@@ -23,7 +23,7 @@ define(["require", "exports", "../model/KeysRepository", "../model/Wallet", "../
             this.importHeight = 0;
         }
         Api.prototype.importWalletFromKeys = function (publicAddress, viewOnly, privateViewKey, privateSpendKey, password) {
-            var _this = this;
+            var self = this;
             blockchainExplorer.getHeight().then(function (currentHeight) {
                 var newWallet = new Wallet_1.Wallet();
                 if (viewOnly) {
@@ -49,8 +49,8 @@ define(["require", "exports", "../model/KeysRepository", "../model/Wallet", "../
                     newWallet.keys = KeysRepository_1.KeysRepository.fromPriv(privateSpendKey.trim(), viewkey);
                     //console.log(1);
                 }
-                _this.importHeightValidator();
-                var height = _this.importHeight; //never trust a perfect value from the user
+                self.importHeightValidator();
+                var height = self.importHeight; //never trust a perfect value from the user
                 if (height >= currentHeight) {
                     height = currentHeight - 1;
                 }
@@ -66,8 +66,8 @@ define(["require", "exports", "../model/KeysRepository", "../model/Wallet", "../
             });
         };
         Api.prototype.importWalletFromMnemonic = function (mnemonicPhrase, language, password) {
-            var _this = this;
             if (language === void 0) { language = "auto"; }
+            var self = this;
             blockchainExplorer.getHeight().then(function (currentHeight) {
                 var newWallet = new Wallet_1.Wallet();
                 var mnemonic = mnemonicPhrase.trim();
@@ -85,7 +85,7 @@ define(["require", "exports", "../model/KeysRepository", "../model/Wallet", "../
                     var keys = Cn_1.Cn.create_address(mnemonic_decoded);
                     var newWallet_1 = new Wallet_1.Wallet();
                     newWallet_1.keys = KeysRepository_1.KeysRepository.fromPriv(keys.spend.sec, keys.view.sec);
-                    var height = _this.importHeight - 10;
+                    var height = self.importHeight - 10;
                     if (height < 0)
                         height = 0;
                     if (height > currentHeight)
@@ -102,10 +102,10 @@ define(["require", "exports", "../model/KeysRepository", "../model/Wallet", "../
             });
         };
         Api.prototype.generateWallet = function (walletPassword) {
-            var _this = this;
+            var self = this;
             setTimeout(function () {
                 blockchainExplorer.getHeight().then(function (currentHeight) {
-                    var seed = Cn_1.CnNativeBride.sc_reduce32(Cn_1.CnRandom.rand_32());
+                    var seed = concealjs.random.random_scalar();
                     var keys = Cn_1.Cn.create_address(seed);
                     var newWallet = new Wallet_1.Wallet();
                     newWallet.keys = KeysRepository_1.KeysRepository.fromPriv(keys.spend.sec, keys.view.sec);
@@ -125,7 +125,7 @@ define(["require", "exports", "../model/KeysRepository", "../model/Wallet", "../
                         }
                         var phrase = Mnemonic_1.Mnemonic.mn_encode(newWallet.keys.priv.spend, langToExport);
                         if (phrase !== null)
-                            _this.mnemonicPhrase = phrase;
+                            self.mnemonicPhrase = phrase;
                     });
                     AppState_1.AppState.openWallet(newWallet, walletPassword);
                 });
@@ -138,13 +138,13 @@ define(["require", "exports", "../model/KeysRepository", "../model/Wallet", "../
         // Maybe pass wallet as a pararm? To be define later after testing
         //	send(wallet: Wallet, amountToSend: string, destinationAddress: string, paymentId: string) {
         Api.prototype.send = function (amountToSend, destinationAddress, paymentId) {
+            var self = this;
             var wallet = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(Wallet_1.Wallet.name, "default", false);
             blockchainExplorer.getHeight().then(function (blockchainHeight) {
                 var amount = parseFloat(amountToSend);
                 if (destinationAddress !== null) {
                     //todo use BigInteger
-                    if (amount * Math.pow(10, config.coinUnitPlaces) >
-                        wallet.availableAmount(blockchainHeight)) {
+                    if (amount * Math.pow(10, config.coinUnitPlaces) > wallet.availableAmount(blockchainHeight)) {
                         console.log("Amount higher than the funds");
                         return;
                     }
@@ -154,8 +154,7 @@ define(["require", "exports", "../model/KeysRepository", "../model/Wallet", "../
                     TransactionsExplorer_1.TransactionsExplorer.createTx([{ address: destinationAddress, amount: amountToSend_1 }], paymentId, wallet, blockchainHeight, function (amounts, numberOuts) {
                         return blockchainExplorer.getRandomOuts(amounts, numberOuts);
                     }, function (amount, feesAmount) {
-                        if (amount + feesAmount >
-                            wallet.availableAmount(blockchainHeight)) {
+                        if (amount + feesAmount > wallet.availableAmount(blockchainHeight)) {
                             console.log("Amount higher than the funds");
                             throw "Amount higher than the funds";
                         }
@@ -192,18 +191,15 @@ define(["require", "exports", "../model/KeysRepository", "../model/Wallet", "../
             });
         };
         Api.prototype.refresh = function (callback) {
+            var self = this;
             blockchainExplorer.getHeight().then(function (height) {
                 callback(height);
             });
         };
         Api.prototype.getTxDetails = function (transaction) {
             var wallet = (0, DependencyInjector_1.DependencyInjectorInstance)().getInstance(Wallet_1.Wallet.name, "default", false);
-            var explorerUrlHash = config.testnet
-                ? config.testnetExplorerUrlHash
-                : config.mainnetExplorerUrlHash;
-            var explorerUrlBlock = config.testnet
-                ? config.testnetExplorerUrlBlock
-                : config.mainnetExplorerUrlBlock;
+            var explorerUrlHash = config.testnet ? config.testnetExplorerUrlHash : config.mainnetExplorerUrlHash;
+            var explorerUrlBlock = config.testnet ? config.testnetExplorerUrlBlock : config.mainnetExplorerUrlBlock;
             var fees = 0;
             if (transaction.getAmount() < 0)
                 fees = transaction.fees / Math.pow(10, config.coinUnitPlaces);

@@ -101,8 +101,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                     _this.blockchainHeight = height;
                     _this.refreshWallet();
                     // Update isDepositDisabled based on syncing status and max amount
-                    _this.isDepositDisabled =
-                        _this.isWalletSyncing || _this.maxDepositAmount < 1;
+                    _this.isDepositDisabled = _this.isWalletSyncing || _this.maxDepositAmount < 1;
                     _this.isWithdrawDisabled = _this.isWalletSyncing;
                 })
                     .catch(function (err) {
@@ -114,9 +113,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 _this.deposits = wallet.getDepositsCopy().reverse();
                 _this.currentScanBlock = wallet.lastHeight;
                 var timeDiff = new Date().getTime() - _this.refreshTimestamp.getTime();
-                if (((_this.refreshTimestamp < wallet.modifiedTimestamp() ||
-                    _this.lastPending > 0) &&
-                    timeDiff > _this.refreshInterval) ||
+                if (((_this.refreshTimestamp < wallet.modifiedTimestamp() || _this.lastPending > 0) && timeDiff > _this.refreshInterval) ||
                     forceRedraw /*|| filterChanged*/) {
                     logDebugMsg("refreshWallet", _this.currentScanBlock);
                     _this.walletAmount = wallet.amount;
@@ -147,12 +144,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 _this.refreshTimestamp = new Date();
             };
             _this.moreInfoOnDeposit = function (deposit) {
-                var explorerUrlHash = config.testnet
-                    ? config.testnetExplorerUrlHash
-                    : config.mainnetExplorerUrlHash;
-                var explorerUrlBlock = config.testnet
-                    ? config.testnetExplorerUrlBlock
-                    : config.mainnetExplorerUrlBlock;
+                var explorerUrlHash = config.testnet ? config.testnetExplorerUrlHash : config.mainnetExplorerUrlHash;
+                var explorerUrlBlock = config.testnet ? config.testnetExplorerUrlBlock : config.mainnetExplorerUrlBlock;
                 var status = deposit.getStatus(_this.blockchainHeight);
                 var creatingTimestamp = 0;
                 var spendingTimestamp = 0;
@@ -221,9 +214,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                         "</a></span></div>\n          <div><span class=\"txDetailsLabel\">" +
                         i18n.t("depositsPage.depositDetails.spendingTime") +
                         "</span>:<span class=\"txDetailsValue\">" +
-                        (spendingTimestamp == 0
-                            ? "unspent"
-                            : new Date(spendingTimestamp * 1000).toDateString()) +
+                        (spendingTimestamp == 0 ? "unspent" : new Date(spendingTimestamp * 1000).toDateString()) +
                         "</a></span></div>\n          <div><span class=\"txDetailsLabel\">" +
                         i18n.t("depositsPage.depositDetails.spendingHeight") +
                         "</span>:<span class=\"txDetailsValue\">" +
@@ -238,13 +229,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                         case 0:
                             _a.trys.push([0, 2, 3, 4]);
                             this.lockedForm = true;
-                            foundDeposit_1 = this.deposits.find(function (d) {
-                                return d.txHash === deposit.txHash &&
-                                    d.globalOutputIndex === deposit.globalOutputIndex;
-                            });
-                            if (!foundDeposit_1 ||
-                                foundDeposit_1.withdrawPending ||
-                                foundDeposit_1.isSpent()) {
+                            foundDeposit_1 = this.deposits.find(function (d) { return d.txHash === deposit.txHash && d.globalOutputIndex === deposit.globalOutputIndex; });
+                            if (!foundDeposit_1 || foundDeposit_1.withdrawPending || foundDeposit_1.isSpent()) {
                                 swal({
                                     type: "error",
                                     title: i18n.t("depositsPage.withdrawError"),
@@ -407,9 +393,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                 console.log("Not enough money to deposit");
                                 return [2 /*return*/];
                             }
-                            termToDeposit = term > 12
-                                ? 12 * config.depositMinTermBlock
-                                : term * config.depositMinTermBlock;
+                            termToDeposit = term > 12 ? 12 * config.depositMinTermBlock : term * config.depositMinTermBlock;
                             destinationAddress = wallet.getPublicAddress();
                             mixinToSendWith = config.defaultMixin;
                             // Get all blocked deposit indices to filter randomOuts-------- <---------- WIP
@@ -429,6 +413,14 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                         onOpen: function () {
                                             swal.hideLoading();
                                         },
+                                    });
+                                    throw "";
+                                }
+                                else if (amount < config.depositMinAmountCoin * Math.pow(10, config.coinUnitPlaces)) {
+                                    swal({
+                                        type: "error",
+                                        title: i18n.t("depositsPage.createDeposit.amountError"),
+                                        confirmButtonText: "OK",
                                     });
                                     throw "";
                                 }
@@ -464,9 +456,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                             type: "error",
                                             title: i18n.t("sendPage.transferExceptionModal.title"),
                                             html: i18n.t("sendPage.transferExceptionModal.content", {
-                                                details: error instanceof Error
-                                                    ? error.message
-                                                    : JSON.stringify(error),
+                                                details: error instanceof Error ? error.message : JSON.stringify(error),
                                             }),
                                             confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
                                         });
@@ -537,8 +527,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                     onOpen: function () {
                         var _a;
                         // Add click event handler to the maximum amount text
-                        (_a = document
-                            .getElementById("maxAmountText")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", function () {
+                        (_a = document.getElementById("maxAmountText")) === null || _a === void 0 ? void 0 : _a.addEventListener("click", function () {
                             var depositAmountInput = document.getElementById("depositAmount");
                             if (depositAmountInput) {
                                 depositAmountInput.value = maxAmount.toString();
@@ -562,10 +551,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                         }
                         // Function to update the reward calculation
                         function updateRewardInfo() {
-                            var amount = parseInt(document.getElementById("depositAmount")
-                                .value) || 0;
-                            var term = parseInt(document.getElementById("depositTerm")
-                                .value) || 0;
+                            var amount = parseInt(document.getElementById("depositAmount").value) || 0;
+                            var term = parseInt(document.getElementById("depositTerm").value) || 0;
                             var aprIndex = 0;
                             if (amount >= 20000) {
                                 aprIndex = 2;
@@ -581,8 +568,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                                 .then(function (height) {
                                 // Calculate the interest using our Interest class
                                 var reward = Interest_1.InterestCalculator.calculateInterest(amount * Math.pow(10, config.coinUnitPlaces), // Convert to atomic units
-                                termBlocks, height) /
-                                    Math.pow(10, config.coinUnitPlaces); // Convert back to human-readable amount
+                                termBlocks, height) / Math.pow(10, config.coinUnitPlaces); // Convert back to human-readable amount
                                 // Update reward text
                                 var rewardText = document.getElementById("rewardText");
                                 if (rewardText) {
@@ -635,10 +621,7 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                         var cleanTerm = termInput.replace(/[^0-9]/g, "");
                         var term = parseInt(cleanTerm);
                         // Validate amount
-                        if (isNaN(amount) ||
-                            amount < 1 ||
-                            !Number.isInteger(amount) ||
-                            amount > maxAmount) {
+                        if (isNaN(amount) || amount < 1 || !Number.isInteger(amount) || amount > maxAmount) {
                             swal({
                                 title: i18n.t("depositsPage.createDeposit.amountError"),
                                 type: "error",

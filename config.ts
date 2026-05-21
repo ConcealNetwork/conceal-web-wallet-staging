@@ -6,9 +6,8 @@ myGlobal.config = {
     "https://ccxapi.conceal.network/api/"
   ],
   nodeList: [
-    //"https://seed1.conceal.network/daemon/",  this node url is temporary disabled
-    "https://seed2.conceal.network/daemon/",
-    "https://seed3.conceal.network/daemon/"
+    "https://explorer.conceal.network/daemon/",
+    "https://ccxapi.conceal.network/daemon/"
   ],
   publicNodes: "https://explorer.conceal.network/pool",
 	mainnetExplorerUrl: "https://explorer.conceal.network/",
@@ -54,6 +53,9 @@ myGlobal.config = {
 	idleWarningDuration: 20,
 	syncBlockCount: 300, // how many block we sync at once for a single remote node
 	maxBlockQueue: 10, // how many watchdog blocks can be max in the queue before waiting
+	maxTxQueueHigh: 2000, // max raw txs in FIFO before producers block
+	maxTxQueueLow: 500, // resume producers once drained below this (hysteresis)
+	maxTxQueuePackets: 100, // max FIFO packets before producers block
   maxRemoteNodes: 8, // what is the max remote nodes we use in a sync process
   maxWorkerCores: 8, // max cores that the workers can use. If lower they will use numberOfCores - 1
 
@@ -64,6 +66,11 @@ myGlobal.config = {
 	coinUriPrefix: 'conceal:',
 
 	donationAddress: 'ccx7V4LeUXy2eZ9waDXgsLS7Uc11e2CpNSCWVdxEqSRFAm6P6NQhSb7XMG1D6VAZKmJeaJP37WYQg84zbNrPduTX2whZ5pacfj',
+	donationAddresses: [
+		'ccx7NzuofXxcypov8Yqm2A118xT17HereBFjp3RScjzM7wncf8BRcnHZbACy63sWD71L7NmkJRgQKXFE3weCfAh31RAVFHgttf',
+		'ccx7V4LeUXy2eZ9waDXgsLS7Uc11e2CpNSCWVdxEqSRFAm6P6NQhSb7XMG1D6VAZKmJeaJP37WYQg84zbNrPduTX2whZ5pacfj',
+		'ccx7YZ4RC97fqMh1bmzrFtDoSSiEgvEYzhaLE53SR9bh4QrDBUhGUH3TCmXqv8MTLjJDtnCeeaT5bLC2ZSzp3ZmQ19DoiPLLXS',
+	],
 
 	avgBlockTime: 120,
 	maxBlockNumber: 500000000,

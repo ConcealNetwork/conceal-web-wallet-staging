@@ -2,8 +2,8 @@
  * Copyright (c) 2018 Gnock
  * Copyright (c) 2018-2019 The Masari Project
  * Copyright (c) 2018-2020 The Karbo developers
- * Copyright (c) 2018-2025 Conceal Community, Conceal.Network & Conceal Devs
- * Copyright (c) 2022-2025 Conceal Network
+ * Copyright (c) 2018-2026 Conceal Community, Conceal.Network & Conceal Devs
+ * Copyright (c) 2022-2026 Conceal Network
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -86,16 +86,21 @@
 	src: url("../fonts/Poppins-Light.ttf");
 }
 
-body,
 html {
 	margin: 0;
 	padding: 0;
-	min-height: 100%;
+	height: 100%;
 	max-width: 100%; /*user on media, won't have to unzoom*/
-	overflow-x: hidden
+	overflow: hidden;
 }
-html {
-	overscroll-behavior: none;
+
+body {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	max-width: 100%;
+	overflow-x: hidden;
+	overflow-y: hidden;
 }
 
 /* Global Modern Scrollbar Styling */
@@ -194,6 +199,11 @@ label {
 	transition: all 0.2s ease-out;
 }
 
+html,
+body {
+	transition: none;
+}
+
 /* unvisited link */
 a:link {
 	color: orange;
@@ -215,12 +225,12 @@ a:active {
 }
 
 body {
-	overflow-y: hidden;
 	font-weight: normal;
 	background-image: url(../img/landing/bg-dark.webp);
 	background-position: center center;
 	background-size: cover;
-	overscroll-behavior-y: contain;
+	overscroll-behavior-y: none;
+	-webkit-overflow-scrolling: touch;
 }
 
 body.menuHidden {
@@ -650,24 +660,6 @@ body.transparent #copyright {
 
 /* Old desktop-specific message history styles removed - now using grid layout for all screens */
 
-/* 
-.messageHistory .transactions .trnsaction .timestamp {
-	width: 20%;
-	font-size: 18px;
-}
-
-.messageHistory .transactions .transaction .messageText {
-	width: 60%;
-	font-size: 18px;
-}
-
-.messageHistory .transactions .transaction .blockHeight {
-	width: 15%;
-	font-size: 18px;
-  padding-right: 1em;
-}
-*/
-
 .message-status-dot {
 	font-size: 0.8em;
 	margin-left: 10px;
@@ -792,25 +784,6 @@ body.transparent #copyright {
 	width: 100%;
 }
 
-.importKeys {}
-
-/*
-.sendTab{
-
-}
-.sendTab .icon{
-	text-align: center;
-	padding-top:20px;
-}
-.sendTab .icon i{
-	font-size: 60px;
-	color:#146DBD;
-}
-.sendTab label{
-	display: block;
-	text-align: left;
-	font-size: 18px;
-}*/
 
 .sendTab .destinationInput {
 	display: block;
@@ -833,18 +806,6 @@ body.transparent #copyright {
 	height: 100%;
 }
 
-/*
-.sendTab .amountInput{
-	display: block;
-	width: 100%;
-	padding:5px;
-}
-
-.sendTab .row{
-	padding:20px 10px;
-	text-align: center;
-}
-*/
 .qrCodeScanningContainer {
 	position: fixed;
 	top: 0;
@@ -959,22 +920,6 @@ body.transparent #copyright {
 	border-width: 0 2px 2px 0;
 }
 
-/*
-.button{
-	display: inline-block;
-	padding: 10px;
-	font-size: 16px;
-	background: none;
-	border: 3px solid #005B95;
-	color:#005B95;
-	text-decoration: none;
-}
-.button:hover{
-	background: #005B95;
-	color:white;
-}
-*/
-
 
 /*===================INDEX PAGE==============*/
 .indexTab .container {
@@ -1010,7 +955,6 @@ body.native .indexTab .mainBlock {
 	margin-right: -50%;
 	transform: translate(-50%, -50%);
 }
-
 /* Native version: Adjust headline height */
 body.native .indexTab .mainBlock .headline {
 	height: calc(100vh - 55%);
@@ -1058,12 +1002,6 @@ body.native .indexTab .mainBlock .headline {
 	font-size: 1.3rem;
 }
 
-/* xSMall & Small */
-/* @media only screen and (max-width: 960px) {
-	.indexTab .mainBlock > .actions{
-		height: 125px !important;
-	}
-} */
 
 .indexTab .mainBlock>.actions {
 	text-align: left;
@@ -1670,20 +1608,6 @@ body {
 }
 
 .field.checkbox label:before {
-	/* position: absolute;
-	top: 0;
-	left: 0;
-	width: 17px;
-	height: 17px;
-	content: '';
-	background: #fff;
-	border-radius: .21428571rem;
-	-webkit-transition: border .1s ease, opacity .1s ease, -webkit-transform .1s ease, -webkit-box-shadow .1s ease;
-	transition: border .1s ease, opacity .1s ease, -webkit-transform .1s ease, -webkit-box-shadow .1s ease;
-	transition: border .1s ease, opacity .1s ease, transform .1s ease, box-shadow .1s ease;
-	transition: border .1s ease, opacity .1s ease, transform .1s ease, box-shadow .1s ease, -webkit-transform .1s ease, -webkit-box-shadow .1s ease;
-	border: 1px solid #d4d4d5; */
-
 	display: block;
 	position: absolute;
 	content: '';
@@ -1731,14 +1655,6 @@ body {
 
 .field.checkbox input:checked~label:after {
 	left: 2.15rem;
-}
-
-.field-description {
-	font-size: 0.9em;
-	color: var(--color-text-tertiary);
-	margin-top: 0.5em;
-	margin-bottom: 1em;
-	line-height: 1.4;
 }
 
 /* TTL Slider Styles */
@@ -2716,3 +2632,85 @@ body {
   text-overflow: ellipsis;
 }
 
+.version-info {
+	position: fixed;
+	bottom: 10%;
+	left: 50%;
+	transform: translateX(-50%);
+	text-align: center;
+	font-size: 12px;
+	color: #888;
+	line-height: 1.4;
+}
+
+.version-info div {
+	margin: 2px 0;
+}
+
+/* Snake animation around button - simple moving border effect */
+.snake-button-wrapper {
+	position: relative;
+	display: inline-block;
+	border-radius: 6px;
+}
+
+/* The moving snake border - 5px solid #ff9900 */
+.snake-button-wrapper.snake-active {
+	position: relative;
+}
+
+/* Remove button margin to prevent gap in border animation */
+.snake-button-wrapper .btn {
+	margin-top: 0;
+}
+
+.snake-button-wrapper.snake-active::before {
+	content: "";
+	position: absolute;
+	top: -2px;
+	left: -2px;
+	right: -2px;
+	bottom: -2px;
+	border: 4px solid #ff9900;
+	animation: snake-border-move 3s linear infinite;
+}
+
+.snake-button-wrapper.snake-active .btn {
+	position: relative;
+	z-index: 1;
+}
+
+/* Border appears to move around the button */
+@keyframes snake-border-move {
+	0% {
+		border-top-color: #ff9900;
+		border-right-color: transparent;
+		border-bottom-color: transparent;
+		border-left-color: transparent;
+	}
+	25% {
+		border-top-color: transparent;
+		border-right-color: #ff9900;
+		border-bottom-color: transparent;
+		border-left-color: transparent;
+	}
+	50% {
+		border-top-color: transparent;
+		border-right-color: transparent;
+		border-bottom-color: #ff9900;
+		border-left-color: transparent;
+	}
+	75% {
+		border-top-color: transparent;
+		border-right-color: transparent;
+		border-bottom-color: transparent;
+		border-left-color: #ff9900;
+	}
+	100% {
+		border-top-color: #ff9900;
+		border-right-color: transparent;
+		border-bottom-color: transparent;
+		border-left-color: transparent;
+	}
+}
+  

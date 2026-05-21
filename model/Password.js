@@ -41,11 +41,7 @@ define(["require", "exports"], function (require, exports) {
                 else if (aSpecial.test(password[i]))
                     numSpecials++;
             }
-            if (password.length < 8 ||
-                numUpper < 1 ||
-                numLower < 1 ||
-                numNums < 1 ||
-                numSpecials < 1) {
+            if (password.length < 8 || numUpper < 1 || numLower < 1 || numNums < 1 || numSpecials < 1) {
                 if (raiseError) {
                     swal({
                         type: "error",

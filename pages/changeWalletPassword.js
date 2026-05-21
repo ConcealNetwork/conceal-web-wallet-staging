@@ -55,7 +55,8 @@ define(["require", "exports", "../lib/numbersLab/DestructableView", "../lib/numb
                 this.invalidOldPassword = true;
         };
         ChangeWalletPasswordView.prototype.forceInsecurePasswordCheck = function () {
-            this.forceInsecurePassword = true;
+            var self = this;
+            self.forceInsecurePassword = true;
         };
         ChangeWalletPasswordView.prototype.walletPasswordWatch = function () {
             if (!Password_1.Password.checkPasswordConstraints(this.walletPassword, false)) {

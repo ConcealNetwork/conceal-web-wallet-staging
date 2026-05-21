@@ -15,18 +15,9 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import {
-  type BlockchainExplorer,
-  NetworkInfo,
-  type RawDaemon_Transaction,
-  type RawDaemon_Out,
-  type RemoteNodeInformation,
-} from "./BlockchainExplorer";
-import type { Wallet } from "../Wallet";
+import { BlockchainExplorer, NetworkInfo, RawDaemon_Transaction, RawDaemon_Out, RemoteNodeInformation } from "./BlockchainExplorer";
+import { Wallet } from "../Wallet";
 import { Storage } from "../Storage";
-import { MathUtil } from "../MathUtil";
-import { CnTransactions, CnUtils } from "../Cn";
-import { Transaction } from "../Transaction";
 import { WalletWatchdog } from "../WalletWatchdog";
 
 export type NodeInfo = {
@@ -46,7 +37,7 @@ class NodeWorker {
   private _allErrors: number;
   private _requests: number;
   private _isWorking: boolean;
-  private errorInterval: NodeJS.Timer;
+  private errorInterval: NodeJS.Timeout;
 
   constructor(url: string) {
     this._url = url;
@@ -61,19 +52,18 @@ class NodeWorker {
     }, 60 * 1000);
   }
 
-  makeRequest = (
-    method: "GET" | "POST",
-    path: string,
-    body: any = undefined
-  ): Promise<any> => {
+  destroy = () => {
+    clearInterval(this.errorInterval);
+  };
+
+  makeRequest = (method: "GET" | "POST", path: string, body: any = undefined): Promise<any> => {
     this._isWorking = true;
     ++this._requests;
 
     return new Promise<any>(async (resolve, reject) => {
       try {
         const url = this._url + path;
-        const requestBody =
-          typeof body === "string" ? body : JSON.stringify(body);
+        const requestBody = typeof body === "string" ? body : JSON.stringify(body);
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -101,15 +91,10 @@ class NodeWorker {
         this.increaseErrors();
 
         if (error.name === "AbortError") {
-          console.error(
-            `Node ${this._url} makeRequest timeout after ${this.timeout}ms (errors: ${this._errors + 1})`
-          );
+          console.error(`Node ${this._url} makeRequest timeout after ${this.timeout}ms (errors: ${this._errors + 1})`);
           reject(new Error("Request timeout"));
         } else {
-          console.error(
-            `Node ${this._url} makeRequest failed: %s (errors: ${this._errors + 1})`,
-            error.message
-          );
+          console.error(`Node ${this._url} makeRequest failed: %s (errors: ${this._errors + 1})`, error.message);
           reject(error);
         }
       }
@@ -168,15 +153,10 @@ class NodeWorker {
         this.increaseErrors();
 
         if (error.name === "AbortError") {
-          console.error(
-            `Node ${this._url} makeRpcRequest timeout after ${this.timeout}ms (errors: ${this._errors + 1})`
-          );
+          console.error(`Node ${this._url} makeRpcRequest timeout after ${this.timeout}ms (errors: ${this._errors + 1})`);
           reject(new Error("Request timeout"));
         } else {
-          console.error(
-            `Node ${this._url} makeRpcRequest failed: %s (errors: ${this._errors + 1})`,
-            error.message
-          );
+          console.error(`Node ${this._url} makeRpcRequest failed: %s (errors: ${this._errors + 1})`, error.message);
           reject(error);
         }
       }
@@ -209,21 +189,13 @@ class NodeWorker {
   };
 
   hasToManyErrors = () => {
-    return (
-      this._errors >= this.maxTempErrors || this._allErrors >= this.maxAllErrors
-    );
+    return this._errors >= this.maxTempErrors || this._allErrors >= this.maxAllErrors;
   };
 
   getStatus = (): number => {
-    if (
-      this._errors < this.maxTempErrors &&
-      this._allErrors < this.maxAllErrors
-    ) {
+    if (this._errors < this.maxTempErrors && this._allErrors < this.maxAllErrors) {
       return 0;
-    } else if (
-      this._errors >= this.maxTempErrors &&
-      this._allErrors < this.maxAllErrors
-    ) {
+    } else if (this._errors >= this.maxTempErrors && this._allErrors < this.maxAllErrors) {
       return 1;
     } else if (this._allErrors >= this.maxAllErrors) {
       return 2;
@@ -269,9 +241,7 @@ class NodeWorkersList {
   }
 
   private pickRandomNode(): NodeWorker | null {
-    let availableNodes = this.nodes.filter(
-      (node) => !node.hasToManyErrors() && !this.usedNodeUrls.has(node.url)
-    );
+    let availableNodes = this.nodes.filter((node) => !node.hasToManyErrors() && !this.usedNodeUrls.has(node.url));
 
     if (availableNodes.length === 0) {
       // If all nodes have been used, reset and try again
@@ -282,13 +252,12 @@ class NodeWorkersList {
         // Last resort: try any node, even if it has errors
         availableNodes = this.nodes;
         if (availableNodes.length === 0) {
+          console.error(`pickRandomNode: No nodes at all!`);
           return null; // No nodes at all
         }
 
         // Filter out nodes with excessive errors even in last resort
-        const lastResortNodes = availableNodes.filter(
-          (node) => node.allErrors < node.maxAllErrors
-        );
+        const lastResortNodes = availableNodes.filter((node) => node.allErrors < node.maxAllErrors);
         if (lastResortNodes.length > 0) {
           availableNodes = lastResortNodes;
         }
@@ -298,16 +267,16 @@ class NodeWorkersList {
     // Shuffle the available nodes for better randomization
     const shuffledNodes = [...availableNodes].sort(() => Math.random() - 0.5);
     const selectedNode = shuffledNodes[0];
-    this.usedNodeUrls.add(selectedNode.url);
+    if (selectedNode) {
+      this.usedNodeUrls.add(selectedNode.url);
+    } else {
+      console.error(`pickRandomNode: No node selected from ${availableNodes.length} available nodes`);
+    }
     return selectedNode;
   }
 
   private getSessionNode(): NodeWorker | null {
-    if (
-      !this.sessionNode ||
-      this.isSessionExpired() ||
-      this.sessionErrorCount >= this.maxSessionErrors
-    ) {
+    if (!this.sessionNode || this.isSessionExpired() || this.sessionErrorCount >= this.maxSessionErrors) {
       // Need to pick a new node
       this.sessionNode = this.pickRandomNode();
       this.sessionStartTime = Date.now();
@@ -333,11 +302,13 @@ class NodeWorkersList {
           }
           return response.fee_address || "";
         } catch (error) {
+          console.warn(`Fee address endpoint failed for node ${sessionNode.url}:`, error);
           // If feeaddress endpoint fails, try getinfo as fallback
           try {
             const info = await sessionNode.makeRequest("GET", "getinfo");
             return info.fee_address || "";
           } catch (fallbackError) {
+            console.warn(`Getinfo fallback also failed for node ${sessionNode.url}:`, fallbackError);
             // If both fail, return empty string (will use donation address)
             return "";
           }
@@ -348,19 +319,11 @@ class NodeWorkersList {
     });
   }
 
-  makeRequest = (
-    method: "GET" | "POST",
-    path: string,
-    body: any = undefined
-  ): Promise<any> => {
-    return this.executeWithSessionFailover((node) =>
-      node.makeRequest(method, path, body)
-    );
+  makeRequest = (method: "GET" | "POST", path: string, body: any = undefined): Promise<any> => {
+    return this.executeWithSessionFailover((node) => node.makeRequest(method, path, body));
   };
 
-  private executeWithSessionFailover = async <T>(
-    operation: (node: NodeWorker) => Promise<T>
-  ): Promise<T> => {
+  private executeWithSessionFailover = async <T>(operation: (node: NodeWorker) => Promise<T>): Promise<T> => {
     let lastError: any;
 
     for (let attempts = 0; attempts < 3; attempts++) {
@@ -384,9 +347,7 @@ class NodeWorkersList {
           if (this.usedNodeUrls.size >= Math.max(1, this.nodes.length - 1)) {
             this.usedNodeUrls.clear();
           } else {
-            console.log(
-              `Keeping used nodes list (${this.usedNodeUrls.size}/${this.nodes.length} used)`
-            );
+            console.log(`Keeping used nodes list (${this.usedNodeUrls.size}/${this.nodes.length} used)`);
           }
         }
       }
@@ -396,9 +357,7 @@ class NodeWorkersList {
   };
 
   makeRpcRequest = (method: string, params: any = {}): Promise<any> => {
-    return this.executeWithSessionFailover((node) =>
-      node.makeRpcRequest(method, params)
-    );
+    return this.executeWithSessionFailover((node) => node.makeRpcRequest(method, params));
   };
 
   getNodes = () => {
@@ -406,6 +365,10 @@ class NodeWorkersList {
   };
 
   start = (nodes: string[]) => {
+    if (this.nodes.length > 0) {
+      this.stop();
+    }
+    console.log(`NodeWorkersList.start: Initializing ${nodes.length} nodes`);
     for (let i = 0; i < nodes.length; i++) {
       this.nodes.push(new NodeWorker(nodes[i]));
     }
@@ -414,6 +377,9 @@ class NodeWorkersList {
   };
 
   stop = () => {
+    for (const node of this.nodes) {
+      node.destroy();
+    }
     this.nodes = [];
   };
 }
@@ -465,46 +431,36 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
   }
 
   getInfo = (): Promise<DaemonResponseGetInfo> => {
-    if (
-      Date.now() - this.lastTimeRetrieveInfo < 20 * 1000 &&
-      this.cacheInfo !== null
-    ) {
+    if (Date.now() - this.lastTimeRetrieveInfo < 20 * 1000 && this.cacheInfo !== null) {
       return Promise.resolve(this.cacheInfo);
     }
 
     this.lastTimeRetrieveInfo = Date.now();
-    return this.nodeWorkers
-      .makeRequest("GET", "getinfo")
-      .then((data: DaemonResponseGetInfo) => {
-        this.cacheInfo = data;
-        return data;
-      });
+    return this.nodeWorkers.makeRequest("GET", "getinfo").then((data: DaemonResponseGetInfo) => {
+      this.cacheInfo = data;
+      return data;
+    });
   };
 
   getHeight = (): Promise<number> => {
-    if (
-      Date.now() - this.lastTimeRetrieveHeight < 20 * 1000 &&
-      this.cacheHeight !== 0
-    ) {
+    if (Date.now() - this.lastTimeRetrieveHeight < 20 * 1000 && this.cacheHeight !== 0) {
       return Promise.resolve(this.cacheHeight);
     }
 
     this.lastTimeRetrieveHeight = Date.now();
-    return this.nodeWorkers
-      .makeRequest("GET", "getheight")
-      .then((data: any) => {
-        let height = parseInt(data.height);
-        this.cacheHeight = height;
-        return height;
-      });
+    return this.nodeWorkers.makeRequest("GET", "getheight").then((data: any) => {
+      let height = parseInt(data.height, 10);
+      this.cacheHeight = height;
+      return height;
+    });
   };
 
   getScannedHeight = (): number => {
     return this.scannedHeight;
   };
 
-  resetNodes = () => {
-    Storage.getItem("customNodeUrl", null)
+  resetNodes = (): Promise<void> => {
+    return Storage.getItem("customNodeUrl", null)
       .then((customNodeUrl) => {
         // Clean up current session before changing nodes
         this.nodeWorkers.cleanupSession();
@@ -520,25 +476,32 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
             currentIndex--;
 
             // And swap it with the current element.
-            [array[currentIndex], array[randomIndex]] = [
-              array[randomIndex],
-              array[currentIndex],
-            ];
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
           }
+        }
+
+        // Ensure we have nodes to work with
+        if (!config || !config.nodeList || config.nodeList.length === 0) {
+          throw new Error("No nodes available in configuration");
         }
 
         if (customNodeUrl) {
           this.nodeWorkers.start([customNodeUrl]);
         } else {
+          // Shuffle the node list for random selection
           shuffle(config.nodeList);
           this.nodeWorkers.start(config.nodeList);
         }
 
-        // Initialize new session with the updated node configuration
-        this.nodeWorkers.initializeSession();
+        // Note: initializeSession() is already called in NodeWorkersList.start()
+        // Verify that nodes are actually available before proceeding
+        if (this.nodeWorkers.getNodes().length === 0) {
+          throw new Error("Failed to initialize nodes");
+        }
       })
       .catch((err) => {
         console.error("resetNodes failed", err);
+        throw err;
       });
   };
 
@@ -546,7 +509,7 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
     return this.initialized;
   };
 
-  initialize = (): Promise<boolean> => {
+  initialize = async (): Promise<boolean> => {
     const doesMatch = (toCheck: string) => {
       return (element: string) => {
         return element.toLowerCase() === toCheck.toLowerCase();
@@ -554,49 +517,57 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
     };
 
     if (this.initialized) {
-      return Promise.resolve(true);
-    } else {
+      return true;
+    }
+
+    try {
       if (config.publicNodes) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10 * 1000);
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10 * 1000);
 
-        return fetch(config.publicNodes + "/list?hasSSL=true", {
-          method: "GET",
-          signal: controller.signal,
-        })
-          .then(async (response) => {
-            clearTimeout(timeoutId);
+          const response = await fetch(config.publicNodes + "/list?hasSSL=true", {
+            method: "GET",
+            signal: controller.signal,
+          });
 
-            if (!response.ok) {
-              throw new Error(
-                `HTTP ${response.status}: ${response.statusText}`
-              );
-            }
+          clearTimeout(timeoutId);
 
-            const result = await response.json();
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
 
-            if (result.success && result.list.length > 0) {
-              for (let i = 0; i < result.list.length; ++i) {
-                let finalUrl = "https://" + result.list[i].url.host + "/";
+          const result = await response.json();
 
-                if (config.nodeList.findIndex(doesMatch(finalUrl)) == -1) {
-                  config.nodeList.push(finalUrl);
-                }
+          if (result.success && result.list.length > 0) {
+            for (let i = 0; i < result.list.length; ++i) {
+              let finalUrl = "https://" + result.list[i].url.host + "/";
+
+              if (config.nodeList.findIndex(doesMatch(finalUrl)) === -1) {
+                config.nodeList.push(finalUrl);
               }
             }
-
-            this.initialized = true;
-            this.resetNodes();
-            return true;
-          })
-          .catch((error: any) => {
-            clearTimeout(timeoutId);
-            console.error("Failed to fetch public nodes: %s", error.message);
-            return false;
-          });
-      } else {
-        return Promise.resolve(true);
+          }
+        } catch (error) {
+          console.warn("Failed to fetch public nodes, using config nodes only:", error);
+        }
       }
+
+      this.initialized = true;
+
+      // Wait for resetNodes to complete before returning
+      await this.resetNodes();
+
+      // Double-check that nodes are ready
+      if (this.nodeWorkers.getNodes().length === 0) {
+        throw new Error("Node initialization failed - no nodes available");
+      }
+
+      console.log(`Initialized with ${this.nodeWorkers.getNodes().length} nodes`);
+      return true;
+    } catch (error) {
+      console.error("Node initialization failed:", error);
+      throw error;
     }
   };
 
@@ -620,11 +591,7 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
     return numbers;
   }
 
-  getTransactionsForBlocks(
-    startBlock: number,
-    endBlock: number,
-    includeMinerTxs: boolean
-  ): Promise<RawDaemon_Transaction[]> {
+  getTransactionsForBlocks(startBlock: number, endBlock: number, includeMinerTxs: boolean): Promise<RawDaemon_Transaction[]> {
     let tempStartBlock: number;
     if (startBlock === 0) {
       tempStartBlock = 1;
@@ -669,8 +636,7 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
                   tx.height = rawTx.height;
                   tx.hash = rawTx.hash;
                   tx.fee = rawTx.fee;
-                  if (rawTx.output_indexes.length > 0)
-                    tx.global_index_start = rawTx.output_indexes[0];
+                  if (rawTx.output_indexes.length > 0) tx.global_index_start = rawTx.output_indexes[0];
                   tx.output_indexes = rawTx.output_indexes;
                   formatted.push(tx);
                 }
@@ -723,28 +689,20 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
     );
   }
 
-  getRandomOuts(
-    amounts: number[],
-    nbOutsNeeded: number
-  ): Promise<RawDaemon_Out[]> {
+  getRandomOuts(amounts: number[], nbOutsNeeded: number): Promise<RawDaemon_Out[]> {
     return this.nodeWorkers
       .makeRequest("POST", "getrandom_outs", {
         amounts: amounts,
         outs_count: nbOutsNeeded,
       })
-      .then(
-        (response: {
-          status: "OK" | "string";
-          outs: { global_index: number; public_key: string }[];
-        }) => {
-          if (response.status !== "OK") throw "invalid_getrandom_outs_answer";
-          // if (response.outs.length > 0) {
-          //   logDebugMsg(response.outs);
-          // }
+      .then((response: { status: "OK" | "string"; outs: { global_index: number; public_key: string }[] }) => {
+        if (response.status !== "OK") throw "invalid_getrandom_outs_answer";
+        // if (response.outs.length > 0) {
+        //   logDebugMsg(response.outs);
+        // }
 
-          return response.outs;
-        }
-      );
+        return response.outs;
+      });
   }
 
   sendRawTx(rawTx: string) {
@@ -754,50 +712,61 @@ export class BlockchainExplorerRpcDaemon implements BlockchainExplorer {
         do_not_relay: false,
       })
       .then((transactions: any) => {
-        if (!transactions.status || transactions.status !== "OK")
-          throw transactions;
+        if (!transactions.status || transactions.status !== "OK") {
+          let errorMessage = "Failed to send raw transaction";
+
+          if (transactions.status) {
+            errorMessage += `: ${transactions.status}`;
+          }
+          if (transactions.reason) {
+            errorMessage += ` (${transactions.reason})`;
+          }
+
+          const error = new Error(errorMessage);
+          // Attach the original response for debugging if needed
+          (error as any).originalResponse = transactions;
+          throw error;
+        }
+
+        return transactions;
       });
   }
 
-  resolveOpenAlias(
-    domain: string
-  ): Promise<{ address: string; name: string | null }> {
-    return this.nodeWorkers
-      .makeRpcRequest("resolve_open_alias", { url: domain })
-      .then((response: { addresses?: string[]; status: "OK" | string }) => {
-        if (response.addresses && response.addresses.length > 0)
-          return { address: response.addresses[0], name: null };
-        throw "not_found";
-      });
+  resolveOpenAlias(domain: string): Promise<{ address: string; name: string | null }> {
+    return this.nodeWorkers.makeRpcRequest("resolve_open_alias", { url: domain }).then(function (response: {
+      addresses?: string[];
+      status: "OK" | string;
+    }) {
+      if (response.addresses && response.addresses.length > 0) return { address: response.addresses[0], name: null };
+      throw "not_found";
+    });
   }
 
   getNetworkInfo(): Promise<any> {
-    return this.nodeWorkers
-      .makeRpcRequest("getlastblockheader")
-      .then((raw: any) => {
-        let nodeList: NodeWorker[] = this.nodeWorkers.getNodes();
-        let usedNodes: NodeInfo[] = [];
+    return this.nodeWorkers.makeRpcRequest("getlastblockheader").then((raw: any) => {
+      let nodeList: NodeWorker[] = this.nodeWorkers.getNodes();
+      let usedNodes: NodeInfo[] = [];
 
-        for (let i = 0; i < nodeList.length; i++) {
-          usedNodes.push({
-            url: nodeList[i].url,
-            requests: nodeList[i].requests,
-            errors: nodeList[i].errors,
-            allErrors: nodeList[i].allErrors,
-            status: nodeList[i].getStatus(),
-          });
-        }
+      for (let i = 0; i < nodeList.length; i++) {
+        usedNodes.push({
+          url: nodeList[i].url,
+          requests: nodeList[i].requests,
+          errors: nodeList[i].errors,
+          allErrors: nodeList[i].allErrors,
+          status: nodeList[i].getStatus(),
+        });
+      }
 
-        return {
-          nodes: usedNodes,
-          major_version: raw.block_header["major_version"],
-          hash: raw.block_header["hash"],
-          reward: raw.block_header["reward"],
-          height: raw.block_header["height"],
-          timestamp: raw.block_header["timestamp"],
-          difficulty: raw.block_header["difficulty"],
-        };
-      });
+      return {
+        nodes: usedNodes,
+        major_version: raw.block_header["major_version"],
+        hash: raw.block_header["hash"],
+        reward: raw.block_header["reward"],
+        height: raw.block_header["height"],
+        timestamp: raw.block_header["timestamp"],
+        difficulty: raw.block_header["difficulty"],
+      };
+    });
   }
 
   getRemoteNodeInformation(): Promise<RemoteNodeInformation> {

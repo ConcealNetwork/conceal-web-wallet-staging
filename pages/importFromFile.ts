@@ -25,12 +25,11 @@ import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvi
 import { Mnemonic } from "../model/Mnemonic";
 import { MnemonicLang } from "../model/MnemonicLang";
 import { WalletRepository } from "../model/WalletRepository";
-import type { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
+import { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
 
 AppState.enableLeftMenu();
 
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
 class ImportView extends DestructableView {
   @VueVar("") password!: string;
@@ -50,13 +49,7 @@ class ImportView extends DestructableView {
   formValid() {
     if (this.password != this.password2) return false;
 
-    if (
-      !(
-        this.password !== "" &&
-        (!this.insecurePassword || this.forceInsecurePassword)
-      )
-    )
-      return false;
+    if (!(this.password !== "" && (!this.insecurePassword || this.forceInsecurePassword))) return false;
 
     if (this.rawFile === null) return false;
 
@@ -64,24 +57,25 @@ class ImportView extends DestructableView {
   }
 
   selectFile() {
+    let self = this;
     let element = $('<input type="file">');
-    this.invalidRawFile = true;
-    this.fileSelected = false;
-    element.on("change", (event: Event) => {
+    self.invalidRawFile = true;
+    self.fileSelected = false;
+    element.on("change", function (event: Event) {
       let files: File[] = (<any>event.target).files; // FileList object
       if (files.length > 0) {
-        this.fileName = files[0].name;
+        self.fileName = files[0].name;
         let fileReader = new FileReader();
-        fileReader.onload = () => {
+        fileReader.onload = function () {
           try {
             if (typeof fileReader.result === "string") {
-              this.rawFile = JSON.parse(fileReader.result);
+              self.rawFile = JSON.parse(fileReader.result);
             }
-            this.invalidRawFile = false;
-            this.fileSelected = true;
+            self.invalidRawFile = false;
+            self.fileSelected = true;
           } catch (e) {
-            this.invalidRawFile = true;
-            this.fileSelected = false;
+            self.invalidRawFile = true;
+            self.fileSelected = false;
             swal({
               type: "error",
               title: i18n.t("global.error"),
@@ -97,47 +91,41 @@ class ImportView extends DestructableView {
     element.click();
   }
 
-  importWallet() {
+  async importWallet() {
+    let self = this;
     $("#pageLoading").show();
 
-    blockchainExplorer
-      .initialize()
-      .then((success) => {
-        blockchainExplorer
-          .getHeight()
-          .then((currentHeight) => {
-            $("#pageLoading").hide();
+    try {
+      await blockchainExplorer.initialize();
 
-            setTimeout(() => {
-              let newWallet = WalletRepository.decodeWithPassword(
-                this.rawFile,
-                this.password
-              );
-              if (newWallet !== null) {
-                newWallet.recalculateIfNotViewOnly();
-                AppState.openWallet(newWallet, this.password);
-                window.location.href = "#account";
-              } else {
-                swal({
-                  type: "error",
-                  title: i18n.t("global.invalidPasswordModal.title"),
-                  text: i18n.t("global.invalidPasswordModal.content"),
-                  confirmButtonText: i18n.t(
-                    "global.invalidPasswordModal.confirmText"
-                  ),
-                });
-              }
-            }, 1);
-          })
-          .catch((err) => {
-            console.log(err);
-            $("#pageLoading").hide();
-          });
-      })
-      .catch((err) => {
-        console.log(err);
-        $("#pageLoading").hide();
-      });
+      // Add a small delay to ensure nodes are fully ready
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const currentHeight = await blockchainExplorer.getHeight();
+      $("#pageLoading").hide();
+
+      // Small delay before wallet operations
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      let newWallet = WalletRepository.decodeWithPassword(self.rawFile, self.password);
+      if (newWallet !== null) {
+        newWallet.recalculateIfNotViewOnly();
+        AppState.openWallet(newWallet, self.password);
+        window.location.href = "#account";
+      } else {
+        swal({
+          type: "error",
+          title: i18n.t("global.invalidPasswordModal.title"),
+          text: i18n.t("global.invalidPasswordModal.content"),
+          confirmButtonText: i18n.t("global.invalidPasswordModal.confirmText"),
+        });
+      }
+
+      console.log("Current height: ", currentHeight);
+    } catch (err) {
+      console.log("Import wallet failed:", err);
+      $("#pageLoading").hide();
+    }
   }
 
   @VueWatched()
@@ -148,7 +136,8 @@ class ImportView extends DestructableView {
   }
 
   forceInsecurePasswordCheck() {
-    this.forceInsecurePassword = true;
+    let self = this;
+    self.forceInsecurePassword = true;
   }
 }
 
