@@ -16,10 +16,7 @@
  */
 
 export class Password {
-  static checkPasswordConstraints(
-    password: string,
-    raiseError: boolean = true
-  ) {
+  static checkPasswordConstraints(password: string, raiseError: boolean = true) {
     let anUpperCase = /[A-Z]/;
     let aLowerCase = /[a-z]/;
     let aNumber = /[0-9]/;
@@ -36,21 +33,13 @@ export class Password {
       else if (aSpecial.test(password[i])) numSpecials++;
     }
 
-    if (
-      password.length < 8 ||
-      numUpper < 1 ||
-      numLower < 1 ||
-      numNums < 1 ||
-      numSpecials < 1
-    ) {
+    if (password.length < 8 || numUpper < 1 || numLower < 1 || numNums < 1 || numSpecials < 1) {
       if (raiseError) {
         swal({
           type: "error",
           title: i18n.t("global.passwordNotComplexEnoughModal.title"),
           text: i18n.t("global.passwordInvalidRequirements"),
-          confirmButtonText: i18n.t(
-            "global.passwordNotComplexEnoughModal.confirmText"
-          ),
+          confirmButtonText: i18n.t("global.passwordNotComplexEnoughModal.confirmText"),
         });
       }
 

@@ -26,13 +26,12 @@ import { QRReader } from "../model/QRReader";
 import { CoinUri } from "../model/CoinUri";
 import { Mnemonic } from "../model/Mnemonic";
 import { Constants } from "../model/Constants";
-import type { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
+import { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
 import { Cn, CnUtils } from "../model/Cn";
 
 AppState.enableLeftMenu();
 
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
 class ImportView extends DestructableView {
   @VueVar("") password!: string;
@@ -55,125 +54,110 @@ class ImportView extends DestructableView {
   formValid() {
     if (this.password != this.password2) return false;
 
-    if (
-      !(
-        this.password !== "" &&
-        (!this.insecurePassword || this.forceInsecurePassword)
-      )
-    )
-      return false;
+    if (!(this.password !== "" && (!this.insecurePassword || this.forceInsecurePassword))) return false;
 
-    if (
-      !(
-        this.privateSpendKey !== null ||
-        this.mnemonicSeed !== null ||
-        (this.publicAddress !== null && this.privateViewKey !== null)
-      )
-    )
+    if (!(this.privateSpendKey !== null || this.mnemonicSeed !== null || (this.publicAddress !== null && this.privateViewKey !== null)))
       return false;
 
     return true;
   }
 
   importWallet() {
+    let self = this;
     $("#pageLoading").show();
 
     blockchainExplorer
       .initialize()
-      .then((success) => {
-        blockchainExplorer
-          .getHeight()
-          .then((currentHeight) => {
-            $("#pageLoading").hide();
-            let newWallet = new Wallet();
+      .then(() => {
+        // Add a small delay to ensure nodes are fully ready
+        setTimeout(() => {
+          blockchainExplorer
+            .getHeight()
+            .then(function (currentHeight) {
+              $("#pageLoading").hide();
+              let newWallet = new Wallet();
 
-            if (this.mnemonicSeed !== null) {
-              let detectedMnemonicLang = Mnemonic.detectLang(this.mnemonicSeed);
-              if (detectedMnemonicLang !== null) {
-                let mnemonic_decoded = Mnemonic.mn_decode(
-                  this.mnemonicSeed,
-                  detectedMnemonicLang
-                );
-                if (mnemonic_decoded !== null) {
-                  let keys = Cn.create_address(mnemonic_decoded);
-                  newWallet.keys = KeysRepository.fromPriv(
-                    keys.spend.sec,
-                    keys.view.sec
-                  );
+              if (self.mnemonicSeed !== null) {
+                let detectedMnemonicLang = Mnemonic.detectLang(self.mnemonicSeed);
+                if (detectedMnemonicLang !== null) {
+                  let mnemonic_decoded = Mnemonic.mn_decode(self.mnemonicSeed, detectedMnemonicLang);
+                  if (mnemonic_decoded !== null) {
+                    let keys = Cn.create_address(mnemonic_decoded);
+                    newWallet.keys = KeysRepository.fromPriv(keys.spend.sec, keys.view.sec);
+                  } else {
+                    swal({
+                      type: "error",
+                      title: i18n.t("global.invalidMnemonicModal.title"),
+                      text: i18n.t("global.invalidMnemonicModal.content"),
+                      confirmButtonText: i18n.t("global.invalidMnemonicModal.confirmText"),
+                    });
+                    return;
+                  }
                 } else {
                   swal({
                     type: "error",
                     title: i18n.t("global.invalidMnemonicModal.title"),
                     text: i18n.t("global.invalidMnemonicModal.content"),
-                    confirmButtonText: i18n.t(
-                      "global.invalidMnemonicModal.confirmText"
-                    ),
+                    confirmButtonText: i18n.t("global.invalidMnemonicModal.confirmText"),
                   });
                   return;
                 }
-              } else {
-                swal({
-                  type: "error",
-                  title: i18n.t("global.invalidMnemonicModal.title"),
-                  text: i18n.t("global.invalidMnemonicModal.content"),
-                  confirmButtonText: i18n.t(
-                    "global.invalidMnemonicModal.confirmText"
-                  ),
-                });
-                return;
+              } else if (self.privateSpendKey !== null) {
+                let viewkey = self.privateViewKey !== null ? self.privateViewKey : "";
+                if (viewkey === "") {
+                  viewkey = Cn.generate_keys(CnUtils.cn_fast_hash(self.privateSpendKey)).sec;
+                }
+                newWallet.keys = KeysRepository.fromPriv(self.privateSpendKey, viewkey);
+              } else if (self.privateSpendKey === null && self.privateViewKey !== null && self.publicAddress !== null) {
+                let decodedPublic = Cn.decode_address(self.publicAddress);
+                newWallet.keys = {
+                  priv: {
+                    spend: "",
+                    view: self.privateViewKey,
+                  },
+                  pub: {
+                    spend: decodedPublic.spend,
+                    view: decodedPublic.view,
+                  },
+                };
               }
-            } else if (this.privateSpendKey !== null) {
-              let viewkey =
-                this.privateViewKey !== null ? this.privateViewKey : "";
-              if (viewkey === "") {
-                viewkey = Cn.generate_keys(
-                  CnUtils.cn_fast_hash(this.privateSpendKey)
-                ).sec;
+
+              let height = self.importHeight; //never trust a perfect value from the user
+              if (height >= currentHeight) {
+                height = currentHeight - 1;
               }
-              newWallet.keys = KeysRepository.fromPriv(
-                this.privateSpendKey,
-                viewkey
-              );
-            } else if (
-              this.privateSpendKey === null &&
-              this.privateViewKey !== null &&
-              this.publicAddress !== null
-            ) {
-              let decodedPublic = Cn.decode_address(this.publicAddress);
-              newWallet.keys = {
-                priv: {
-                  spend: "",
-                  view: this.privateViewKey,
-                },
-                pub: {
-                  spend: decodedPublic.spend,
-                  view: decodedPublic.view,
-                },
-              };
-            }
+              height = height - 10;
 
-            let height = this.importHeight; //never trust a perfect value from the user
-            if (height >= currentHeight) {
-              height = currentHeight - 1;
-            }
-            height = height - 10;
+              if (height < 0) height = 0;
+              if (height > currentHeight) height = currentHeight;
+              newWallet.lastHeight = height;
+              newWallet.creationHeight = newWallet.lastHeight;
 
-            if (height < 0) height = 0;
-            if (height > currentHeight) height = currentHeight;
-            newWallet.lastHeight = height;
-            newWallet.creationHeight = newWallet.lastHeight;
+              AppState.openWallet(newWallet, self.password);
 
-            AppState.openWallet(newWallet, this.password);
-            window.location.href = "#account";
-          })
-          .catch((err) => {
-            console.log(err);
-            $("#pageLoading").hide();
-          });
+              window.location.href = "#account";
+            })
+            .catch((err) => {
+              console.log(err);
+              $("#pageLoading").hide();
+              swal({
+                type: "error",
+                title: i18n.t("importFromQrPage.error.title"),
+                text: i18n.t("importFromQrPage.error.connection"),
+                confirmButtonText: i18n.t("importFromQrPage.error.confirmText"),
+              });
+            });
+        }, 100); // 100ms delay to ensure nodes are ready
       })
       .catch((err) => {
         console.log(err);
         $("#pageLoading").hide();
+        swal({
+          type: "error",
+          title: i18n.t("importFromQrPage.error.title"),
+          text: i18n.t("importFromQrPage.error.init"),
+          confirmButtonText: i18n.t("importFromQrPage.error.confirmText"),
+        });
       });
   }
 
@@ -186,16 +170,17 @@ class ImportView extends DestructableView {
   }
 
   startScan() {
+    let self = this;
     this.scanSuccess = false; // Reset scan success state
     if (typeof window.QRScanner !== "undefined") {
-      window.QRScanner.scan((err: any, result: any) => {
+      window.QRScanner.scan(function (err: any, result: any) {
         if (err) {
           if (err.name === "SCAN_CANCELED") {
           } else {
             alert(JSON.stringify(err));
           }
         } else {
-          this.handleScanResult(result);
+          self.handleScanResult(result);
         }
       });
 
@@ -220,25 +205,18 @@ class ImportView extends DestructableView {
 
     try {
       let txDetails = CoinUri.decodeWallet(result);
-      if (
-        txDetails !== null &&
-        (typeof txDetails.spendKey !== "undefined" ||
-          typeof txDetails.mnemonicSeed !== "undefined")
-      ) {
-        if (typeof txDetails.spendKey !== "undefined")
-          this.privateSpendKey = txDetails.spendKey;
-        if (typeof txDetails.mnemonicSeed !== "undefined")
-          this.mnemonicSeed = txDetails.mnemonicSeed;
-        if (typeof txDetails.viewKey !== "undefined")
-          this.privateViewKey = txDetails.viewKey;
-        if (typeof txDetails.height !== "undefined")
-          this.importHeight = parseInt("" + txDetails.height);
-        if (typeof txDetails.address !== "undefined")
-          this.publicAddress = txDetails.address;
+      if (txDetails !== null && (typeof txDetails.spendKey !== "undefined" || typeof txDetails.mnemonicSeed !== "undefined")) {
+        if (typeof txDetails.spendKey !== "undefined") this.privateSpendKey = txDetails.spendKey;
+        if (typeof txDetails.mnemonicSeed !== "undefined") this.mnemonicSeed = txDetails.mnemonicSeed;
+        if (typeof txDetails.viewKey !== "undefined") this.privateViewKey = txDetails.viewKey;
+        if (typeof txDetails.height !== "undefined") this.importHeight = parseInt("" + txDetails.height);
+        if (typeof txDetails.address !== "undefined") this.publicAddress = txDetails.address;
         this.scanSuccess = true;
         return true;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("Error handling scan result", e);
+    }
 
     this.scanSuccess = false;
     return false;
@@ -246,7 +224,7 @@ class ImportView extends DestructableView {
 
   stopScan() {
     if (typeof window.QRScanner !== "undefined") {
-      window.QRScanner.cancelScan((status: any) => {
+      window.QRScanner.cancelScan(function (status: any) {
         //console.log(status);
       });
       window.QRScanner.hide();

@@ -13,38 +13,23 @@
  */
 
 import { DestructableView } from "../lib/numbersLab/DestructableView";
-import {
-  VueRequireFilter,
-  VueVar,
-  VueWatched,
-} from "../lib/numbersLab/VueAnnotate";
+import { VueRequireFilter, VueVar, VueWatched } from "../lib/numbersLab/VueAnnotate";
 import { TransactionsExplorer } from "../model/TransactionsExplorer";
-import {
-  Autowire,
-  DependencyInjectorInstance,
-} from "../lib/numbersLab/DependencyInjector";
+import { Autowire, DependencyInjectorInstance } from "../lib/numbersLab/DependencyInjector";
 import { Wallet } from "../model/Wallet";
 import { Url } from "../utils/Url";
 import { CoinUri } from "../model/CoinUri";
 import { QRReader } from "../model/QRReader";
 import { AppState } from "../model/AppState";
-import { type Transaction, TransactionIn } from "../model/Transaction";
+import { Transaction, TransactionIn } from "../model/Transaction";
 import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
-import { type NdefMessage, Nfc } from "../model/Nfc";
-import type {
-  BlockchainExplorer,
-  RawDaemon_Out,
-} from "../model/blockchain/BlockchainExplorer";
+import { NdefMessage, Nfc } from "../model/Nfc";
+import { BlockchainExplorer, RawDaemon_Out } from "../model/blockchain/BlockchainExplorer";
 import { Cn } from "../model/Cn";
 import { WalletWatchdog } from "../model/WalletWatchdog";
 
-let wallet: Wallet = DependencyInjectorInstance().getInstance(
-  Wallet.name,
-  "default",
-  false
-);
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
+let wallet: Wallet = DependencyInjectorInstance().getInstance(Wallet.name, "default", false);
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
 class MessagesView extends DestructableView {
   @VueVar([]) transactions!: Transaction[];
@@ -117,9 +102,7 @@ class MessagesView extends DestructableView {
   };
 
   refreshWallet = (forceRedraw: boolean = false) => {
-    let allTransactions = wallet.txsMem.concat(
-      wallet.getTransactionsCopy().reverse()
-    );
+    let allTransactions = wallet.txsMem.concat(wallet.getTransactionsCopy().reverse());
 
     this.transactions = allTransactions.filter((tx) => {
       return tx.message;
@@ -143,9 +126,10 @@ class MessagesView extends DestructableView {
   }
 
   startNfcScan() {
+    let self = this;
     if (this.ndefListener === null) {
-      this.ndefListener = (data: NdefMessage) => {
-        if (data.text) this.handleScanResult(data.text.content);
+      this.ndefListener = function (data: NdefMessage) {
+        if (data.text) self.handleScanResult(data.text.content);
         swal.close();
       };
       this.nfc.listenNdef(this.ndefListener);
@@ -176,15 +160,16 @@ class MessagesView extends DestructableView {
   }
 
   startScan() {
+    let self = this;
     if (typeof window.QRScanner !== "undefined") {
-      window.QRScanner.scan((err: any, result: any) => {
+      window.QRScanner.scan(function (err: any, result: any) {
         if (err) {
           if (err.name === "SCAN_CANCELED") {
           } else {
             alert(JSON.stringify(err));
           }
         } else {
-          this.handleScanResult(result);
+          self.handleScanResult(result);
         }
       });
 
@@ -196,43 +181,47 @@ class MessagesView extends DestructableView {
       this.initQr();
       if (this.qrReader) {
         this.qrScanning = true;
-        this.qrReader.scan((result: string) => {
-          this.qrScanning = false;
-          this.handleScanResult(result);
+        this.qrReader.scan(function (result: string) {
+          self.qrScanning = false;
+          self.handleScanResult(result);
         });
       }
     }
   }
 
   handleScanResult(result: string) {
+    //console.log('Scan result:', result);
+    let self = this;
     let parsed = false;
     try {
       let txDetails = CoinUri.decodeTx(result);
       if (txDetails !== null) {
-        this.destinationAddressUser = txDetails.address;
-        if (typeof txDetails.description !== "undefined")
-          this.txDescription = txDetails.description;
-        if (typeof txDetails.recipientName !== "undefined")
-          this.txDestinationName = txDetails.recipientName;
+        self.destinationAddressUser = txDetails.address;
+        if (typeof txDetails.description !== "undefined") self.txDescription = txDetails.description;
+        if (typeof txDetails.recipientName !== "undefined") self.txDestinationName = txDetails.recipientName;
         parsed = true;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("Error handling scan result", e);
+    }
 
     try {
       let txDetails = CoinUri.decodeWallet(result);
       if (txDetails !== null) {
-        this.destinationAddressUser = txDetails.address;
+        self.destinationAddressUser = txDetails.address;
         parsed = true;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("Error handling scan result", e);
+    }
 
-    if (!parsed) this.destinationAddressUser = result;
-    this.stopScan();
+    if (!parsed) self.destinationAddressUser = result;
+    self.stopScan();
   }
 
   stopScan() {
     if (typeof window.QRScanner !== "undefined") {
-      window.QRScanner.cancelScan((status: any) => {
+      window.QRScanner.cancelScan(function (status: any) {
         //console.log(status);
       });
       window.QRScanner.hide();
@@ -252,7 +241,7 @@ class MessagesView extends DestructableView {
     let self = this;
     blockchainExplorer
       .getHeight()
-      .then((blockchainHeight: number) => {
+      .then(function (blockchainHeight: number) {
         if (self.destinationAddress !== null) {
           let destinationAddress = self.destinationAddress;
           let amountToSend = config.messageTxAmount;
@@ -268,9 +257,7 @@ class MessagesView extends DestructableView {
 
           let mixinToSendWith: number = config.defaultMixin;
 
-          let destination: any[] = [
-            { address: destinationAddress, amount: amountToSend },
-          ];
+          let destination: any[] = [{ address: destinationAddress, amount: amountToSend }];
 
           // Get fee address from session node for remote node fee
           blockchainExplorer
@@ -295,23 +282,16 @@ class MessagesView extends DestructableView {
                 "",
                 wallet,
                 blockchainHeight,
-                (
-                  amounts: number[],
-                  numberOuts: number
-                ): Promise<RawDaemon_Out[]> =>
-                  blockchainExplorer.getRandomOuts(amounts, numberOuts),
-                (amount: number, feesAmount: number): Promise<void> => {
-                  if (
-                    amount + feesAmount >
-                    wallet.availableAmount(blockchainHeight)
-                  ) {
+                function (amounts: number[], numberOuts: number): Promise<RawDaemon_Out[]> {
+                  return blockchainExplorer.getRandomOuts(amounts, numberOuts);
+                },
+                function (amount: number, feesAmount: number): Promise<void> {
+                  if (amount + feesAmount > wallet.availableAmount(blockchainHeight)) {
                     swal({
                       type: "error",
                       title: i18n.t("sendPage.notEnoughMoneyModal.title"),
                       text: i18n.t("sendPage.notEnoughMoneyModal.content"),
-                      confirmButtonText: i18n.t(
-                        "sendPage.notEnoughMoneyModal.confirmText"
-                      ),
+                      confirmButtonText: i18n.t("sendPage.notEnoughMoneyModal.confirmText"),
                       onOpen: () => {
                         swal.hideLoading();
                       },
@@ -319,26 +299,18 @@ class MessagesView extends DestructableView {
                     throw "";
                   }
 
-                  return new Promise<void>((resolve, reject) => {
-                    setTimeout(() => {
+                  return new Promise<void>(function (resolve, reject) {
+                    setTimeout(function () {
                       //prevent bug with swal when code is too fast
                       let feeInfo = "";
-                      if (
-                        remoteFeeAddress !== wallet.getPublicAddress() &&
-                        ttl === 0
-                      ) {
+                      if (remoteFeeAddress !== wallet.getPublicAddress() && ttl === 0) {
                         feeInfo =
                           '<br><br><span style="font-size: 0.8em; font-style: italic; color: #666;">' +
                           "(" +
-                          i18n.t(
-                            "sendPage.confirmTransactionModal.remoteNodeFee",
-                            {
-                              fee:
-                                config.remoteNodeFee /
-                                10 ** config.coinUnitPlaces,
-                              symbol: config.coinSymbol,
-                            }
-                          ) +
+                          i18n.t("sendPage.confirmTransactionModal.remoteNodeFee", {
+                            fee: config.remoteNodeFee / Math.pow(10, config.coinUnitPlaces),
+                            symbol: config.coinSymbol,
+                          }) +
                           ")" +
                           "</span>";
                       }
@@ -347,31 +319,21 @@ class MessagesView extends DestructableView {
                         title: i18n.t("sendPage.confirmTransactionModal.title"),
                         html:
                           i18n.t("sendPage.confirmTransactionModal.content", {
-                            amount: amount / 10 ** config.coinUnitPlaces,
-                            fees: feesAmount / 10 ** config.coinUnitPlaces,
-                            total:
-                              (amount + feesAmount) /
-                              10 ** config.coinUnitPlaces,
+                            amount: amount / Math.pow(10, config.coinUnitPlaces),
+                            fees: feesAmount / Math.pow(10, config.coinUnitPlaces),
+                            total: (amount + feesAmount) / Math.pow(10, config.coinUnitPlaces),
                           }) + feeInfo,
                         showCancelButton: true,
-                        confirmButtonText: i18n.t(
-                          "sendPage.confirmTransactionModal.confirmText"
-                        ),
-                        cancelButtonText: i18n.t(
-                          "sendPage.confirmTransactionModal.cancelText"
-                        ),
+                        confirmButtonText: i18n.t("sendPage.confirmTransactionModal.confirmText"),
+                        cancelButtonText: i18n.t("sendPage.confirmTransactionModal.cancelText"),
                       })
-                        .then((result: any) => {
+                        .then(function (result: any) {
                           if (result.dismiss) {
                             reject("");
                           } else {
                             swal({
-                              title: i18n.t(
-                                "sendPage.finalizingTransferModal.title"
-                              ),
-                              html: i18n.t(
-                                "sendPage.finalizingTransferModal.content"
-                              ),
+                              title: i18n.t("sendPage.finalizingTransferModal.title"),
+                              html: i18n.t("sendPage.finalizingTransferModal.content"),
                               onOpen: () => {
                                 swal.showLoading();
                               },
@@ -387,93 +349,59 @@ class MessagesView extends DestructableView {
                 self.message,
                 ttl
               )
-                .then(
-                  (rawTxData: {
-                    raw: { hash: string; prvkey: string; raw: string };
-                    signed: any;
-                  }) => {
-                    blockchainExplorer
-                      .sendRawTx(rawTxData.raw.raw)
-                      .then(() => {
-                        //save the tx private key
-                        wallet.addTxPrivateKeyWithTxHash(
-                          rawTxData.raw.hash,
-                          rawTxData.raw.prvkey
-                        );
+                .then(function (rawTxData: { raw: { hash: string; prvkey: string; raw: string }; signed: any }) {
+                  blockchainExplorer
+                    .sendRawTx(rawTxData.raw.raw)
+                    .then(function () {
+                      //save the tx private key
+                      wallet.addTxPrivateKeyWithTxHash(rawTxData.raw.hash, rawTxData.raw.prvkey);
 
-                        //force a mempool check so the user is up to date
-                        let watchdog: WalletWatchdog =
-                          DependencyInjectorInstance().getInstance(
-                            WalletWatchdog.name
-                          );
-                        if (watchdog !== null) watchdog.checkMempool();
+                      //force a mempool check so the user is up to date
+                      let watchdog: WalletWatchdog = DependencyInjectorInstance().getInstance(WalletWatchdog.name);
+                      if (watchdog !== null) watchdog.checkMempool();
 
-                        let promise = Promise.resolve();
-                        promise = swal({
-                          type: "success",
-                          title: i18n.t("sendPage.transferSentModal.title"),
-                          confirmButtonText: i18n.t(
-                            "sendPage.transferSentModal.confirmText"
-                          ),
-                          onClose: () => {
-                            window.location.href = "#!account";
-                          },
-                        });
-
-                        promise.then(() => {
-                          if (self.redirectUrlAfterSend !== null) {
-                            window.location.href =
-                              self.redirectUrlAfterSend.replace(
-                                "{TX_HASH}",
-                                rawTxData.raw.hash
-                              );
-                          }
-                        });
-                      })
-                      .catch((data: any) => {
-                        swal({
-                          type: "error",
-                          title: i18n.t(
-                            "sendPage.transferExceptionModal.title"
-                          ),
-                          html: i18n.t(
-                            "sendPage.transferExceptionModal.content",
-                            { details: JSON.stringify(data) }
-                          ),
-                          confirmButtonText: i18n.t(
-                            "sendPage.transferExceptionModal.confirmText"
-                          ),
-                        });
+                      let promise = Promise.resolve();
+                      promise = swal({
+                        type: "success",
+                        title: i18n.t("sendPage.transferSentModal.title"),
+                        confirmButtonText: i18n.t("sendPage.transferSentModal.confirmText"),
+                        onClose: () => {
+                          window.location.href = "#!account";
+                        },
                       });
-                    swal.close();
-                  }
-                )
-                .catch((error: any) => {
+
+                      promise.then(function () {
+                        if (self.redirectUrlAfterSend !== null) {
+                          window.location.href = self.redirectUrlAfterSend.replace("{TX_HASH}", rawTxData.raw.hash);
+                        }
+                      });
+                    })
+                    .catch(function (data: any) {
+                      swal({
+                        type: "error",
+                        title: i18n.t("sendPage.transferExceptionModal.title"),
+                        html: i18n.t("sendPage.transferExceptionModal.content", { details: JSON.stringify(data) }),
+                        confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
+                      });
+                    });
+                  swal.close();
+                })
+                .catch(function (error: any) {
                   //console.log(error);
                   if (error && error !== "") {
                     if (typeof error === "string")
                       swal({
                         type: "error",
                         title: i18n.t("sendPage.transferExceptionModal.title"),
-                        html: i18n.t(
-                          "sendPage.transferExceptionModal.content",
-                          { details: error }
-                        ),
-                        confirmButtonText: i18n.t(
-                          "sendPage.transferExceptionModal.confirmText"
-                        ),
+                        html: i18n.t("sendPage.transferExceptionModal.content", { details: error }),
+                        confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
                       });
                     else
                       swal({
                         type: "error",
                         title: i18n.t("sendPage.transferExceptionModal.title"),
-                        html: i18n.t(
-                          "sendPage.transferExceptionModal.content",
-                          { details: JSON.stringify(error) }
-                        ),
-                        confirmButtonText: i18n.t(
-                          "sendPage.transferExceptionModal.confirmText"
-                        ),
+                        html: i18n.t("sendPage.transferExceptionModal.content", { details: JSON.stringify(error) }),
+                        confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
                       });
                   }
                 });
@@ -486,9 +414,7 @@ class MessagesView extends DestructableView {
             type: "error",
             title: i18n.t("sendPage.invalidAmountModal.title"),
             html: i18n.t("sendPage.invalidAmountModal.content"),
-            confirmButtonText: i18n.t(
-              "sendPage.invalidAmountModal.confirmText"
-            ),
+            confirmButtonText: i18n.t("sendPage.invalidAmountModal.confirmText"),
           });
         }
       })
@@ -500,29 +426,29 @@ class MessagesView extends DestructableView {
   @VueWatched()
   destinationAddressUserWatch() {
     if (this.destinationAddressUser.indexOf(".") !== -1) {
-      if (this.timeoutResolveAlias !== 0)
-        clearTimeout(this.timeoutResolveAlias);
+      let self = this;
+      if (this.timeoutResolveAlias !== 0) clearTimeout(this.timeoutResolveAlias);
 
-      this.timeoutResolveAlias = <any>setTimeout(() => {
+      this.timeoutResolveAlias = <any>setTimeout(function () {
         blockchainExplorer
-          .resolveOpenAlias(this.destinationAddressUser)
-          .then((data: { address: string; name: string | null }) => {
+          .resolveOpenAlias(self.destinationAddressUser)
+          .then(function (data: { address: string; name: string | null }) {
             try {
               Cn.decode_address(data.address);
-              this.txDestinationName = data.name;
-              this.destinationAddress = data.address;
-              this.domainAliasAddress = data.address;
-              this.destinationAddressValid = true;
-              this.openAliasValid = true;
+              self.txDestinationName = data.name;
+              self.destinationAddress = data.address;
+              self.domainAliasAddress = data.address;
+              self.destinationAddressValid = true;
+              self.openAliasValid = true;
             } catch (e) {
-              this.destinationAddressValid = false;
-              this.openAliasValid = false;
+              self.destinationAddressValid = false;
+              self.openAliasValid = false;
             }
-            this.timeoutResolveAlias = 0;
+            self.timeoutResolveAlias = 0;
           })
-          .catch(() => {
-            this.openAliasValid = false;
-            this.timeoutResolveAlias = 0;
+          .catch(function () {
+            self.openAliasValid = false;
+            self.timeoutResolveAlias = 0;
           });
       }, 400);
     } else {
@@ -540,9 +466,7 @@ class MessagesView extends DestructableView {
   @VueWatched()
   messageWatch() {
     try {
-      this.messageValid =
-        this.message.length === 0 ||
-        this.message.length <= config.maxMessageSize;
+      this.messageValid = this.message.length === 0 || this.message.length <= config.maxMessageSize;
     } catch (e) {
       this.messageValid = false;
     }
@@ -590,7 +514,7 @@ class MessagesView extends DestructableView {
     // Replace "* " with bullet point
     formatted = formatted.replace(/\*\s/g, "&nbsp;&nbsp•&nbsp");
     // Replace any two spaces with <br>
-    formatted = formatted.replace(/ {2}/g, "<br>");
+    formatted = formatted.replace(/  /g, "<br>");
 
     return formatted;
   }
@@ -607,11 +531,7 @@ class MessagesView extends DestructableView {
   }
 
   getTTLCountdown(transaction: Transaction): string {
-    if (
-      !transaction.ttl ||
-      transaction.ttl === 0 ||
-      transaction.blockHeight !== 0
-    ) {
+    if (!transaction.ttl || transaction.ttl === 0 || transaction.blockHeight !== 0) {
       return "";
     }
 
@@ -636,10 +556,7 @@ class MessagesView extends DestructableView {
   }
 
   markMessageSeen(txHash: string) {
-    if (
-      this.transactions.find((tx) => tx.hash === txHash)?.messageViewed ===
-      false
-    ) {
+    if (this.transactions.find((tx) => tx.hash === txHash)?.messageViewed === false) {
       wallet.updateTransactionFlags(txHash, { messageViewed: true });
     }
   }
@@ -662,33 +579,23 @@ class MessagesView extends DestructableView {
     }
 
     const searchText = this.messageFilter.toLowerCase();
-    return filtered.filter(
-      (tx) => tx.message && tx.message.toLowerCase().includes(searchText)
-    );
+    return filtered.filter((tx) => tx.message && tx.message.toLowerCase().includes(searchText));
   }
 
   get showPreview(): boolean {
-    return (
-      this.message.includes("  ") ||
-      this.message.includes("*") ||
-      this.message.includes("`")
-    );
+    return this.message.includes("  ") || this.message.includes("*") || this.message.includes("`");
   }
 }
 
 if (wallet !== null && blockchainExplorer !== null) new MessagesView("#app");
 else {
   AppState.askUserOpenWallet(false)
-    .then(() => {
-      wallet = DependencyInjectorInstance().getInstance(
-        Wallet.name,
-        "default",
-        false
-      );
+    .then(function () {
+      wallet = DependencyInjectorInstance().getInstance(Wallet.name, "default", false);
       if (wallet === null) throw "e";
       new MessagesView("#app");
     })
-    .catch(() => {
+    .catch(function () {
       window.location.href = "#index";
     });
 }

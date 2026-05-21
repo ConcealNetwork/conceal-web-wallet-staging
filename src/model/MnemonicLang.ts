@@ -17,17 +17,12 @@
 
 export class MnemonicLang {
   prefixLen = 0;
-  words: Array<string> = [];
-  trunc_words: Array<string> = [];
+  words: Array<String> = [];
+  trunc_words: Array<String> = [];
   name = "";
   shortLang = "";
 
-  constructor(
-    name: string,
-    shortLang: string,
-    prefixLen: number,
-    words: Array<string>
-  ) {
+  constructor(name: string, shortLang: string, prefixLen: number, words: Array<String>) {
     this.prefixLen = prefixLen;
     this.words = words;
     this.name = name;

@@ -25,11 +25,10 @@ import { AppState } from "../model/AppState";
 import { WalletRepository } from "../model/WalletRepository";
 import { Translations } from "../model/Translations";
 import { MnemonicLang } from "../model/MnemonicLang";
-import type { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
-import { Cn, CnNativeBride, CnRandom } from "../model/Cn";
+import { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
+import { Cn } from "../model/Cn";
 
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
 class CreateViewWallet extends DestructableView {
   @VueVar(0) step!: number;
@@ -54,61 +53,46 @@ class CreateViewWallet extends DestructableView {
     return super.destruct();
   }
 
-  generateWallet() {
-    setTimeout(() => {
+  async generateWallet() {
+    let self = this;
+    setTimeout(async function () {
       $("#pageLoading").show();
 
-      blockchainExplorer
-        .initialize()
-        .then((success) => {
-          blockchainExplorer
-            .getHeight()
-            .then((currentHeight) => {
-              $("#pageLoading").hide();
+      try {
+        await blockchainExplorer.initialize();
+        const currentHeight = await blockchainExplorer.getHeight();
+        $("#pageLoading").hide();
 
-              let seed = CnNativeBride.sc_reduce32(CnRandom.rand_32());
-              let keys = Cn.create_address(seed);
+        let seed = concealjs.random.random_scalar();
+        let keys = Cn.create_address(seed);
 
-              let newWallet = new Wallet();
-              newWallet.keys = KeysRepository.fromPriv(
-                keys.spend.sec,
-                keys.view.sec
-              );
-              let height = currentHeight - 10;
-              if (height < 0) height = 0;
-              newWallet.lastHeight = height;
-              newWallet.creationHeight = height;
+        let newWallet = new Wallet();
+        newWallet.keys = KeysRepository.fromPriv(keys.spend.sec, keys.view.sec);
+        let height = currentHeight - 10;
+        if (height < 0) height = 0;
+        newWallet.lastHeight = height;
+        newWallet.creationHeight = height;
 
-              this.newWallet = newWallet;
+        self.newWallet = newWallet;
 
-              Translations.getLang().then((userLang: string) => {
-                let langToExport = "english";
-                for (let lang of MnemonicLang.getLangs()) {
-                  if (lang.shortLang === userLang) {
-                    langToExport = lang.name;
-                    break;
-                  }
-                }
-                let phrase = Mnemonic.mn_encode(
-                  newWallet.keys.priv.spend,
-                  langToExport
-                );
-                if (phrase !== null) this.mnemonicPhrase = phrase;
-              });
+        const userLang = await Translations.getLang();
+        let langToExport = "english";
+        for (let lang of MnemonicLang.getLangs()) {
+          if (lang.shortLang === userLang) {
+            langToExport = lang.name;
+            break;
+          }
+        }
+        let phrase = Mnemonic.mn_encode(newWallet.keys.priv.spend, langToExport);
+        if (phrase !== null) self.mnemonicPhrase = phrase;
 
-              setTimeout(() => {
-                this.step = 1;
-              }, 2000);
-            })
-            .catch((err) => {
-              $("#pageLoading").hide();
-              console.log(err);
-            });
-        })
-        .catch((err) => {
-          $("#pageLoading").hide();
-          console.log(err);
-        });
+        setTimeout(function () {
+          self.step = 1;
+        }, 2000);
+      } catch (err) {
+        console.log("Wallet generation failed:", err);
+        $("#pageLoading").hide();
+      }
     }, 0);
   }
 
@@ -125,6 +109,7 @@ class CreateViewWallet extends DestructableView {
   }
 
   forceInsecurePasswordCheck() {
+    let self = this;
     /*swal({
 			title: 'Are you sure?',
 			text: "You won't be able to revert this!",
@@ -134,23 +119,19 @@ class CreateViewWallet extends DestructableView {
 			confirmButtonText: 'Yes'
 		}).then((result:{value:boolean}) => {
 			if (result.value) {*/
-    this.forceInsecurePassword = true;
+    self.forceInsecurePassword = true;
     // }
     // });
   }
 
   exportStep() {
-    if (
-      this.walletPassword !== "" &&
-      (!this.insecurePassword || this.forceInsecurePassword)
-    ) {
+    if (this.walletPassword !== "" && (!this.insecurePassword || this.forceInsecurePassword)) {
       this.step = 2;
     }
   }
 
   downloadBackup() {
-    if (this.newWallet !== null)
-      WalletRepository.downloadEncryptedPdf(this.newWallet);
+    if (this.newWallet !== null) WalletRepository.downloadEncryptedPdf(this.newWallet);
     this.walletBackupMade = true;
   }
 

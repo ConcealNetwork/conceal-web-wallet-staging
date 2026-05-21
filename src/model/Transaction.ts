@@ -57,8 +57,7 @@ export class TransactionOut {
     nout.type = raw.type;
     nout.term = raw.term;
 
-    if (typeof raw.ephemeralPub !== "undefined")
-      nout.ephemeralPub = raw.ephemeralPub;
+    if (typeof raw.ephemeralPub !== "undefined") nout.ephemeralPub = raw.ephemeralPub;
     if (typeof raw.pubKey !== "undefined") nout.pubKey = raw.pubKey;
     if (typeof raw.rtcOutPk !== "undefined") nout.rtcOutPk = raw.rtcOutPk;
     if (typeof raw.rtcMask !== "undefined") nout.rtcMask = raw.rtcMask;
@@ -186,8 +185,7 @@ export class Transaction {
     if (typeof raw.hash !== "undefined") transac.hash = raw.hash;
     if (typeof raw.message !== "undefined") transac.message = raw.message;
     if (typeof raw.fusion !== "undefined") transac.fusion = raw.fusion;
-    if (typeof raw.messageViewed !== "undefined")
-      transac.messageViewed = raw.messageViewed;
+    if (typeof raw.messageViewed !== "undefined") transac.messageViewed = raw.messageViewed;
     if (typeof raw.ttl !== "undefined") transac.ttl = raw.ttl;
     return transac;
   };
@@ -244,15 +242,9 @@ export class Transaction {
   isConfirmed = (blockchainHeight: number) => {
     if (this.blockHeight === 0) {
       return false;
-    } else if (
-      this.isCoinbase() &&
-      this.blockHeight + config.txCoinbaseMinConfirms < blockchainHeight
-    ) {
+    } else if (this.isCoinbase() && this.blockHeight + config.txCoinbaseMinConfirms < blockchainHeight) {
       return true;
-    } else if (
-      !this.isCoinbase() &&
-      this.blockHeight + config.txMinConfirms < blockchainHeight
-    ) {
+    } else if (!this.isCoinbase() && this.blockHeight + config.txMinConfirms < blockchainHeight) {
       return true;
     }
 
@@ -260,10 +252,7 @@ export class Transaction {
   };
 
   isFullyChecked = () => {
-    if (
-      this.getAmount() === 0 ||
-      this.getAmount() === -1 * config.minimumFee_V2
-    ) {
+    if (this.getAmount() === 0 || this.getAmount() === -1 * config.minimumFee_V2) {
       if (this.isFusion) {
         return true;
       } else if (this.ttl > 0) {
@@ -283,12 +272,7 @@ export class Transaction {
 
   hasMessage = () => {
     let txAmount = this.getAmount();
-    return (
-      this.message !== "" &&
-      txAmount > 0 &&
-      txAmount !== 1 * config.remoteNodeFee &&
-      txAmount !== 10 * config.remoteNodeFee
-    ); // no envelope for a suspectedremote node fee transaction
+    return this.message !== "" && txAmount > 0 && txAmount !== 1 * config.remoteNodeFee && txAmount !== 10 * config.remoteNodeFee; // no envelope for a suspectedremote node fee transaction
   };
 
   get isDeposit() {
@@ -304,17 +288,10 @@ export class Transaction {
   get isFusion() {
     let outputsCount = this.outs.length;
     let inputsCount = this.ins.length;
-    if (
-      this.outs.some((out) => out.type === "03") ||
-      this.ins.some((input) => input.type === "03")
-    ) {
+    if (this.outs.some((out) => out.type === "03") || this.ins.some((input) => input.type === "03")) {
       return false;
     }
-    return (
-      (inputsCount > Currency.fusionTxMinInputCount &&
-        inputsCount / outputsCount > config.fusionTxMinInOutCountRatio) ||
-      this.fusion
-    );
+    return (inputsCount > Currency.fusionTxMinInputCount && inputsCount / outputsCount > config.fusionTxMinInOutCountRatio) || this.fusion;
   }
 
   copy = () => {

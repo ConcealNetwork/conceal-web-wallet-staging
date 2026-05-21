@@ -19,37 +19,22 @@
  */
 
 import { DestructableView } from "../lib/numbersLab/DestructableView";
-import {
-  VueRequireFilter,
-  VueVar,
-  VueWatched,
-} from "../lib/numbersLab/VueAnnotate";
+import { VueRequireFilter, VueVar, VueWatched } from "../lib/numbersLab/VueAnnotate";
 import { TransactionsExplorer } from "../model/TransactionsExplorer";
-import {
-  Autowire,
-  DependencyInjectorInstance,
-} from "../lib/numbersLab/DependencyInjector";
+import { Autowire, DependencyInjectorInstance } from "../lib/numbersLab/DependencyInjector";
 import { Wallet } from "../model/Wallet";
 import { Url } from "../utils/Url";
 import { CoinUri } from "../model/CoinUri";
 import { QRReader } from "../model/QRReader";
 import { AppState } from "../model/AppState";
 import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
-import { type NdefMessage, Nfc } from "../model/Nfc";
-import type {
-  BlockchainExplorer,
-  RawDaemon_Out,
-} from "../model/blockchain/BlockchainExplorer";
+import { NdefMessage, Nfc } from "../model/Nfc";
+import { BlockchainExplorer, RawDaemon_Out } from "../model/blockchain/BlockchainExplorer";
 import { Cn } from "../model/Cn";
 import { WalletWatchdog } from "../model/WalletWatchdog";
 
-let wallet: Wallet = DependencyInjectorInstance().getInstance(
-  Wallet.name,
-  "default",
-  false
-);
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
+let wallet: Wallet = DependencyInjectorInstance().getInstance(Wallet.name, "default", false);
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
 AppState.enableLeftMenu();
 
@@ -103,14 +88,11 @@ class SendView extends DestructableView {
     let destinationName = Url.getHashSearchParameter("destName");
     let description = Url.getHashSearchParameter("txDesc");
     let redirect = Url.getHashSearchParameter("redirect");
-    if (sendAddress !== null)
-      this.destinationAddressUser = sendAddress.substr(0, 256);
+    if (sendAddress !== null) this.destinationAddressUser = sendAddress.substr(0, 256);
     if (amount !== null) this.amountToSend = amount;
-    if (destinationName !== null)
-      this.txDestinationName = destinationName.substr(0, 256);
+    if (destinationName !== null) this.txDestinationName = destinationName.substr(0, 256);
     if (description !== null) this.txDescription = description.substr(0, 256);
-    if (redirect !== null)
-      this.redirectUrlAfterSend = decodeURIComponent(redirect);
+    if (redirect !== null) this.redirectUrlAfterSend = decodeURIComponent(redirect);
     this.maxMessageSize = config.maxMessageSize;
     this.oldIsWalletSyncing = true;
     this.isWalletSyncing = true;
@@ -120,7 +102,7 @@ class SendView extends DestructableView {
     this.nfcAvailable = this.nfc.has;
     this.intervalRefresh = setInterval(() => {
       this.refresh();
-    }, 1 * 1000);
+    }, 3 * 1000);
 
     this.refresh();
   }
@@ -132,10 +114,7 @@ class SendView extends DestructableView {
         this.blockchainHeight = height;
         this.isWalletSyncing = wallet.lastHeight + 2 < this.blockchainHeight;
 
-        if (
-          this.oldIsWalletSyncing !== this.isWalletSyncing &&
-          !this.isWalletSyncing
-        ) {
+        if (this.oldIsWalletSyncing !== this.isWalletSyncing && !this.isWalletSyncing) {
           this.checkOptimization();
         }
 
@@ -163,9 +142,10 @@ class SendView extends DestructableView {
   }
 
   startNfcScan() {
+    let self = this;
     if (this.ndefListener === null) {
-      this.ndefListener = (data: NdefMessage) => {
-        if (data.text) this.handleScanResult(data.text.content);
+      this.ndefListener = function (data: NdefMessage) {
+        if (data.text) self.handleScanResult(data.text.content);
         swal.close();
       };
       this.nfc.listenNdef(this.ndefListener);
@@ -196,15 +176,16 @@ class SendView extends DestructableView {
   }
 
   startScan() {
+    let self = this;
     if (typeof window.QRScanner !== "undefined") {
-      window.QRScanner.scan((err: any, result: any) => {
+      window.QRScanner.scan(function (err: any, result: any) {
         if (err) {
           if (err.name === "SCAN_CANCELED") {
           } else {
             alert(JSON.stringify(err));
           }
         } else {
-          this.handleScanResult(result);
+          self.handleScanResult(result);
         }
       });
 
@@ -216,49 +197,52 @@ class SendView extends DestructableView {
       this.initQr();
       if (this.qrReader) {
         this.qrScanning = true;
-        this.qrReader.scan((result: string) => {
-          this.qrScanning = false;
-          this.handleScanResult(result);
+        this.qrReader.scan(function (result: string) {
+          self.qrScanning = false;
+          self.handleScanResult(result);
         });
       }
     }
   }
 
   handleScanResult(result: string) {
+    //console.log('Scan result:', result);
+    let self = this;
     let parsed = false;
     try {
       let txDetails = CoinUri.decodeTx(result);
       if (txDetails !== null) {
-        this.destinationAddressUser = txDetails.address;
-        if (typeof txDetails.description !== "undefined")
-          this.txDescription = txDetails.description;
-        if (typeof txDetails.recipientName !== "undefined")
-          this.txDestinationName = txDetails.recipientName;
+        self.destinationAddressUser = txDetails.address;
+        if (typeof txDetails.description !== "undefined") self.txDescription = txDetails.description;
+        if (typeof txDetails.recipientName !== "undefined") self.txDestinationName = txDetails.recipientName;
         if (typeof txDetails.amount !== "undefined") {
-          this.amountToSend = txDetails.amount;
-          this.lockedForm = true;
+          self.amountToSend = txDetails.amount;
+          self.lockedForm = true;
         }
-        if (typeof txDetails.paymentId !== "undefined")
-          this.paymentId = txDetails.paymentId;
+        if (typeof txDetails.paymentId !== "undefined") self.paymentId = txDetails.paymentId;
         parsed = true;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("Error handling scan result", e);
+    }
 
     try {
       let txDetails = CoinUri.decodeWallet(result);
       if (txDetails !== null) {
-        this.destinationAddressUser = txDetails.address;
+        self.destinationAddressUser = txDetails.address;
         parsed = true;
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error("Error handling scan result", e);
+    }
 
-    if (!parsed) this.destinationAddressUser = result;
-    this.stopScan();
+    if (!parsed) self.destinationAddressUser = result;
+    self.stopScan();
   }
 
   stopScan() {
     if (typeof window.QRScanner !== "undefined") {
-      window.QRScanner.cancelScan((status: any) => {
+      window.QRScanner.cancelScan(function (status: any) {
         //console.log(status);
       });
       window.QRScanner.hide();
@@ -286,27 +270,22 @@ class SendView extends DestructableView {
     let self = this;
     blockchainExplorer
       .getHeight()
-      .then(async (blockchainHeight: number) => {
+      .then(async function (blockchainHeight: number) {
         let amount = parseFloat(self.amountToSend);
         if (self.destinationAddress !== null) {
           //todo use BigInteger
-          if (
-            amount * 10 ** config.coinUnitPlaces >
-            wallet.availableAmount(blockchainHeight)
-          ) {
+          if (amount * Math.pow(10, config.coinUnitPlaces) > wallet.availableAmount(blockchainHeight)) {
             swal({
               type: "error",
               title: i18n.t("sendPage.notEnoughMoneyModal.title"),
               text: i18n.t("sendPage.notEnoughMoneyModal.content"),
-              confirmButtonText: i18n.t(
-                "sendPage.notEnoughMoneyModal.confirmText"
-              ),
+              confirmButtonText: i18n.t("sendPage.notEnoughMoneyModal.confirmText"),
             });
             return;
           }
 
           //TODO use biginteger
-          let amountToSend = amount * 10 ** config.coinUnitPlaces;
+          let amountToSend = amount * Math.pow(10, config.coinUnitPlaces);
           let destinationAddress = self.destinationAddress;
 
           swal({
@@ -319,9 +298,7 @@ class SendView extends DestructableView {
 
           let mixinToSendWith: number = config.defaultMixin;
 
-          let destination: any[] = [
-            { address: destinationAddress, amount: amountToSend },
-          ];
+          let destination: any[] = [{ address: destinationAddress, amount: amountToSend }];
 
           // Get fee address from session node for remote node fee
           blockchainExplorer
@@ -346,23 +323,16 @@ class SendView extends DestructableView {
                 self.paymentId,
                 wallet,
                 blockchainHeight,
-                (
-                  amounts: number[],
-                  numberOuts: number
-                ): Promise<RawDaemon_Out[]> =>
-                  blockchainExplorer.getRandomOuts(amounts, numberOuts),
-                (amount: number, feesAmount: number): Promise<void> => {
-                  if (
-                    amount + feesAmount >
-                    wallet.availableAmount(blockchainHeight)
-                  ) {
+                function (amounts: number[], numberOuts: number): Promise<RawDaemon_Out[]> {
+                  return blockchainExplorer.getRandomOuts(amounts, numberOuts);
+                },
+                function (amount: number, feesAmount: number): Promise<void> {
+                  if (amount + feesAmount > wallet.availableAmount(blockchainHeight)) {
                     swal({
                       type: "error",
                       title: i18n.t("sendPage.notEnoughMoneyModal.title"),
                       text: i18n.t("sendPage.notEnoughMoneyModal.content"),
-                      confirmButtonText: i18n.t(
-                        "sendPage.notEnoughMoneyModal.confirmText"
-                      ),
+                      confirmButtonText: i18n.t("sendPage.notEnoughMoneyModal.confirmText"),
                       onOpen: () => {
                         swal.hideLoading();
                       },
@@ -370,23 +340,18 @@ class SendView extends DestructableView {
                     throw "";
                   }
 
-                  return new Promise<void>((resolve, reject) => {
-                    setTimeout(() => {
+                  return new Promise<void>(function (resolve, reject) {
+                    setTimeout(function () {
                       //prevent bug with swal when code is too fast
                       let feeInfo = "";
                       if (remoteFeeAddress !== wallet.getPublicAddress()) {
                         feeInfo =
                           '<br><br><span style="font-size: 0.8em; font-style: italic; color: #666;">' +
                           "(" +
-                          i18n.t(
-                            "sendPage.confirmTransactionModal.remoteNodeFee",
-                            {
-                              fee:
-                                config.remoteNodeFee /
-                                10 ** config.coinUnitPlaces,
-                              symbol: config.coinSymbol,
-                            }
-                          ) +
+                          i18n.t("sendPage.confirmTransactionModal.remoteNodeFee", {
+                            fee: config.remoteNodeFee / Math.pow(10, config.coinUnitPlaces),
+                            symbol: config.coinSymbol,
+                          }) +
                           ")" +
                           "</span>";
                       }
@@ -395,31 +360,21 @@ class SendView extends DestructableView {
                         title: i18n.t("sendPage.confirmTransactionModal.title"),
                         html:
                           i18n.t("sendPage.confirmTransactionModal.content", {
-                            amount: amount / 10 ** config.coinUnitPlaces,
-                            fees: feesAmount / 10 ** config.coinUnitPlaces,
-                            total:
-                              (amount + feesAmount) /
-                              10 ** config.coinUnitPlaces,
+                            amount: amount / Math.pow(10, config.coinUnitPlaces),
+                            fees: feesAmount / Math.pow(10, config.coinUnitPlaces),
+                            total: (amount + feesAmount) / Math.pow(10, config.coinUnitPlaces),
                           }) + feeInfo,
                         showCancelButton: true,
-                        confirmButtonText: i18n.t(
-                          "sendPage.confirmTransactionModal.confirmText"
-                        ),
-                        cancelButtonText: i18n.t(
-                          "sendPage.confirmTransactionModal.cancelText"
-                        ),
+                        confirmButtonText: i18n.t("sendPage.confirmTransactionModal.confirmText"),
+                        cancelButtonText: i18n.t("sendPage.confirmTransactionModal.cancelText"),
                       })
-                        .then((result: any) => {
+                        .then(function (result: any) {
                           if (result.dismiss) {
                             reject("");
                           } else {
                             swal({
-                              title: i18n.t(
-                                "sendPage.finalizingTransferModal.title"
-                              ),
-                              html: i18n.t(
-                                "sendPage.finalizingTransferModal.content"
-                              ),
+                              title: i18n.t("sendPage.finalizingTransferModal.title"),
+                              html: i18n.t("sendPage.finalizingTransferModal.content"),
                               onOpen: () => {
                                 swal.showLoading();
                               },
@@ -437,114 +392,73 @@ class SendView extends DestructableView {
                 "regular",
                 0
               )
-                .then(
-                  (rawTxData: {
-                    raw: { hash: string; prvkey: string; raw: string };
-                    signed: any;
-                  }) => {
-                    blockchainExplorer
-                      .sendRawTx(rawTxData.raw.raw)
-                      .then(() => {
-                        //save the tx private key
-                        wallet.addTxPrivateKeyWithTxHashAndFusion(
-                          rawTxData.raw.hash,
-                          rawTxData.raw.prvkey,
-                          false
-                        );
+                .then(function (rawTxData: { raw: { hash: string; prvkey: string; raw: string }; signed: any }) {
+                  blockchainExplorer
+                    .sendRawTx(rawTxData.raw.raw)
+                    .then(function () {
+                      //save the tx private key
+                      wallet.addTxPrivateKeyWithTxHashAndFusion(rawTxData.raw.hash, rawTxData.raw.prvkey, false);
 
-                        //force a mempool check so the user is up to date
-                        let watchdog: WalletWatchdog =
-                          DependencyInjectorInstance().getInstance(
-                            WalletWatchdog.name
-                          );
-                        if (watchdog !== null) watchdog.checkMempool();
+                      //force a mempool check so the user is up to date
+                      let watchdog: WalletWatchdog = DependencyInjectorInstance().getInstance(WalletWatchdog.name);
+                      if (watchdog !== null) watchdog.checkMempool();
 
-                        let promise = Promise.resolve();
-                        if (
-                          destinationAddress ===
-                            "ccx7NzuofXxcypov8Yqm2A118xT17HereBFjp3RScjzM7wncf8BRcnHZbACy63sWD71L7NmkJRgQKXFE3weCfAh31RAVFHgttf" ||
-                          destinationAddress ===
-                            "ccx7V4LeUXy2eZ9waDXgsLS7Uc11e2CpNSCWVdxEqSRFAm6P6NQhSb7XMG1D6VAZKmJeaJP37WYQg84zbNrPduTX2whZ5pacfj" ||
-                          destinationAddress ===
-                            "ccx7YZ4RC97fqMh1bmzrFtDoSSiEgvEYzhaLE53SR9bh4QrDBUhGUH3TCmXqv8MTLjJDtnCeeaT5bLC2ZSzp3ZmQ19DoiPLLXS"
-                        ) {
-                          promise = swal({
-                            type: "success",
-                            title: i18n.t(
-                              "sendPage.thankYouDonationModal.title"
-                            ),
-                            text: i18n.t(
-                              "sendPage.thankYouDonationModal.content"
-                            ),
-                            confirmButtonText: i18n.t(
-                              "sendPage.thankYouDonationModal.confirmText"
-                            ),
-                            onClose: () => {
-                              window.location.href = "#!account";
-                            },
-                          });
-                        } else
-                          promise = swal({
-                            type: "success",
-                            title: i18n.t("sendPage.transferSentModal.title"),
-                            confirmButtonText: i18n.t(
-                              "sendPage.transferSentModal.confirmText"
-                            ),
-                            onClose: () => {
-                              window.location.href = "#!account";
-                            },
-                          });
-
-                        promise.then(() => {
-                          if (self.redirectUrlAfterSend !== null) {
-                            window.location.href = window.encodeURIComponent(
-                              self.redirectUrlAfterSend.replace(
-                                "{TX_HASH}",
-                                rawTxData.raw.hash
-                              )
-                            );
-                          }
+                      let promise = Promise.resolve();
+                      if (config.donationAddresses?.includes(destinationAddress)) {
+                        promise = swal({
+                          type: "success",
+                          title: i18n.t("sendPage.thankYouDonationModal.title"),
+                          text: i18n.t("sendPage.thankYouDonationModal.content"),
+                          confirmButtonText: i18n.t("sendPage.thankYouDonationModal.confirmText"),
+                          onClose: () => {
+                            window.location.href = "#!account";
+                          },
                         });
-                      })
-                      .catch((error: any) => {
-                        //console.log(error);
-                        if (error && error !== "") {
-                          let errorMessage = "";
-                          let errorTitle = i18n.t(
-                            "sendPage.transferExceptionModal.title"
-                          );
+                      } else
+                        promise = swal({
+                          type: "success",
+                          title: i18n.t("sendPage.transferSentModal.title"),
+                          confirmButtonText: i18n.t("sendPage.transferSentModal.confirmText"),
+                          onClose: () => {
+                            window.location.href = "#!account";
+                          },
+                        });
 
-                          if (typeof error === "string") {
-                            errorMessage = error;
-                          } else if (error instanceof Error) {
-                            errorMessage = error.message;
-                          } else {
-                            errorMessage = JSON.stringify(error);
-                          }
-
-                          swal({
-                            type: "error",
-                            title: errorTitle,
-                            html: i18n.t(
-                              "sendPage.transferExceptionModal.content",
-                              { details: errorMessage }
-                            ),
-                            confirmButtonText: i18n.t(
-                              "sendPage.transferExceptionModal.confirmText"
-                            ),
-                          });
+                      promise.then(function () {
+                        if (self.redirectUrlAfterSend !== null) {
+                          window.location.href = self.redirectUrlAfterSend.replace("{TX_HASH}", rawTxData.raw.hash);
                         }
                       });
-                    swal.close();
-                  }
-                )
-                .catch((error: any) => {
+                    })
+                    .catch(function (error: any) {
+                      //console.log(error);
+                      if (error && error !== "") {
+                        let errorMessage = "";
+                        let errorTitle = i18n.t("sendPage.transferExceptionModal.title");
+
+                        if (typeof error === "string") {
+                          errorMessage = error;
+                        } else if (error instanceof Error) {
+                          errorMessage = error.message;
+                        } else {
+                          errorMessage = JSON.stringify(error);
+                        }
+
+                        swal({
+                          type: "error",
+                          title: errorTitle,
+                          html: i18n.t("sendPage.transferExceptionModal.content", { details: errorMessage }),
+                          confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
+                        });
+                      }
+                    });
+                  swal.close();
+                })
+                .catch(function (error: any) {
                   //console.log(error);
                   if (error && error !== "") {
                     let errorMessage = "";
-                    let errorTitle = i18n.t(
-                      "sendPage.transferExceptionModal.title"
-                    );
+                    let errorTitle = i18n.t("sendPage.transferExceptionModal.title");
 
                     if (typeof error === "string") {
                       errorMessage = error;
@@ -560,9 +474,7 @@ class SendView extends DestructableView {
                       html: i18n.t("sendPage.transferExceptionModal.content", {
                         details: errorMessage,
                       }),
-                      confirmButtonText: i18n.t(
-                        "sendPage.transferExceptionModal.confirmText"
-                      ),
+                      confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
                     });
                   }
                 });
@@ -575,9 +487,7 @@ class SendView extends DestructableView {
             type: "error",
             title: i18n.t("sendPage.invalidAmountModal.title"),
             html: i18n.t("sendPage.invalidAmountModal.content"),
-            confirmButtonText: i18n.t(
-              "sendPage.invalidAmountModal.confirmText"
-            ),
+            confirmButtonText: i18n.t("sendPage.invalidAmountModal.confirmText"),
           });
         }
       })
@@ -590,10 +500,7 @@ class SendView extends DestructableView {
     blockchainExplorer
       .getHeight()
       .then((blockchainHeight: number) => {
-        let optimizeInfo = wallet.optimizationNeeded(
-          blockchainHeight,
-          config.optimizeThreshold
-        );
+        let optimizeInfo = wallet.optimizationNeeded(blockchainHeight, config.optimizeThreshold);
         logDebugMsg("optimizeInfo.numOutputs", optimizeInfo.numOutputs);
         logDebugMsg("optimizeInfo.isNeeded", optimizeInfo.isNeeded);
         this.optimizeIsNeeded = optimizeInfo.isNeeded;
@@ -621,12 +528,12 @@ class SendView extends DestructableView {
             blockchainHeight,
             config.optimizeThreshold,
             blockchainExplorer,
-            (amounts: number[], numberOuts: number): Promise<RawDaemon_Out[]> =>
-              blockchainExplorer.getRandomOuts(amounts, numberOuts)
+            function (amounts: number[], numberOuts: number): Promise<RawDaemon_Out[]> {
+              return blockchainExplorer.getRandomOuts(amounts, numberOuts);
+            }
           )
           .then((processedOuts: number) => {
-            let watchdog: WalletWatchdog =
-              DependencyInjectorInstance().getInstance(WalletWatchdog.name);
+            let watchdog: WalletWatchdog = DependencyInjectorInstance().getInstance(WalletWatchdog.name);
             console.log("processedOuts", processedOuts);
             //force a mempool check so the user is up to date
             if (watchdog !== null) {
@@ -653,29 +560,29 @@ class SendView extends DestructableView {
   @VueWatched()
   destinationAddressUserWatch() {
     if (this.destinationAddressUser.indexOf(".") !== -1) {
-      if (this.timeoutResolveAlias !== 0)
-        clearTimeout(this.timeoutResolveAlias);
+      let self = this;
+      if (this.timeoutResolveAlias !== 0) clearTimeout(this.timeoutResolveAlias);
 
-      this.timeoutResolveAlias = <any>setTimeout(() => {
+      this.timeoutResolveAlias = <any>setTimeout(function () {
         blockchainExplorer
-          .resolveOpenAlias(this.destinationAddressUser)
-          .then((data: { address: string; name: string | null }) => {
+          .resolveOpenAlias(self.destinationAddressUser)
+          .then(function (data: { address: string; name: string | null }) {
             try {
               Cn.decode_address(data.address);
-              this.txDestinationName = data.name;
-              this.destinationAddress = data.address;
-              this.domainAliasAddress = data.address;
-              this.destinationAddressValid = true;
-              this.openAliasValid = true;
+              self.txDestinationName = data.name;
+              self.destinationAddress = data.address;
+              self.domainAliasAddress = data.address;
+              self.destinationAddressValid = true;
+              self.openAliasValid = true;
             } catch (e) {
-              this.destinationAddressValid = false;
-              this.openAliasValid = false;
+              self.destinationAddressValid = false;
+              self.openAliasValid = false;
             }
-            this.timeoutResolveAlias = 0;
+            self.timeoutResolveAlias = 0;
           })
-          .catch(() => {
-            this.openAliasValid = false;
-            this.timeoutResolveAlias = 0;
+          .catch(function () {
+            self.openAliasValid = false;
+            self.timeoutResolveAlias = 0;
           });
       }, 400);
     } else {
@@ -693,9 +600,7 @@ class SendView extends DestructableView {
   @VueWatched()
   amountToSendWatch() {
     // Allow only numbers and at most one dot
-    this.amountToSend = this.amountToSend
-      .replace(/[^0-9.]/g, "")
-      .replace(/(\\..*)\\./g, "$1");
+    this.amountToSend = this.amountToSend.replace(/[^0-9.]/g, "").replace(/(\\..*)\\./g, "$1");
     try {
       this.amountToSendValid = !isNaN(parseFloat(this.amountToSend));
     } catch (e) {
@@ -708,10 +613,8 @@ class SendView extends DestructableView {
     try {
       this.paymentIdValid =
         this.paymentId.length === 0 ||
-        (this.paymentId.length === 16 &&
-          /^[0-9a-fA-F]{16}$/.test(this.paymentId)) ||
-        (this.paymentId.length === 64 &&
-          /^[0-9a-fA-F]{64}$/.test(this.paymentId));
+        (this.paymentId.length === 16 && /^[0-9a-fA-F]{16}$/.test(this.paymentId)) ||
+        (this.paymentId.length === 64 && /^[0-9a-fA-F]{64}$/.test(this.paymentId));
     } catch (e) {
       this.paymentIdValid = false;
     }
@@ -720,9 +623,7 @@ class SendView extends DestructableView {
   @VueWatched()
   messageWatch() {
     try {
-      this.messageValid =
-        this.message.length === 0 ||
-        this.message.length <= config.maxMessageSize;
+      this.messageValid = this.message.length === 0 || this.message.length <= config.maxMessageSize;
     } catch (e) {
       this.messageValid = false;
     }
@@ -741,11 +642,13 @@ class SendView extends DestructableView {
   }
 
   onAmountFocus() {
+    if (!this) return; // Safety check
     this.amountPlaceholder = "";
     if (this.amountToSend === "0") this.amountToSend = "";
   }
 
   onAmountBlur() {
+    if (!this) return; // Safety check
     if (this.amountToSend === "") this.amountToSend = "0";
     this.amountPlaceholder = "0";
   }
@@ -754,16 +657,12 @@ class SendView extends DestructableView {
 if (wallet !== null && blockchainExplorer !== null) new SendView("#app");
 else {
   AppState.askUserOpenWallet(false)
-    .then(() => {
-      wallet = DependencyInjectorInstance().getInstance(
-        Wallet.name,
-        "default",
-        false
-      );
+    .then(function () {
+      wallet = DependencyInjectorInstance().getInstance(Wallet.name, "default", false);
       if (wallet === null) throw "e";
       new SendView("#app");
     })
-    .catch(() => {
+    .catch(function () {
       window.location.href = "#index";
     });
 }

@@ -23,6 +23,7 @@ AppState.enableLeftMenu();
 class DonateView extends DestructableView {
   constructor(container: string) {
     super(container);
+    let self = this;
   }
 }
 

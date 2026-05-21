@@ -25,21 +25,12 @@ import { Wallet } from "../model/Wallet";
 import { AppState, WalletWorker } from "../model/AppState";
 import { Password } from "../model/Password";
 import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
-import type { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
+import { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
 import { WalletWatchdog } from "../model/WalletWatchdog";
 
-let wallet: Wallet = DependencyInjectorInstance().getInstance(
-  Wallet.name,
-  "default",
-  false
-);
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
-let walletWatchdog: WalletWatchdog = DependencyInjectorInstance().getInstance(
-  WalletWatchdog.name,
-  "default",
-  false
-);
+let wallet: Wallet = DependencyInjectorInstance().getInstance(Wallet.name, "default", false);
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
+let walletWatchdog: WalletWatchdog = DependencyInjectorInstance().getInstance(WalletWatchdog.name, "default", false);
 
 class ChangeWalletPasswordView extends DestructableView {
   @VueVar("") oldPassword!: string;
@@ -63,7 +54,8 @@ class ChangeWalletPasswordView extends DestructableView {
   }
 
   forceInsecurePasswordCheck() {
-    this.forceInsecurePassword = true;
+    let self = this;
+    self.forceInsecurePassword = true;
   }
 
   @VueWatched()
@@ -74,11 +66,7 @@ class ChangeWalletPasswordView extends DestructableView {
   }
 
   changePassword() {
-    let walletWorker: WalletWorker = DependencyInjectorInstance().getInstance(
-      WalletWorker.name,
-      "default",
-      false
-    );
+    let walletWorker: WalletWorker = DependencyInjectorInstance().getInstance(WalletWorker.name, "default", false);
     if (walletWorker !== null) {
       walletWorker.password = this.walletPassword;
       walletWorker.save();
@@ -86,9 +74,7 @@ class ChangeWalletPasswordView extends DestructableView {
       swal({
         type: "success",
         title: i18n.t("changeWalletPasswordPage.modalSuccess.title"),
-        confirmButtonText: i18n.t(
-          "changeWalletPasswordPage.modalSuccess.confirmText"
-        ),
+        confirmButtonText: i18n.t("changeWalletPasswordPage.modalSuccess.confirmText"),
       });
       this.oldPassword = "";
       this.walletPassword = "";
@@ -100,6 +86,5 @@ class ChangeWalletPasswordView extends DestructableView {
   }
 }
 
-if (wallet !== null && blockchainExplorer !== null)
-  new ChangeWalletPasswordView("#app");
+if (wallet !== null && blockchainExplorer !== null) new ChangeWalletPasswordView("#app");
 else window.location.href = "#index";

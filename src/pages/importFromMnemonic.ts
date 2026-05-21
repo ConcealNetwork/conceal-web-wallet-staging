@@ -26,13 +26,12 @@ import { Wallet } from "../model/Wallet";
 import { KeysRepository } from "../model/KeysRepository";
 import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
 import { Mnemonic } from "../model/Mnemonic";
-import type { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
+import { BlockchainExplorer } from "../model/blockchain/BlockchainExplorer";
 import { Cn } from "../model/Cn";
 
 AppState.enableLeftMenu();
 
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
 class ImportView extends DestructableView {
   @VueVar("") password!: string;
@@ -69,13 +68,7 @@ class ImportView extends DestructableView {
   formValid() {
     if (this.password != this.password2) return false;
 
-    if (
-      !(
-        this.password !== "" &&
-        (!this.insecurePassword || this.forceInsecurePassword)
-      )
-    )
-      return false;
+    if (!(this.password !== "" && (!this.insecurePassword || this.forceInsecurePassword))) return false;
 
     if (!this.validMnemonicPhrase) return false;
 
@@ -83,61 +76,58 @@ class ImportView extends DestructableView {
   }
 
   importWallet() {
+    let self = this;
     $("#pageLoading").show();
 
     blockchainExplorer
       .initialize()
-      .then((success) => {
-        blockchainExplorer
-          .getHeight()
-          .then((currentHeight) => {
-            $("#pageLoading").hide();
-
-            let newWallet = new Wallet();
-            let mnemonic = this.mnemonicPhrase.trim();
-            // let current_lang = 'english';
-            let current_lang = "english";
-
-            if (this.language === "auto") {
-              let detectedLang = Mnemonic.detectLang(
-                this.mnemonicPhrase.trim()
-              );
-              if (detectedLang !== null) current_lang = detectedLang;
-            } else current_lang = this.language;
-
-            let mnemonic_decoded = Mnemonic.mn_decode(mnemonic, current_lang);
-            if (mnemonic_decoded !== null) {
-              let keys = Cn.create_address(mnemonic_decoded);
+      .then(() => {
+        // Add a small delay to ensure nodes are fully ready
+        setTimeout(() => {
+          blockchainExplorer
+            .getHeight()
+            .then(function (currentHeight) {
+              $("#pageLoading").hide();
 
               let newWallet = new Wallet();
-              newWallet.keys = KeysRepository.fromPriv(
-                keys.spend.sec,
-                keys.view.sec
-              );
+              let mnemonic = self.mnemonicPhrase.trim();
+              // let current_lang = 'english';
+              let current_lang = "english";
 
-              let height = this.importHeight - 10;
-              if (height < 0) height = 0;
-              if (height > currentHeight) height = currentHeight;
+              if (self.language === "auto") {
+                let detectedLang = Mnemonic.detectLang(self.mnemonicPhrase.trim());
+                if (detectedLang !== null) current_lang = detectedLang;
+              } else current_lang = self.language;
 
-              newWallet.lastHeight = height;
-              newWallet.creationHeight = newWallet.lastHeight;
-              AppState.openWallet(newWallet, this.password);
-              window.location.href = "#account";
-            } else {
-              swal({
-                type: "error",
-                title: i18n.t("global.invalidMnemonicModal.title"),
-                text: i18n.t("global.invalidMnemonicModal.content"),
-                confirmButtonText: i18n.t(
-                  "global.invalidMnemonicModal.confirmText"
-                ),
-              });
-            }
-          })
-          .catch((err) => {
-            console.log(err);
-            $("#pageLoading").hide();
-          });
+              let mnemonic_decoded = Mnemonic.mn_decode(mnemonic, current_lang);
+              if (mnemonic_decoded !== null) {
+                let keys = Cn.create_address(mnemonic_decoded);
+
+                let newWallet = new Wallet();
+                newWallet.keys = KeysRepository.fromPriv(keys.spend.sec, keys.view.sec);
+
+                let height = self.importHeight - 10;
+                if (height < 0) height = 0;
+                if (height > currentHeight) height = currentHeight;
+
+                newWallet.lastHeight = height;
+                newWallet.creationHeight = newWallet.lastHeight;
+                AppState.openWallet(newWallet, self.password);
+                window.location.href = "#account";
+              } else {
+                swal({
+                  type: "error",
+                  title: i18n.t("global.invalidMnemonicModal.title"),
+                  text: i18n.t("global.invalidMnemonicModal.content"),
+                  confirmButtonText: i18n.t("global.invalidMnemonicModal.confirmText"),
+                });
+              }
+            })
+            .catch((err) => {
+              console.log(err);
+              $("#pageLoading").hide();
+            });
+        }, 100); // 100ms delay to ensure nodes are ready
       })
       .catch((err) => {
         console.log(err);
@@ -177,14 +167,14 @@ class ImportView extends DestructableView {
       this.validMnemonicPhrase = false;
     } else {
       let detected = Mnemonic.detectLang(this.mnemonicPhrase.trim());
-      if (this.language === "auto")
-        this.validMnemonicPhrase = detected !== null;
+      if (this.language === "auto") this.validMnemonicPhrase = detected !== null;
       else this.validMnemonicPhrase = detected === this.language;
     }
   }
 
   forceInsecurePasswordCheck() {
-    this.forceInsecurePassword = true;
+    let self = this;
+    self.forceInsecurePassword = true;
   }
 }
 

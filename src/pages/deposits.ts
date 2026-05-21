@@ -14,41 +14,26 @@
  */
 
 import { DestructableView } from "../lib/numbersLab/DestructableView";
-import {
-  VueRequireFilter,
-  VueVar,
-  VueWatched,
-} from "../lib/numbersLab/VueAnnotate";
+import { VueRequireFilter, VueVar, VueWatched } from "../lib/numbersLab/VueAnnotate";
 import { TransactionsExplorer } from "../model/TransactionsExplorer";
-import {
-  Autowire,
-  DependencyInjectorInstance,
-} from "../lib/numbersLab/DependencyInjector";
+import { Autowire, DependencyInjectorInstance } from "../lib/numbersLab/DependencyInjector";
 import { Wallet } from "../model/Wallet";
 import { Url } from "../utils/Url";
 import { CoinUri } from "../model/CoinUri";
-import type { QRReader } from "../model/QRReader";
+import { QRReader } from "../model/QRReader";
 import { AppState } from "../model/AppState";
-import { Transaction, TransactionIn, type Deposit } from "../model/Transaction";
+import { Transaction, TransactionIn, Deposit } from "../model/Transaction";
 import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
-import { type NdefMessage, Nfc } from "../model/Nfc";
-import type {
-  BlockchainExplorer,
-  RawDaemon_Out,
-} from "../model/blockchain/BlockchainExplorer";
+import { NdefMessage, Nfc } from "../model/Nfc";
+import { BlockchainExplorer, RawDaemon_Out } from "../model/blockchain/BlockchainExplorer";
 import { Cn } from "../model/Cn";
 import { WalletWatchdog } from "../model/WalletWatchdog";
 import { WalletRepository } from "../model/WalletRepository";
 import { InterestCalculator } from "../model/Interest";
 import { Translations, tickerStore } from "../model/Translations";
 
-let wallet: Wallet = DependencyInjectorInstance().getInstance(
-  Wallet.name,
-  "default",
-  false
-);
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
+let wallet: Wallet = DependencyInjectorInstance().getInstance(Wallet.name, "default", false);
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
 
 class DepositsView extends DestructableView {
   @VueVar([]) deposits!: Deposit[];
@@ -61,7 +46,7 @@ class DepositsView extends DestructableView {
 
   @VueVar(false) isWalletSyncing!: boolean;
   @VueVar(true) openAliasValid!: boolean;
-  @VueVar(10 ** config.coinUnitPlaces) currencyDivider!: number;
+  @VueVar(Math.pow(10, config.coinUnitPlaces)) currencyDivider!: number;
   @VueVar(0) maxDepositAmount!: number;
   @VueVar(false) isDepositDisabled!: boolean;
   @VueVar(false) isWithdrawDisabled!: boolean;
@@ -145,26 +130,18 @@ class DepositsView extends DestructableView {
         cancelButtonText: i18n.t("depositsPage.createDeposit.cancel"),
         onOpen: () => {
           // Add click event handler to the maximum amount text
-          document
-            .getElementById("maxAmountText")
-            ?.addEventListener("click", () => {
-              let depositAmountInput = document.getElementById(
-                "depositAmount"
-              ) as HTMLInputElement;
-              if (depositAmountInput) {
-                depositAmountInput.value = maxAmount.toString();
-                // Update reward info based on the new amount value
-                updateRewardInfo();
-              }
-            });
+          document.getElementById("maxAmountText")?.addEventListener("click", () => {
+            let depositAmountInput = document.getElementById("depositAmount") as HTMLInputElement;
+            if (depositAmountInput) {
+              depositAmountInput.value = maxAmount.toString();
+              // Update reward info based on the new amount value
+              updateRewardInfo();
+            }
+          });
 
           // Add input event listener to update reward information when deposit amount changes
-          let depositAmountInput = document.getElementById(
-            "depositAmount"
-          ) as HTMLInputElement;
-          let depositTermInput = document.getElementById(
-            "depositTerm"
-          ) as HTMLInputElement;
+          let depositAmountInput = document.getElementById("depositAmount") as HTMLInputElement;
+          let depositTermInput = document.getElementById("depositTerm") as HTMLInputElement;
 
           if (depositAmountInput) {
             depositAmountInput.addEventListener("input", () => {
@@ -181,16 +158,8 @@ class DepositsView extends DestructableView {
 
           // Function to update the reward calculation
           function updateRewardInfo() {
-            let amount =
-              parseInt(
-                (document.getElementById("depositAmount") as HTMLInputElement)
-                  .value
-              ) || 0;
-            let term =
-              parseInt(
-                (document.getElementById("depositTerm") as HTMLInputElement)
-                  .value
-              ) || 0;
+            let amount = parseInt((document.getElementById("depositAmount") as HTMLInputElement).value) || 0;
+            let term = parseInt((document.getElementById("depositTerm") as HTMLInputElement).value) || 0;
 
             let aprIndex = 0;
 
@@ -210,11 +179,10 @@ class DepositsView extends DestructableView {
                 // Calculate the interest using our Interest class
                 let reward =
                   InterestCalculator.calculateInterest(
-                    amount * 10 ** config.coinUnitPlaces, // Convert to atomic units
+                    amount * Math.pow(10, config.coinUnitPlaces), // Convert to atomic units
                     termBlocks,
                     height
-                  ) /
-                  10 ** config.coinUnitPlaces; // Convert back to human-readable amount
+                  ) / Math.pow(10, config.coinUnitPlaces); // Convert back to human-readable amount
 
                 // Update reward text
                 let rewardText = document.getElementById("rewardText");
@@ -231,10 +199,7 @@ class DepositsView extends DestructableView {
                     }
                   }
 
-                  rewardText.textContent = i18n.t(
-                    "depositsPage.createDeposit.rewardAtTerm",
-                    { reward: rewardFixed }
-                  );
+                  rewardText.textContent = i18n.t("depositsPage.createDeposit.rewardAtTerm", { reward: rewardFixed });
                 }
               })
               .catch((error) => {
@@ -255,10 +220,7 @@ class DepositsView extends DestructableView {
                       break;
                     }
                   }
-                  rewardText.textContent = i18n.t(
-                    "depositsPage.createDeposit.rewardAtTerm",
-                    { reward: rewardFixed }
-                  );
+                  rewardText.textContent = i18n.t("depositsPage.createDeposit.rewardAtTerm", { reward: rewardFixed });
                 }
               });
           }
@@ -267,12 +229,8 @@ class DepositsView extends DestructableView {
           updateRewardInfo();
         },
         preConfirm: () => {
-          const amountInput = (
-            document.getElementById("depositAmount") as HTMLInputElement
-          ).value;
-          const termInput = (
-            document.getElementById("depositTerm") as HTMLInputElement
-          ).value;
+          const amountInput = (document.getElementById("depositAmount") as HTMLInputElement).value;
+          const termInput = (document.getElementById("depositTerm") as HTMLInputElement).value;
 
           // Clean and validate amount
           const cleanAmount = amountInput.replace(/[^0-9]/g, "");
@@ -283,12 +241,7 @@ class DepositsView extends DestructableView {
           const term = parseInt(cleanTerm);
 
           // Validate amount
-          if (
-            isNaN(amount) ||
-            amount < 1 ||
-            !Number.isInteger(amount) ||
-            amount > maxAmount
-          ) {
+          if (isNaN(amount) || amount < 1 || !Number.isInteger(amount) || amount > maxAmount) {
             swal({
               title: i18n.t("depositsPage.createDeposit.amountError"),
               type: "error",
@@ -351,19 +304,14 @@ class DepositsView extends DestructableView {
                 if (wallet !== null) {
                   // Password is correct, proceed with deposit creation
                   swal.close();
-                  return this.createDeposit(
-                    this.depositAmount,
-                    this.depositTerm
-                  );
+                  return this.createDeposit(this.depositAmount, this.depositTerm);
                 } else {
                   // Password is incorrect
                   return swal({
                     type: "error",
                     title: i18n.t("global.invalidPasswordModal.title"),
                     text: i18n.t("global.invalidPasswordModal.content"),
-                    confirmButtonText: i18n.t(
-                      "global.invalidPasswordModal.confirmText"
-                    ),
+                    confirmButtonText: i18n.t("global.invalidPasswordModal.confirmText"),
                   });
                 }
               })
@@ -416,8 +364,7 @@ class DepositsView extends DestructableView {
         this.blockchainHeight = height;
         this.refreshWallet();
         // Update isDepositDisabled based on syncing status and max amount
-        this.isDepositDisabled =
-          this.isWalletSyncing || this.maxDepositAmount < 1;
+        this.isDepositDisabled = this.isWalletSyncing || this.maxDepositAmount < 1;
         this.isWithdrawDisabled = this.isWalletSyncing;
       })
       .catch((err: any) => {
@@ -429,13 +376,10 @@ class DepositsView extends DestructableView {
     this.deposits = wallet.getDepositsCopy().reverse();
     this.currentScanBlock = wallet.lastHeight;
 
-    let timeDiff: number =
-      new Date().getTime() - this.refreshTimestamp.getTime();
+    let timeDiff: number = new Date().getTime() - this.refreshTimestamp.getTime();
 
     if (
-      ((this.refreshTimestamp < wallet.modifiedTimestamp() ||
-        this.lastPending > 0) &&
-        timeDiff > this.refreshInterval) ||
+      ((this.refreshTimestamp < wallet.modifiedTimestamp() || this.lastPending > 0) && timeDiff > this.refreshInterval) ||
       forceRedraw /*|| filterChanged*/
     ) {
       logDebugMsg("refreshWallet", this.currentScanBlock);
@@ -443,19 +387,11 @@ class DepositsView extends DestructableView {
       this.walletAmount = wallet.amount;
       this.unlockedWalletAmount = wallet.availableAmount(this.currentScanBlock);
       // Calculate the maximum deposit amount
-      this.maxDepositAmount = Math.floor(
-        (this.unlockedWalletAmount - config.coinFee) / this.currencyDivider
-      );
+      this.maxDepositAmount = Math.floor((this.unlockedWalletAmount - config.coinFee) / this.currencyDivider);
 
       // Recap calculations
-      this.totalLifetimeDeposit = this.deposits.reduce(
-        (sum, d) => sum + d.amount,
-        0
-      );
-      this.totalLifetimeInterest = this.deposits.reduce(
-        (sum, d) => sum + d.interest,
-        0
-      );
+      this.totalLifetimeDeposit = this.deposits.reduce((sum, d) => sum + d.amount, 0);
+      this.totalLifetimeInterest = this.deposits.reduce((sum, d) => sum + d.interest, 0);
       const future = wallet.futureDepositInterest(this.currentScanBlock);
       this.totalCashedOutInterest = future.spent;
       this.futureInterestLocked = future.locked;
@@ -464,11 +400,8 @@ class DepositsView extends DestructableView {
       // Earliest unlockable
       const earliest = wallet.earliestUnlockableDeposit(this.currentScanBlock);
       if (earliest) {
-        const unlockTimestamp =
-          (earliest.timestamp + earliest.term * 120) * 1000;
-        this.earliestUnlockableDate = new Date(
-          unlockTimestamp
-        ).toLocaleDateString();
+        const unlockTimestamp = (earliest.timestamp + earliest.term * 120) * 1000;
+        this.earliestUnlockableDate = new Date(unlockTimestamp).toLocaleDateString();
         const now = Date.now();
         this.earliestUnlockableIsPast = unlockTimestamp < now;
       } else {
@@ -486,12 +419,8 @@ class DepositsView extends DestructableView {
   }
 
   moreInfoOnDeposit = (deposit: Deposit) => {
-    let explorerUrlHash = config.testnet
-      ? config.testnetExplorerUrlHash
-      : config.mainnetExplorerUrlHash;
-    let explorerUrlBlock = config.testnet
-      ? config.testnetExplorerUrlBlock
-      : config.mainnetExplorerUrlBlock;
+    let explorerUrlHash = config.testnet ? config.testnetExplorerUrlHash : config.mainnetExplorerUrlHash;
+    let explorerUrlBlock = config.testnet ? config.testnetExplorerUrlBlock : config.mainnetExplorerUrlBlock;
     let status = deposit.getStatus(this.blockchainHeight);
 
     let creatingTimestamp = 0;
@@ -546,7 +475,7 @@ class DepositsView extends DestructableView {
           <div><span class="txDetailsLabel">` +
         i18n.t("depositsPage.depositDetails.amount") +
         `</span>:<span class="txDetailsValue">` +
-        deposit.amount / 10 ** config.coinUnitPlaces +
+        deposit.amount / Math.pow(10, config.coinUnitPlaces) +
         `</a></span></div>
           <div><span class="txDetailsLabel">` +
         i18n.t("depositsPage.depositDetails.term") +
@@ -571,14 +500,12 @@ class DepositsView extends DestructableView {
           <div><span class="txDetailsLabel">` +
         i18n.t("depositsPage.depositDetails.interest") +
         `</span>:<span class="txDetailsValue">` +
-        deposit.interest / 10 ** config.coinUnitPlaces +
+        deposit.interest / Math.pow(10, config.coinUnitPlaces) +
         `</a></span></div>
           <div><span class="txDetailsLabel">` +
         i18n.t("depositsPage.depositDetails.spendingTime") +
         `</span>:<span class="txDetailsValue">` +
-        (spendingTimestamp == 0
-          ? "unspent"
-          : new Date(spendingTimestamp * 1000).toDateString()) +
+        (spendingTimestamp == 0 ? "unspent" : new Date(spendingTimestamp * 1000).toDateString()) +
         `</a></span></div>
           <div><span class="txDetailsLabel">` +
         i18n.t("depositsPage.depositDetails.spendingHeight") +
@@ -593,16 +520,8 @@ class DepositsView extends DestructableView {
     try {
       this.lockedForm = true;
       // Find deposit by txHash and outputIndex (natural unique identifiers)
-      const foundDeposit = this.deposits.find(
-        (d) =>
-          d.txHash === deposit.txHash &&
-          d.globalOutputIndex === deposit.globalOutputIndex
-      );
-      if (
-        !foundDeposit ||
-        foundDeposit.withdrawPending ||
-        foundDeposit.isSpent()
-      ) {
+      const foundDeposit = this.deposits.find((d) => d.txHash === deposit.txHash && d.globalOutputIndex === deposit.globalOutputIndex);
+      if (!foundDeposit || foundDeposit.withdrawPending || foundDeposit.isSpent()) {
         swal({
           type: "error",
           title: i18n.t("depositsPage.withdrawError"),
@@ -618,19 +537,17 @@ class DepositsView extends DestructableView {
         foundDeposit,
         wallet,
         blockchainHeight,
-        (amounts: number[], numberOuts: number): Promise<RawDaemon_Out[]> => {
+        function (amounts: number[], numberOuts: number): Promise<RawDaemon_Out[]> {
           // For withdrawals, we don't need mixins, so return empty array
           return Promise.resolve([]);
         },
-        (amount: number, feesAmount: number): Promise<void> => {
+        function (amount: number, feesAmount: number): Promise<void> {
           if (feesAmount > wallet.availableAmount(blockchainHeight)) {
             swal({
               type: "error",
               title: i18n.t("sendPage.notEnoughMoneyModal.title"),
               text: i18n.t("sendPage.notEnoughMoneyModal.content"),
-              confirmButtonText: i18n.t(
-                "sendPage.notEnoughMoneyModal.confirmText"
-              ),
+              confirmButtonText: i18n.t("sendPage.notEnoughMoneyModal.confirmText"),
               onOpen: () => {
                 swal.hideLoading();
               },
@@ -638,25 +555,21 @@ class DepositsView extends DestructableView {
             throw "";
           }
 
-          return new Promise<void>((resolve, reject) => {
-            setTimeout(() => {
+          return new Promise<void>(function (resolve, reject) {
+            setTimeout(function () {
               //prevent bug with swal when code is too fast
               swal({
                 title: i18n.t("sendPage.confirmTransactionModal.title"),
                 html: i18n.t("sendPage.confirmTransactionModal.content", {
-                  amount: (amount + feesAmount) / 10 ** config.coinUnitPlaces,
-                  fees: feesAmount / 10 ** config.coinUnitPlaces,
-                  total: amount / 10 ** config.coinUnitPlaces,
+                  amount: (amount + feesAmount) / Math.pow(10, config.coinUnitPlaces),
+                  fees: feesAmount / Math.pow(10, config.coinUnitPlaces),
+                  total: amount / Math.pow(10, config.coinUnitPlaces),
                 }),
                 showCancelButton: true,
-                confirmButtonText: i18n.t(
-                  "sendPage.confirmTransactionModal.confirmText"
-                ),
-                cancelButtonText: i18n.t(
-                  "sendPage.confirmTransactionModal.cancelText"
-                ),
+                confirmButtonText: i18n.t("sendPage.confirmTransactionModal.confirmText"),
+                cancelButtonText: i18n.t("sendPage.confirmTransactionModal.cancelText"),
               })
-                .then((result: any) => {
+                .then(function (result: any) {
                   if (result.dismiss) {
                     reject("");
                   } else {
@@ -685,67 +598,52 @@ class DepositsView extends DestructableView {
         "withdraw",
         foundDeposit.term
       )
-        .then(
-          (rawTxData: {
-            raw: { hash: string; prvkey: string; raw: string };
-            signed: any;
-          }) => {
-            //console.log('Raw transaction data:', rawTxData.raw.raw);
+        .then(function (rawTxData: { raw: { hash: string; prvkey: string; raw: string }; signed: any }) {
+          //console.log('Raw transaction data:', rawTxData.raw.raw);
 
-            blockchainExplorer
-              .sendRawTx(rawTxData.raw.raw)
-              .then(() => {
-                setTimeout(() => {
-                  //save the tx private key
-                  wallet.addTxPrivateKeyWithTxHash(
-                    rawTxData.raw.hash,
-                    rawTxData.raw.prvkey
-                  );
+          blockchainExplorer
+            .sendRawTx(rawTxData.raw.raw)
+            .then(function () {
+              setTimeout(() => {
+                //save the tx private key
+                wallet.addTxPrivateKeyWithTxHash(rawTxData.raw.hash, rawTxData.raw.prvkey);
 
-                  //force a mempool check so the user is up to date
-                  let watchdog: WalletWatchdog =
-                    DependencyInjectorInstance().getInstance(
-                      WalletWatchdog.name
-                    );
-                  if (watchdog !== null) watchdog.checkMempool();
+                //force a mempool check so the user is up to date
+                let watchdog: WalletWatchdog = DependencyInjectorInstance().getInstance(WalletWatchdog.name);
+                if (watchdog !== null) watchdog.checkMempool();
 
-                  // Success
-                  swal({
-                    type: "success",
-                    title: i18n.t("depositsPage.createDeposit.withdrawSuccess"),
-                    html: `TxHash:<br>
+                // Success
+                swal({
+                  type: "success",
+                  title: i18n.t("depositsPage.createDeposit.withdrawSuccess"),
+                  html: `TxHash:<br>
                 <a href="${config.mainnetExplorerUrlHash.replace("{ID}", rawTxData.raw.hash)}" 
                 target="_blank" class="tx-hash-value">${rawTxData.raw.hash}</a>`,
-                  });
-                  let promise = Promise.resolve();
-                  promise.then(() => {
-                    console.log(
-                      "Withdrawal successfully submitted to the blockchain"
-                    );
-                  });
-                }, 5);
-              })
-              .catch((data: any) => {
-                setTimeout(() => {
-                  wallet.updateDepositFlags(foundDeposit.txHash, {
-                    withdrawPending: false,
-                  });
-                  swal({
-                    type: "error",
-                    title: i18n.t("sendPage.transferExceptionModal.title"),
-                    html: i18n.t("sendPage.transferExceptionModal.content", {
-                      details: JSON.stringify(data),
-                    }),
-                    confirmButtonText: i18n.t(
-                      "sendPage.transferExceptionModal.confirmText"
-                    ),
-                  });
-                }, 5);
-              });
+                });
+                let promise = Promise.resolve();
+                promise.then(function () {
+                  console.log("Withdrawal successfully submitted to the blockchain");
+                });
+              }, 5);
+            })
+            .catch(function (data: any) {
+              setTimeout(() => {
+                wallet.updateDepositFlags(foundDeposit.txHash, {
+                  withdrawPending: false,
+                });
+                swal({
+                  type: "error",
+                  title: i18n.t("sendPage.transferExceptionModal.title"),
+                  html: i18n.t("sendPage.transferExceptionModal.content", {
+                    details: JSON.stringify(data),
+                  }),
+                  confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
+                });
+              }, 5);
+            });
 
-            swal.close();
-          }
-        )
+          swal.close();
+        })
         .catch((error) => {
           setTimeout(() => {
             if (error && error !== "") {
@@ -756,9 +654,7 @@ class DepositsView extends DestructableView {
                   html: i18n.t("sendPage.transferExceptionModal.content", {
                     details: error,
                   }),
-                  confirmButtonText: i18n.t(
-                    "sendPage.transferExceptionModal.confirmText"
-                  ),
+                  confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
                 });
               else
                 swal({
@@ -767,9 +663,7 @@ class DepositsView extends DestructableView {
                   html: i18n.t("sendPage.transferExceptionModal.content", {
                     details: JSON.stringify(error),
                   }),
-                  confirmButtonText: i18n.t(
-                    "sendPage.transferExceptionModal.confirmText"
-                  ),
+                  confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
                 });
             }
           }, 100);
@@ -791,19 +685,14 @@ class DepositsView extends DestructableView {
       this.lockedForm = true;
       const blockchainHeight = await blockchainExplorer.getHeight();
       // Convert amount to atomic units
-      const amountToDeposit = new JSBigInt(amount).multiply(
-        new JSBigInt(10 ** config.coinUnitPlaces)
-      );
+      const amountToDeposit = new JSBigInt(amount).multiply(new JSBigInt(Math.pow(10, config.coinUnitPlaces)));
       const fee = new JSBigInt(config.coinFee);
       const neededAmount = amountToDeposit.add(fee);
       if (neededAmount > wallet.availableAmount(blockchainHeight)) {
         console.log("Not enough money to deposit");
         return;
       }
-      const termToDeposit =
-        term > 12
-          ? 12 * config.depositMinTermBlock
-          : term * config.depositMinTermBlock;
+      const termToDeposit = term > 12 ? 12 * config.depositMinTermBlock : term * config.depositMinTermBlock;
       // Use the wallet's own address for deposits
       const destinationAddress = wallet.getPublicAddress();
 
@@ -821,20 +710,26 @@ class DepositsView extends DestructableView {
         "",
         wallet,
         blockchainHeight,
-        (amounts: number[], numberOuts: number): Promise<RawDaemon_Out[]> =>
-          blockchainExplorer.getRandomOuts(amounts, numberOuts),
-        (amount: number, feesAmount: number): Promise<void> => {
+        function (amounts: number[], numberOuts: number): Promise<RawDaemon_Out[]> {
+          return blockchainExplorer.getRandomOuts(amounts, numberOuts);
+        },
+        function (amount: number, feesAmount: number): Promise<void> {
           if (amount + feesAmount > wallet.availableAmount(blockchainHeight)) {
             swal({
               type: "error",
               title: i18n.t("sendPage.notEnoughMoneyModal.title"),
               text: i18n.t("sendPage.notEnoughMoneyModal.content"),
-              confirmButtonText: i18n.t(
-                "sendPage.notEnoughMoneyModal.confirmText"
-              ),
+              confirmButtonText: i18n.t("sendPage.notEnoughMoneyModal.confirmText"),
               onOpen: () => {
                 swal.hideLoading();
               },
+            });
+            throw "";
+          } else if (amount < config.depositMinAmountCoin * Math.pow(10, config.coinUnitPlaces)) {
+            swal({
+              type: "error",
+              title: i18n.t("depositsPage.createDeposit.amountError"),
+              confirmButtonText: "OK",
             });
             throw "";
           }
@@ -846,65 +741,49 @@ class DepositsView extends DestructableView {
         "deposit",
         termToDeposit
       )
-        .then(
-          (rawTxData: {
-            raw: { hash: string; prvkey: string; raw: string };
-            signed: any;
-          }) => {
-            // console.log(JSON.stringify(rawTxData, null, 2));
-            blockchainExplorer
-              .sendRawTx(rawTxData.raw.raw)
-              .then(() => {
-                //save the tx private key
-                wallet.addTxPrivateKeyWithTxHash(
-                  rawTxData.raw.hash,
-                  rawTxData.raw.prvkey
-                );
+        .then(function (rawTxData: { raw: { hash: string; prvkey: string; raw: string }; signed: any }) {
+          // console.log(JSON.stringify(rawTxData, null, 2));
+          blockchainExplorer
+            .sendRawTx(rawTxData.raw.raw)
+            .then(function () {
+              //save the tx private key
+              wallet.addTxPrivateKeyWithTxHash(rawTxData.raw.hash, rawTxData.raw.prvkey);
 
-                //force a mempool check so the user is up to date
-                let watchdog: WalletWatchdog =
-                  DependencyInjectorInstance().getInstance(WalletWatchdog.name);
-                if (watchdog !== null) watchdog.checkMempool();
+              //force a mempool check so the user is up to date
+              let watchdog: WalletWatchdog = DependencyInjectorInstance().getInstance(WalletWatchdog.name);
+              if (watchdog !== null) watchdog.checkMempool();
 
-                // Success
-                swal({
-                  type: "success",
-                  title: i18n.t("depositsPage.createDeposit.createSuccess"),
-                  html: `TxHash:<br>
+              // Success
+              swal({
+                type: "success",
+                title: i18n.t("depositsPage.createDeposit.createSuccess"),
+                html: `TxHash:<br>
                 <a href="${config.mainnetExplorerUrlHash.replace("{ID}", rawTxData.raw.hash)}" 
                 target="_blank" class="tx-hash-value">${rawTxData.raw.hash}</a>`,
-                });
-                let promise = Promise.resolve();
-                promise.then(() => {
-                  console.log(
-                    "Deposit successfully submitted to the blockchain"
-                  );
-                });
-              })
-              .catch((error) => {
-                console.error("Transaction creation error:", error);
-                // Wait a short moment to ensure all console logs are printed
-                setTimeout(() => {
-                  swal({
-                    type: "error",
-                    title: i18n.t("sendPage.transferExceptionModal.title"),
-                    html: i18n.t("sendPage.transferExceptionModal.content", {
-                      details:
-                        error instanceof Error
-                          ? error.message
-                          : JSON.stringify(error),
-                    }),
-                    confirmButtonText: i18n.t(
-                      "sendPage.transferExceptionModal.confirmText"
-                    ),
-                  });
-                }, 100);
               });
+              let promise = Promise.resolve();
+              promise.then(function () {
+                console.log("Deposit successfully submitted to the blockchain");
+              });
+            })
+            .catch((error) => {
+              console.error("Transaction creation error:", error);
+              // Wait a short moment to ensure all console logs are printed
+              setTimeout(() => {
+                swal({
+                  type: "error",
+                  title: i18n.t("sendPage.transferExceptionModal.title"),
+                  html: i18n.t("sendPage.transferExceptionModal.content", {
+                    details: error instanceof Error ? error.message : JSON.stringify(error),
+                  }),
+                  confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
+                });
+              }, 100);
+            });
 
-            swal.close();
-          }
-        )
-        .catch((error: any) => {
+          swal.close();
+        })
+        .catch(function (error: any) {
           //console.log(error);
           if (error && error !== "") {
             if (typeof error === "string")
@@ -914,9 +793,7 @@ class DepositsView extends DestructableView {
                 html: i18n.t("sendPage.transferExceptionModal.content", {
                   details: error,
                 }),
-                confirmButtonText: i18n.t(
-                  "sendPage.transferExceptionModal.confirmText"
-                ),
+                confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
               });
             else
               swal({
@@ -925,9 +802,7 @@ class DepositsView extends DestructableView {
                 html: i18n.t("sendPage.transferExceptionModal.content", {
                   details: JSON.stringify(error),
                 }),
-                confirmButtonText: i18n.t(
-                  "sendPage.transferExceptionModal.confirmText"
-                ),
+                confirmButtonText: i18n.t("sendPage.transferExceptionModal.confirmText"),
               });
           }
         });
@@ -947,16 +822,12 @@ class DepositsView extends DestructableView {
 if (wallet !== null && blockchainExplorer !== null) new DepositsView("#app");
 else {
   AppState.askUserOpenWallet(false)
-    .then(() => {
-      wallet = DependencyInjectorInstance().getInstance(
-        Wallet.name,
-        "default",
-        false
-      );
+    .then(function () {
+      wallet = DependencyInjectorInstance().getInstance(Wallet.name, "default", false);
       if (wallet === null) throw "e";
       new DepositsView("#app");
     })
-    .catch(() => {
+    .catch(function () {
       window.location.href = "#index";
     });
 }

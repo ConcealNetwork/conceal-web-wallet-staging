@@ -16,9 +16,9 @@
  */
 
 const workboxBuild = require('workbox-build');
-const fs = require('fs');
-const path = require('path');
-const crypto = require('crypto');
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
 const dotenv = require('dotenv');
 
 // Load environment variables
@@ -52,6 +52,7 @@ const generateAllowedExceptionsHash = (exceptions) => {
 
 // Function to update environment file with integrity hashes
 const updateIntegrityHashes = () => {
+
 	const envPath = path.join(__dirname, '.env');
 	let envContent = '';
 	
@@ -59,18 +60,19 @@ const updateIntegrityHashes = () => {
 		envContent = fs.readFileSync(envPath, 'utf8');
 	}
 
+
 	// Update API integrity hash
 	const apiHtmlPath = path.join(__dirname, 'src', 'api.html');
 	const apiIntegrityHash = generateIntegrityHash(apiHtmlPath);
 	if (apiIntegrityHash) {
 		console.log(`Generated new integrity hash for api.html`);
-		if (!envContent.includes('API_INTEGRITY_HASH=')) {
-			envContent += `API_INTEGRITY_HASH=${apiIntegrityHash}`;
-		} else {
+		if (envContent.includes('API_INTEGRITY_HASH=')) {
 			envContent = envContent.replace(
 				/API_INTEGRITY_HASH=.*/,
 				`API_INTEGRITY_HASH=${apiIntegrityHash}`
 			);
+		} else {
+			envContent += `API_INTEGRITY_HASH=${apiIntegrityHash}`;
 		}
 	}
 
@@ -87,13 +89,12 @@ const updateIntegrityHashes = () => {
 	
 	// Get the content between square brackets, remove quotes and commas, then split and clean
 	const exceptionsContent = exceptionsMatch[1]
-		.replace(/['"]/g, '') // Remove quotes
-		.replace(/,/g, '')    // Remove commas
-		.replace(/\s+/g, '')  // Remove all whitespace
+		.replaceAll(/['"]/g, '') // Remove quotes
+		.replaceAll(/,/g, '')    // Remove commas
+		.replaceAll(/\s+/g, '')  // Remove all whitespace
 		.trim();              // Final trim
 		
 	const exceptionsHash = generateAllowedExceptionsHash([exceptionsContent]);
-	console.log('Generated hash:', exceptionsHash);
 	
 	// Update the hash in the compiled JS file
 	const allowedPagesJsPath = path.join(__dirname, 'src', 'lib', 'config', 'allowedPages.js');
@@ -112,6 +113,7 @@ const updateIntegrityHashes = () => {
 	// Write updated content back to .env
 	fs.writeFileSync(envPath, envContent);
 	console.log('Updated .env with new integrity hashes');
+
 };
 
 // NOTE: This should be run *AFTER* all your assets are built
@@ -122,7 +124,7 @@ const buildSW = () => {
 		swDest: 'src/service-worker.js',
 		globDirectory: 'src',
 		globPatterns: [
-			'**\/*.{js,css,html,json,png,ico,jpg}',
+			'**/*.{js,css,html,json,png,ico,jpg}',
 		],
 		globIgnores:[
 			'd/Vue.js', 'src/service-worker-raw.js'

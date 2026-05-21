@@ -47,13 +47,11 @@ let TX_EXTRA_MESSAGE_CHECKSUM_SIZE = 4;
 let INTEGRATED_ID_SIZE = 8;
 let ENCRYPTED_PAYMENT_ID_TAIL = 141;
 let CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX = config.addressPrefix;
-let CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX =
-  config.integratedAddressPrefix;
+let CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX = config.integratedAddressPrefix;
 let CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX = config.subAddressPrefix;
 if (config.testnet === true) {
   CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX = config.addressPrefixTestnet;
-  CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX =
-    config.integratedAddressPrefixTestnet;
+  CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX = config.integratedAddressPrefixTestnet;
   CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX = config.subAddressPrefixTestnet;
 }
 let UINT64_MAX = new JSBigInt(2).pow(64);
@@ -96,15 +94,10 @@ export namespace CnVars {
     SimpleBulletproof = 4,
   }
 
-  export let H =
-    "8b655970153799af2aeadc9ff1add0ea6c7251d54154cfa92c173a0dd39c1f94"; //base H for amounts
-  export let l = JSBigInt(
-    "7237005577332262213973186563042994240857116359379907606001950938285454250989"
-  ); //curve order (not RCT specific)
-  export let I =
-    "0100000000000000000000000000000000000000000000000000000000000000"; //identity element
-  export let Z =
-    "0000000000000000000000000000000000000000000000000000000000000000"; //zero scalar
+  export let H = "8b655970153799af2aeadc9ff1add0ea6c7251d54154cfa92c173a0dd39c1f94"; //base H for amounts
+  export let l = JSBigInt("7237005577332262213973186563042994240857116359379907606001950938285454250989"); //curve order (not RCT specific)
+  export let I = "0100000000000000000000000000000000000000000000000000000000000000"; //identity element
+  export let Z = "0000000000000000000000000000000000000000000000000000000000000000"; //zero scalar
   //H2 object to speed up some operations
   export let H2 = [
     "8b655970153799af2aeadc9ff1add0ea6c7251d54154cfa92c173a0dd39c1f94",
@@ -172,29 +165,6 @@ export namespace CnVars {
     "056541ae5da9961be2b0a5e895e5c5ba153cbb62dd561a427bad0ffd41923199",
     "f8fef05a3fa5c9f3eba41638b247b711a99f960fe73aa2f90136aeb20329b888",
   ];
-}
-
-export namespace CnRandom {
-  // Generate a 256-bit / 64-char / 32-byte crypto random
-  export function rand_32() {
-    return Mnemonic.mn_random(256);
-  }
-
-  // Generate a 128-bit / 32-char / 16-byte crypto random
-  export function rand_16() {
-    return Mnemonic.mn_random(128);
-  }
-
-  // Generate a 64-bit / 16-char / 8-byte crypto random
-  export function rand_8() {
-    return Mnemonic.mn_random(64);
-  }
-
-  export function random_scalar() {
-    //let rand = this.sc_reduce(mn_random(64 * 8));
-    //return rand.slice(0, STRUCT_SIZES.EC_SCALAR * 2);
-    return CnNativeBride.sc_reduce32(CnRandom.rand_32());
-  }
 }
 
 export namespace CnUtils {
@@ -267,10 +237,10 @@ export namespace CnUtils {
   // hexadecimal to integer
   export function h2d(hex: any) {
     /*let vali = 0;
-		 for (let j = 7; j >= 0; j--) {
-			 vali = (vali * 256 + test[j].charCodeAt(0));
-		 }
-		 return vali;*/
+		for (let j = 7; j >= 0; j--) {
+			vali = (vali * 256 + test[j].charCodeAt(0));
+		}
+		return vali;*/
     // return JSBigInt.parse(test,16);
     // let bytes = Crypto.hextobin(test);
     // logDebugMsg('bytes',bytes, test,swapEndianC(test));
@@ -304,9 +274,7 @@ export namespace CnUtils {
     if (pub.length !== 64 || sec.length !== 64) {
       throw "Invalid input length";
     }
-    return CnUtils.bintohex(
-      nacl.ll.ge_scalarmult(CnUtils.hextobin(pub), CnUtils.hextobin(sec))
-    );
+    return CnUtils.bintohex(nacl.ll.ge_scalarmult(CnUtils.hextobin(pub), CnUtils.hextobin(sec)));
   }
 
   export function ge_add(p1: string, p2: string) {
@@ -322,11 +290,7 @@ export namespace CnUtils {
     if (point.length !== 64) {
       throw "expected 64 char hex string";
     }
-    return (
-      point.slice(0, 62) +
-      ((parseInt(point.slice(62, 63), 16) + 8) % 16).toString(16) +
-      point.slice(63, 64)
-    );
+    return point.slice(0, 62) + ((parseInt(point.slice(62, 63), 16) + 8) % 16).toString(16) + point.slice(63, 64);
   }
 
   //order matters
@@ -351,21 +315,11 @@ export namespace CnUtils {
     return CnUtils.sec_key_to_pub(sec);
   }
 
-  export function derivation_to_scalar(
-    derivation: string,
-    output_index: number
-  ) {
-    let buf = "";
+  export function derivation_to_scalar(derivation: string, output_index: number) {
     if (derivation.length !== STRUCT_SIZES.EC_POINT * 2) {
       throw "Invalid derivation length!";
     }
-    buf += derivation;
-    let enc = CnUtils.encode_varint(output_index);
-    if (enc.length > 10 * 2) {
-      throw "output_index didn't fit in 64-bit varint";
-    }
-    buf += enc;
-    return Cn.hash_to_scalar(buf);
+    return concealjs.cnutils.derivation_to_scalar(derivation, output_index);
   }
 
   export function encode_varint(i: number | string) {
@@ -406,30 +360,18 @@ export namespace CnUtils {
     //update to use new keccak impl (approx 45x faster)
     //let state = this.keccak(input, inlen, HASH_STATE_BYTES);
     //return state.substr(0, HASH_SIZE * 2);
-    return keccak_256(CnUtils.hextobin(input));
+    return concealjs.cnutils.cn_fast_hash(input);
   }
 
   export function hex_xor(hex1: string, hex2: string) {
-    if (
-      !hex1 ||
-      !hex2 ||
-      hex1.length !== hex2.length ||
-      hex1.length % 2 !== 0 ||
-      hex2.length % 2 !== 0
-    ) {
+    if (!hex1 || !hex2 || hex1.length !== hex2.length || hex1.length % 2 !== 0 || hex2.length % 2 !== 0) {
       throw "Hex string(s) is/are invalid!";
     }
-    let bin1 = hextobin(hex1);
-    let bin2 = hextobin(hex2);
-    let xor = new Uint8Array(bin1.length);
-    for (let i = 0; i < xor.length; i++) {
-      xor[i] = bin1[i] ^ bin2[i];
-    }
-    return bintohex(xor);
+    return concealjs.cnutils.hex_xor(hex1, hex2);
   }
 
   export function trimRight(str: string, char: string) {
-    while (str[str.length - 1] == char) str = str.slice(0, -1);
+    while (str[str.length - 1] === char) str = str.slice(0, -1);
     return str;
   }
 
@@ -440,46 +382,16 @@ export namespace CnUtils {
     return str;
   }
 
-  export function ge_double_scalarmult_base_vartime(
-    c: string,
-    P: string,
-    r: string
-  ): string {
+  export function ge_double_scalarmult_base_vartime(c: string, P: string, r: string): string {
     if (c.length !== 64 || P.length !== 64 || r.length !== 64) {
       throw "Invalid input length!";
     }
-    return bintohex(
-      nacl.ll.ge_double_scalarmult_base_vartime(
-        hextobin(c),
-        hextobin(P),
-        hextobin(r)
-      )
-    );
+    return concealjs.cnutils.ge_double_scalarmult_base_vartime(c, P, r);
   }
 
-  export function ge_double_scalarmult_postcomp_vartime(
-    r: string,
-    P: string,
-    c: string,
-    I: string
-  ) {
-    if (
-      c.length !== 64 ||
-      P.length !== 64 ||
-      r.length !== 64 ||
-      I.length !== 64
-    ) {
-      throw "Invalid input length!";
-    }
-    let Pb = CnNativeBride.hash_to_ec_2(P);
-    return bintohex(
-      nacl.ll.ge_double_scalarmult_postcomp_vartime(
-        hextobin(r),
-        hextobin(Pb),
-        hextobin(c),
-        hextobin(I)
-      )
-    );
+  export function ge_double_scalarmult_postcomp_vartime(r: string, P: string, c: string, I: string) {
+
+    return concealjs.cnutils.ge_double_scalarmult_postcomp_vartime(r, P, c, I);
   }
 
   export function decompose_amount_into_digits(amount: number | string) {
@@ -499,10 +411,7 @@ export namespace CnUtils {
     return ret;
   }
 
-  export function decode_rct_ecdh(
-    ecdh: { mask: string; amount: string },
-    key: string
-  ) {
+  export function decode_rct_ecdh(ecdh: { mask: string; amount: string }, key: string) {
     let first = Cn.hash_to_scalar(key);
     let second = Cn.hash_to_scalar(first);
     return {
@@ -511,10 +420,7 @@ export namespace CnUtils {
     };
   }
 
-  export function encode_rct_ecdh(
-    ecdh: { mask: string; amount: string },
-    key: string
-  ) {
+  export function encode_rct_ecdh(ecdh: { mask: string; amount: string }, key: string) {
     let first = Cn.hash_to_scalar(key);
     let second = Cn.hash_to_scalar(first);
     return {
@@ -538,144 +444,36 @@ export namespace CnNativeBride {
     return CnUtils.bintohex(output);
   }
 
-  export function derive_secret_key(
-    derivation: string,
-    out_index: number,
-    sec: string
-  ) {
+  export function derive_secret_key(derivation: string, out_index: number, sec: string) {
     if (derivation.length !== 64 || sec.length !== 64) {
       throw "Invalid input length!";
     }
-    let scalar_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    let scalar_b = CnUtils.hextobin(
-      CnUtils.derivation_to_scalar(derivation, out_index)
-    );
-    Module.HEAPU8.set(scalar_b, scalar_m);
-    let base_m = Module._malloc(KEY_SIZE);
-    Module.HEAPU8.set(CnUtils.hextobin(sec), base_m);
-    let derived_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    Module.ccall(
-      "sc_add",
-      "void",
-      ["number", "number", "number"],
-      [derived_m, base_m, scalar_m]
-    );
-    let res = Module.HEAPU8.subarray(
-      derived_m,
-      derived_m + STRUCT_SIZES.EC_SCALAR
-    );
-    Module._free(scalar_m);
-    Module._free(base_m);
-    Module._free(derived_m);
-    return CnUtils.bintohex(res);
+    return concealjs.crypto.derive_secret_key(derivation, out_index, sec);
   }
 
+  /** GE_P3 (160-byte) representation for Module ge_* ops. Matches legacy `cn_utils.hash_to_ec160`. */
   export function hash_to_ec(key: string) {
     if (key.length !== KEY_SIZE * 2) {
       throw "Invalid input length";
     }
-    let h_m = Module._malloc(HASH_SIZE);
-    let point_m = Module._malloc(STRUCT_SIZES.GE_P2);
-    let point2_m = Module._malloc(STRUCT_SIZES.GE_P1P1);
-    let res_m = Module._malloc(STRUCT_SIZES.GE_P3);
-    let hash = CnUtils.hextobin(CnUtils.cn_fast_hash(key));
-    Module.HEAPU8.set(hash, h_m);
-    Module.ccall(
-      "ge_fromfe_frombytes_vartime",
-      "void",
-      ["number", "number"],
-      [point_m, h_m]
-    );
-    Module.ccall("ge_mul8", "void", ["number", "number"], [point2_m, point_m]);
-    Module.ccall(
-      "ge_p1p1_to_p3",
-      "void",
-      ["number", "number"],
-      [res_m, point2_m]
-    );
-    let res = Module.HEAPU8.subarray(res_m, res_m + STRUCT_SIZES.GE_P3);
-    Module._free(h_m);
-    Module._free(point_m);
-    Module._free(point2_m);
-    Module._free(res_m);
-    return CnUtils.bintohex(res);
+
+    return concealjs.crypto.hash_to_ec160(key);
+  
   }
 
-  //returns a 32 byte point via "ge_p3_tobytes" rather than a 160 byte "p3", otherwise same as above;
+  /** 32-byte compressed point. Matches `concealjs.crypto.hash_to_ec32` / legacy `cn_utils.hash_to_ec_2`. */
   export function hash_to_ec_2(key: string) {
     if (key.length !== KEY_SIZE * 2) {
       throw "Invalid input length";
     }
-    let h_m = Module._malloc(HASH_SIZE);
-    let point_m = Module._malloc(STRUCT_SIZES.GE_P2);
-    let point2_m = Module._malloc(STRUCT_SIZES.GE_P1P1);
-    let res_m = Module._malloc(STRUCT_SIZES.GE_P3);
-    let hash = CnUtils.hextobin(CnUtils.cn_fast_hash(key));
-    let res2_m = Module._malloc(KEY_SIZE);
-    Module.HEAPU8.set(hash, h_m);
-    Module.ccall(
-      "ge_fromfe_frombytes_vartime",
-      "void",
-      ["number", "number"],
-      [point_m, h_m]
-    );
-    Module.ccall("ge_mul8", "void", ["number", "number"], [point2_m, point_m]);
-    Module.ccall(
-      "ge_p1p1_to_p3",
-      "void",
-      ["number", "number"],
-      [res_m, point2_m]
-    );
-    Module.ccall(
-      "ge_p3_tobytes",
-      "void",
-      ["number", "number"],
-      [res2_m, res_m]
-    );
-    let res = Module.HEAPU8.subarray(res2_m, res2_m + KEY_SIZE);
-    Module._free(h_m);
-    Module._free(point_m);
-    Module._free(point2_m);
-    Module._free(res_m);
-    Module._free(res2_m);
-    return CnUtils.bintohex(res);
+    return concealjs.crypto.hash_to_ec32(key);
   }
 
   export function generate_key_image_2(pub: string, sec: string) {
     if (!pub || !sec || pub.length !== 64 || sec.length !== 64) {
       throw "Invalid input length";
     }
-    let pub_m = Module._malloc(KEY_SIZE);
-    let sec_m = Module._malloc(KEY_SIZE);
-    Module.HEAPU8.set(CnUtils.hextobin(pub), pub_m);
-    Module.HEAPU8.set(CnUtils.hextobin(sec), sec_m);
-    if (Module.ccall("sc_check", "number", ["number"], [sec_m]) !== 0) {
-      throw "sc_check(sec) != 0";
-    }
-    let point_m = Module._malloc(STRUCT_SIZES.GE_P3);
-    let point2_m = Module._malloc(STRUCT_SIZES.GE_P2);
-    let point_b = CnUtils.hextobin(CnNativeBride.hash_to_ec(pub));
-    Module.HEAPU8.set(point_b, point_m);
-    let image_m = Module._malloc(STRUCT_SIZES.KEY_IMAGE);
-    Module.ccall(
-      "ge_scalarmult",
-      "void",
-      ["number", "number", "number"],
-      [point2_m, sec_m, point_m]
-    );
-    Module.ccall(
-      "ge_tobytes",
-      "void",
-      ["number", "number"],
-      [image_m, point2_m]
-    );
-    let res = Module.HEAPU8.subarray(image_m, image_m + STRUCT_SIZES.KEY_IMAGE);
-    Module._free(pub_m);
-    Module._free(sec_m);
-    Module._free(point_m);
-    Module._free(point2_m);
-    Module._free(image_m);
-    return CnUtils.bintohex(res);
+    return concealjs.crypto.generate_key_image(pub, sec);
   }
 
   //adds two scalars together
@@ -683,25 +481,8 @@ export namespace CnNativeBride {
     if (scalar1.length !== 64 || scalar2.length !== 64) {
       throw "Invalid input length!";
     }
-    let scalar1_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    let scalar2_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    Module.HEAPU8.set(CnUtils.hextobin(scalar1), scalar1_m);
-    Module.HEAPU8.set(CnUtils.hextobin(scalar2), scalar2_m);
-    let derived_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    Module.ccall(
-      "sc_add",
-      "void",
-      ["number", "number", "number"],
-      [derived_m, scalar1_m, scalar2_m]
-    );
-    let res = Module.HEAPU8.subarray(
-      derived_m,
-      derived_m + STRUCT_SIZES.EC_SCALAR
-    );
-    Module._free(scalar1_m);
-    Module._free(scalar2_m);
-    Module._free(derived_m);
-    return CnUtils.bintohex(res);
+    return concealjs.crypto.sc_add(scalar1, scalar2);
+    
   }
 
   //subtracts one scalar from another
@@ -709,25 +490,7 @@ export namespace CnNativeBride {
     if (scalar1.length !== 64 || scalar2.length !== 64) {
       throw "Invalid input length!";
     }
-    let scalar1_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    let scalar2_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    Module.HEAPU8.set(CnUtils.hextobin(scalar1), scalar1_m);
-    Module.HEAPU8.set(CnUtils.hextobin(scalar2), scalar2_m);
-    let derived_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    Module.ccall(
-      "sc_sub",
-      "void",
-      ["number", "number", "number"],
-      [derived_m, scalar1_m, scalar2_m]
-    );
-    let res = Module.HEAPU8.subarray(
-      derived_m,
-      derived_m + STRUCT_SIZES.EC_SCALAR
-    );
-    Module._free(scalar1_m);
-    Module._free(scalar2_m);
-    Module._free(derived_m);
-    return CnUtils.bintohex(res);
+    return concealjs.crypto.sc_sub(scalar1, scalar2);
   }
 
   //res = c - (ab) mod l; argument names copied from the signature implementation
@@ -742,237 +505,24 @@ export namespace CnNativeBride {
     ) {
       throw "bad scalar";
     }
-    let sec_m = Module._malloc(KEY_SIZE);
-    Module.HEAPU8.set(CnUtils.hextobin(sec), sec_m);
-    let sigc_m = Module._malloc(KEY_SIZE);
-    Module.HEAPU8.set(CnUtils.hextobin(sigc), sigc_m);
-    let k_m = Module._malloc(KEY_SIZE);
-    Module.HEAPU8.set(CnUtils.hextobin(k), k_m);
-    let res_m = Module._malloc(KEY_SIZE);
-
-    Module.ccall(
-      "sc_mulsub",
-      "void",
-      ["number", "number", "number", "number"],
-      [res_m, sigc_m, sec_m, k_m]
-    );
-    let res = Module.HEAPU8.subarray(res_m, res_m + KEY_SIZE);
-    Module._free(k_m);
-    Module._free(sec_m);
-    Module._free(sigc_m);
-    Module._free(res_m);
-    return CnUtils.bintohex(res);
+    return concealjs.crypto.sc_mulsub(sigc, sec, k);
   }
 
-  // New function that takes binary directly
-  export function sc_mulsub_bin(
-    sigc_bin: Uint8Array,
-    sec_bin: Uint8Array,
-    k_bin: Uint8Array
-  ) {
-    let sigc_m = Module._malloc(KEY_SIZE);
-    Module.HEAPU8.set(sigc_bin, sigc_m);
-    let sec_m = Module._malloc(KEY_SIZE);
-    Module.HEAPU8.set(sec_bin, sec_m);
-    let k_m = Module._malloc(KEY_SIZE);
-    Module.HEAPU8.set(k_bin, k_m);
-    let res_m = Module._malloc(KEY_SIZE);
-
-    Module.ccall(
-      "sc_mulsub",
-      "void",
-      ["number", "number", "number", "number"],
-      [res_m, sigc_m, sec_m, k_m]
-    );
-    let res = Module.HEAPU8.subarray(res_m, res_m + KEY_SIZE);
-
-    // Clean up
-    Module._free(k_m);
-    Module._free(sec_m);
-    Module._free(sigc_m);
-    Module._free(res_m);
-
-    return CnUtils.bintohex(res);
-  }
-
-  export function generate_ring_signature(
-    prefix_hash: string,
-    k_image: string,
-    keys: string[],
-    sec: string,
-    real_index: number
-  ) {
+  export function generate_ring_signature(prefix_hash: string, k_image: string, keys: string[], sec: string, real_index: number) {
     if (k_image.length !== STRUCT_SIZES.KEY_IMAGE * 2) {
       throw "invalid key image length";
     }
     if (sec.length !== KEY_SIZE * 2) {
       throw "Invalid secret key length";
     }
-    if (
-      prefix_hash.length !== HASH_SIZE * 2 ||
-      !CnUtils.valid_hex(prefix_hash)
-    ) {
+    if (prefix_hash.length !== HASH_SIZE * 2 || !CnUtils.valid_hex(prefix_hash)) {
       throw "Invalid prefix hash";
     }
     if (real_index >= keys.length || real_index < 0) {
       throw "real_index is invalid";
     }
-    let _ge_tobytes = Module.cwrap("ge_tobytes", "void", ["number", "number"]);
-    let _ge_p3_tobytes = Module.cwrap("ge_p3_tobytes", "void", [
-      "number",
-      "number",
-    ]);
-    let _ge_scalarmult_base = Module.cwrap("ge_scalarmult_base", "void", [
-      "number",
-      "number",
-    ]);
-    let _ge_scalarmult = Module.cwrap("ge_scalarmult", "void", [
-      "number",
-      "number",
-      "number",
-    ]);
-    let _sc_add = Module.cwrap("sc_add", "void", [
-      "number",
-      "number",
-      "number",
-    ]);
-    let _sc_sub = Module.cwrap("sc_sub", "void", [
-      "number",
-      "number",
-      "number",
-    ]);
-    let _sc_mulsub = Module.cwrap("sc_mulsub", "void", [
-      "number",
-      "number",
-      "number",
-      "number",
-    ]);
-    let _sc_0 = Module.cwrap("sc_0", "void", ["number"]);
-    let _ge_double_scalarmult_base_vartime = Module.cwrap(
-      "ge_double_scalarmult_base_vartime",
-      "void",
-      ["number", "number", "number", "number"]
-    );
-    let _ge_double_scalarmult_precomp_vartime = Module.cwrap(
-      "ge_double_scalarmult_precomp_vartime",
-      "void",
-      ["number", "number", "number", "number", "number"]
-    );
-    let _ge_frombytes_vartime = Module.cwrap("ge_frombytes_vartime", "number", [
-      "number",
-      "number",
-    ]);
-    let _ge_dsm_precomp = Module.cwrap("ge_dsm_precomp", "void", [
-      "number",
-      "number",
-    ]);
-
-    let buf_size = STRUCT_SIZES.EC_POINT * 2 * keys.length;
-    let buf_m = Module._malloc(buf_size);
-    let sig_size = STRUCT_SIZES.SIGNATURE * keys.length;
-    let sig_m = Module._malloc(sig_size);
-
-    // Struct pointer helper functions
-    function buf_a(i: number) {
-      return buf_m + STRUCT_SIZES.EC_POINT * (2 * i);
-    }
-    function buf_b(i: number) {
-      return buf_m + STRUCT_SIZES.EC_POINT * (2 * i + 1);
-    }
-    function sig_c(i: number) {
-      return sig_m + STRUCT_SIZES.EC_SCALAR * (2 * i);
-    }
-    function sig_r(i: number) {
-      return sig_m + STRUCT_SIZES.EC_SCALAR * (2 * i + 1);
-    }
-    let image_m = Module._malloc(STRUCT_SIZES.KEY_IMAGE);
-    Module.HEAPU8.set(CnUtils.hextobin(k_image), image_m);
-    let i;
-    let image_unp_m = Module._malloc(STRUCT_SIZES.GE_P3);
-    let image_pre_m = Module._malloc(STRUCT_SIZES.GE_DSMP);
-    let sum_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    let k_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    let h_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-    let tmp2_m = Module._malloc(STRUCT_SIZES.GE_P2);
-    let tmp3_m = Module._malloc(STRUCT_SIZES.GE_P3);
-    let pub_m = Module._malloc(KEY_SIZE);
-    let sec_m = Module._malloc(KEY_SIZE);
-    Module.HEAPU8.set(CnUtils.hextobin(sec), sec_m);
-    if (_ge_frombytes_vartime(image_unp_m, image_m) != 0) {
-      throw "failed to call ge_frombytes_vartime";
-    }
-    _ge_dsm_precomp(image_pre_m, image_unp_m);
-    _sc_0(sum_m);
-    for (i = 0; i < keys.length; i++) {
-      if (i === real_index) {
-        // Real key
-        let rand = CnRandom.random_scalar();
-        Module.HEAPU8.set(CnUtils.hextobin(rand), k_m);
-        _ge_scalarmult_base(tmp3_m, k_m);
-        _ge_p3_tobytes(buf_a(i), tmp3_m);
-        let ec = CnNativeBride.hash_to_ec(keys[i]);
-        Module.HEAPU8.set(CnUtils.hextobin(ec), tmp3_m);
-        _ge_scalarmult(tmp2_m, k_m, tmp3_m);
-        _ge_tobytes(buf_b(i), tmp2_m);
-      } else {
-        Module.HEAPU8.set(CnUtils.hextobin(CnRandom.random_scalar()), sig_c(i));
-        Module.HEAPU8.set(CnUtils.hextobin(CnRandom.random_scalar()), sig_r(i));
-        Module.HEAPU8.set(CnUtils.hextobin(keys[i]), pub_m);
-        if (
-          Module.ccall(
-            "ge_frombytes_vartime",
-            "void",
-            ["number", "number"],
-            [tmp3_m, pub_m]
-          ) !== 0
-        ) {
-          throw "Failed to call ge_frombytes_vartime";
-        }
-        _ge_double_scalarmult_base_vartime(tmp2_m, sig_c(i), tmp3_m, sig_r(i));
-        _ge_tobytes(buf_a(i), tmp2_m);
-        let ec = CnNativeBride.hash_to_ec(keys[i]);
-        Module.HEAPU8.set(CnUtils.hextobin(ec), tmp3_m);
-        _ge_double_scalarmult_precomp_vartime(
-          tmp2_m,
-          sig_r(i),
-          tmp3_m,
-          sig_c(i),
-          image_pre_m
-        );
-        _ge_tobytes(buf_b(i), tmp2_m);
-        _sc_add(sum_m, sum_m, sig_c(i));
-      }
-    }
-    let buf_bin = Module.HEAPU8.subarray(buf_m, buf_m + buf_size);
-    let scalar = Cn.hash_to_scalar(prefix_hash + CnUtils.bintohex(buf_bin));
-    Module.HEAPU8.set(CnUtils.hextobin(scalar), h_m);
-    _sc_sub(sig_c(real_index), h_m, sum_m);
-    _sc_mulsub(sig_r(real_index), sig_c(real_index), sec_m, k_m);
-    let sig_data = CnUtils.bintohex(
-      Module.HEAPU8.subarray(sig_m, sig_m + sig_size)
-    );
-    let sigs = [];
-    for (let k = 0; k < keys.length; k++) {
-      sigs.push(
-        sig_data.slice(
-          STRUCT_SIZES.SIGNATURE * 2 * k,
-          STRUCT_SIZES.SIGNATURE * 2 * (k + 1)
-        )
-      );
-    }
-    Module._free(image_m);
-    Module._free(image_unp_m);
-    Module._free(image_pre_m);
-    Module._free(sum_m);
-    Module._free(k_m);
-    Module._free(h_m);
-    Module._free(tmp2_m);
-    Module._free(tmp3_m);
-    Module._free(buf_m);
-    Module._free(sig_m);
-    Module._free(pub_m);
-    Module._free(sec_m);
-    return sigs;
+    return concealjs.crypto.generate_ring_signature(prefix_hash, k_image, keys, sec, real_index);
+ 
   }
 
   //    <--------------------------------------------------------
@@ -983,161 +533,9 @@ export namespace CnNativeBride {
    * @param secretKey - Secret key to sign with
    * @returns The generated signature as a hex string
    */
-  export function generate_signature(
-    prefixHash: string,
-    publicKey: string,
-    secretKey: string
-  ): string {
+  export function generate_signature(prefixHash: string, publicKey: string, secretKey: string): string {
     try {
-      // Validate input lengths
-      if (
-        prefixHash.length !== HASH_SIZE * 2 ||
-        !CnUtils.valid_hex(prefixHash)
-      ) {
-        throw new Error("Invalid prefix hash length or format");
-      }
-      if (publicKey.length !== KEY_SIZE * 2 || !CnUtils.valid_hex(publicKey)) {
-        throw new Error("Invalid public key length or format");
-      }
-      if (secretKey.length !== KEY_SIZE * 2 || !CnUtils.valid_hex(secretKey)) {
-        throw new Error("Invalid secret key length or format");
-      }
-
-      // Convert inputs to binary format
-      const prefixHashBin = CnUtils.hextobin(prefixHash);
-      const publicKeyBin = CnUtils.hextobin(publicKey);
-      const secretKeyBin = CnUtils.hextobin(secretKey);
-
-      // Check if secret key is a valid scalar, in the C++ code that is only for DEBUG MODE
-      const secBuf = Module._malloc(KEY_SIZE);
-      if (!secBuf) {
-        throw new Error("Failed to allocate secBuf buffer");
-      }
-      try {
-        Module.HEAPU8.set(secretKeyBin, secBuf);
-        if (Module.ccall("sc_check", "number", ["number"], [secBuf]) !== 0) {
-          //console.log('Secret key is not a valid scalar');
-          throw new Error("Invalid secret key: not a valid scalar");
-        }
-        // Verify that secret key corresponds to public key
-        const tmp3 = Module._malloc(STRUCT_SIZES.GE_P3);
-        if (!tmp3) {
-          throw new Error("Failed to allocate tmp3 buffer");
-        }
-        try {
-          // Calculate public key from secret key
-          Module.ccall(
-            "ge_scalarmult_base",
-            "void",
-            ["number", "number"],
-            [tmp3, secBuf]
-          );
-
-          // Get the calculated public key
-          const calculatedPubBuf = Module._malloc(KEY_SIZE);
-          if (!calculatedPubBuf) {
-            throw new Error("Failed to allocate calculatedPubBuf buffer");
-          }
-          try {
-            Module.ccall(
-              "ge_p3_tobytes",
-              "void",
-              ["number", "number"],
-              [calculatedPubBuf, tmp3]
-            );
-            const calculatedPub = CnUtils.bintohex(
-              Module.HEAPU8.subarray(
-                calculatedPubBuf,
-                calculatedPubBuf + KEY_SIZE
-              )
-            );
-
-            // Compare calculated public key with provided public key
-            if (calculatedPub !== publicKey) {
-              //console.log('Secret key does not correspond to public key');
-              throw new Error(
-                "Invalid key pair: secret key does not correspond to public key"
-              );
-            }
-          } finally {
-            Module._free(calculatedPubBuf);
-          }
-        } finally {
-          Module._free(tmp3);
-        }
-      } finally {
-        Module._free(secBuf);
-      }
-
-      // random k
-      let k: string;
-      k = CnRandom.random_scalar();
-      // console.log('check_scalar', k, 'true'); // debug for crypto-test.cpp
-      const kBin = CnUtils.hextobin(k);
-
-      // Allocate memory for temporary buffers
-      const tmp3 = Module._malloc(STRUCT_SIZES.GE_P3);
-      if (!tmp3) {
-        throw new Error("Failed to allocate tmp3 buffer");
-      }
-
-      try {
-        const k_m = Module._malloc(STRUCT_SIZES.EC_SCALAR);
-        if (!k_m) {
-          throw new Error("Failed to allocate k_m buffer");
-        }
-
-        try {
-          Module.HEAPU8.set(kBin, k_m);
-          // Calculate commitment point: commitment = kG
-          Module.ccall(
-            "ge_scalarmult_base",
-            "void",
-            ["number", "number"],
-            [tmp3, k_m]
-          );
-
-          // Create buffer with proper structure (prefix_hash + pub + comm)
-          const buf = Module._malloc(HASH_SIZE + KEY_SIZE + KEY_SIZE);
-          if (!buf) {
-            throw new Error("Failed to allocate buffer");
-          }
-          try {
-            // Make sure the order matches the C++ s_comm struct
-            Module.HEAPU8.set(prefixHashBin, buf); // h
-            Module.HEAPU8.set(publicKeyBin, buf + HASH_SIZE); // key
-            Module.ccall(
-              "ge_p3_tobytes",
-              "void",
-              ["number", "number"],
-              [buf + HASH_SIZE + KEY_SIZE, tmp3]
-            ); // comm
-
-            const c = Cn.hash_to_scalar(
-              CnUtils.bintohex(
-                Module.HEAPU8.subarray(
-                  buf,
-                  buf + HASH_SIZE + KEY_SIZE + KEY_SIZE
-                )
-              )
-            );
-            //console.log('hash_to_scalar', CnUtils.bintohex(Module.HEAPU8.subarray(buf, buf + HASH_SIZE + KEY_SIZE + KEY_SIZE)) ,c); // debug for crypto-test.cpp
-
-            // Calculate response scalar: r = k - (c*sec) mod l
-            const r = CnNativeBride.sc_mulsub(c, secretKey, k);
-
-            // Final signature is c || r
-            const finalSignature = c + r;
-            return finalSignature;
-          } finally {
-            Module._free(buf);
-          }
-        } finally {
-          Module._free(k_m);
-        }
-      } finally {
-        Module._free(tmp3);
-      }
+    return concealjs.crypto.generate_signature(prefixHash, publicKey, secretKey);
     } catch (e) {
       console.error("Error in generate_signature:", e);
       throw e;
@@ -1145,77 +543,11 @@ export namespace CnNativeBride {
   }
 
   export function generate_key_derivation(pub: any, sec: any) {
-    let generate_key_derivation_bind = (<any>self).Module_native.cwrap(
-      "generate_key_derivation",
-      null,
-      ["number", "number", "number"]
-    );
-
-    let pub_b = CnUtils.hextobin(pub);
-    let sec_b = CnUtils.hextobin(sec);
-    let Module_native = (<any>self).Module_native;
-
-    let pub_m = Module_native._malloc(KEY_SIZE);
-    Module_native.HEAPU8.set(pub_b, pub_m);
-
-    let sec_m = Module_native._malloc(KEY_SIZE);
-    Module_native.HEAPU8.set(sec_b, sec_m);
-
-    let derivation_m = Module_native._malloc(KEY_SIZE);
-    let r = generate_key_derivation_bind(pub_m, sec_m, derivation_m);
-
-    Module_native._free(pub_m);
-    Module_native._free(sec_m);
-
-    let res = Module_native.HEAPU8.subarray(
-      derivation_m,
-      derivation_m + KEY_SIZE
-    );
-    Module_native._free(derivation_m);
-
-    return CnUtils.bintohex(res);
+    return concealjs.crypto.generate_key_derivation(pub, sec);
   }
 
-  export function derive_public_key(
-    derivation: string,
-    output_idx_in_tx: number,
-    pubSpend: string
-  ) {
-    let derive_public_key_bind = (<any>self).Module_native.cwrap(
-      "derive_public_key",
-      null,
-      ["number", "number", "number", "number"]
-    );
-
-    let derivation_b = CnUtils.hextobin(derivation);
-    let pub_spend_b = CnUtils.hextobin(pubSpend);
-
-    let Module_native = (<any>self).Module_native;
-
-    let derivation_m = Module_native._malloc(KEY_SIZE);
-    Module_native.HEAPU8.set(derivation_b, derivation_m);
-
-    let pub_spend_m = Module_native._malloc(KEY_SIZE);
-    Module_native.HEAPU8.set(pub_spend_b, pub_spend_m);
-
-    let derived_key_m = Module_native._malloc(KEY_SIZE);
-    let r = derive_public_key_bind(
-      derivation_m,
-      output_idx_in_tx,
-      pub_spend_m,
-      derived_key_m
-    );
-
-    Module_native._free(derivation_m);
-    Module_native._free(pub_spend_m);
-
-    let res = Module_native.HEAPU8.subarray(
-      derived_key_m,
-      derived_key_m + KEY_SIZE
-    );
-    Module_native._free(derived_key_m);
-
-    return CnUtils.bintohex(res);
+  export function derive_public_key(derivation: string, output_idx_in_tx: number, pubSpend: string) {
+    return concealjs.crypto.derive_public_key(derivation, output_idx_in_tx, pubSpend);
   }
 
   /**
@@ -1224,26 +556,16 @@ export namespace CnNativeBride {
    * @param signature - Signature to verify (c + r)
    * @returns boolean indicating if signature is valid
    */
-  export function verify_signature(
-    prefixHash: string,
-    publicKey: string,
-    signature: string
-  ): boolean {
+  export function verify_signature(prefixHash: string, publicKey: string, signature: string): boolean {
     try {
       // Validate input lengths
-      if (
-        prefixHash.length !== HASH_SIZE * 2 ||
-        !CnUtils.valid_hex(prefixHash)
-      ) {
+      if (prefixHash.length !== HASH_SIZE * 2 || !CnUtils.valid_hex(prefixHash)) {
         return false;
       }
       if (publicKey.length !== KEY_SIZE * 2 || !CnUtils.valid_hex(publicKey)) {
         return false;
       }
-      if (
-        signature.length !== STRUCT_SIZES.SIGNATURE * 2 ||
-        !CnUtils.valid_hex(signature)
-      ) {
+      if (signature.length !== STRUCT_SIZES.SIGNATURE * 2 || !CnUtils.valid_hex(signature)) {
         return false;
       }
       //console.log('check_signature', prefixHash, publicKey, signature, 'true'); // debug for crypto-test.cpp
@@ -1296,12 +618,7 @@ export namespace CnNativeBride {
             // Copy public key to aligned buffer
             Module.HEAPU8.set(publicKeyBin, pubKeyBuf);
             // Convert public key to point on curve
-            const fromBytesResult = Module.ccall(
-              "ge_frombytes_vartime",
-              "number",
-              ["number", "number"],
-              [tmp3, pubKeyBuf]
-            );
+            const fromBytesResult = Module.ccall("ge_frombytes_vartime", "number", ["number", "number"], [tmp3, pubKeyBuf]);
 
             if (fromBytesResult !== 0) {
               return false;
@@ -1314,12 +631,7 @@ export namespace CnNativeBride {
 
             try {
               // Perform double scalar multiplication with aligned buffers
-              Module.ccall(
-                "ge_double_scalarmult_base_vartime",
-                "void",
-                ["number", "number", "number", "number"],
-                [tmp2, cBuf, tmp3, rBuf]
-              );
+              Module.ccall("ge_double_scalarmult_base_vartime", "void", ["number", "number", "number", "number"], [tmp2, cBuf, tmp3, rBuf]);
 
               // Create buffer for hash input
               const buf = Module._malloc(HASH_SIZE + KEY_SIZE + KEY_SIZE);
@@ -1340,28 +652,15 @@ export namespace CnNativeBride {
 
                 try {
                   // Get commitment point bytes
-                  Module.ccall(
-                    "ge_tobytes",
-                    "void",
-                    ["number", "number"],
-                    [comm_m, tmp2]
-                  );
+                  Module.ccall("ge_tobytes", "void", ["number", "number"], [comm_m, tmp2]);
 
                   // Copy commitment point to buffer
-                  const commBytes = Module.HEAPU8.subarray(
-                    comm_m,
-                    comm_m + KEY_SIZE
-                  );
+                  const commBytes = Module.HEAPU8.subarray(comm_m, comm_m + KEY_SIZE);
                   Module.HEAPU8.set(commBytes, buf + HASH_SIZE + KEY_SIZE);
 
                   // Hash the buffer to create challenge scalar
-                  const buf_bin = Module.HEAPU8.subarray(
-                    buf,
-                    buf + HASH_SIZE + KEY_SIZE + KEY_SIZE
-                  );
-                  const computed_c = Cn.hash_to_scalar(
-                    CnUtils.bintohex(buf_bin)
-                  );
+                  const buf_bin = Module.HEAPU8.subarray(buf, buf + HASH_SIZE + KEY_SIZE + KEY_SIZE);
+                  const computed_c = Cn.hash_to_scalar(CnUtils.bintohex(buf_bin));
 
                   // Compare computed challenge with provided challenge
                   return computed_c === c;
@@ -1390,19 +689,10 @@ export namespace CnNativeBride {
     }
   }
 
-  export function checkTxProof(
-    prefixHash: string,
-    R: string,
-    A: string,
-    D: string,
-    sig: string
-  ): boolean {
+  export function checkTxProof(prefixHash: string, R: string, A: string, D: string, sig: string): boolean {
     try {
       // Validate input lengths
-      if (
-        prefixHash.length !== HASH_SIZE * 2 ||
-        !CnUtils.valid_hex(prefixHash)
-      ) {
+      if (prefixHash.length !== HASH_SIZE * 2 || !CnUtils.valid_hex(prefixHash)) {
         console.error("Invalid prefix hash length or format");
         return false;
       }
@@ -1418,10 +708,7 @@ export namespace CnNativeBride {
         console.error("Invalid D length or format");
         return false;
       }
-      if (
-        sig.length !== STRUCT_SIZES.SIGNATURE * 2 ||
-        !CnUtils.valid_hex(sig)
-      ) {
+      if (sig.length !== STRUCT_SIZES.SIGNATURE * 2 || !CnUtils.valid_hex(sig)) {
         console.error("Invalid signature length or format");
         return false;
       }
@@ -1461,30 +748,11 @@ export namespace CnNativeBride {
           Module.HEAPU8.set(ABin, ABuf);
           Module.HEAPU8.set(DBin, DBuf);
 
-          const fromBytesResult_R = Module.ccall(
-            "ge_frombytes_vartime",
-            "number",
-            ["number", "number"],
-            [tmp3_R, RBuf]
-          );
-          const fromBytesResult_A = Module.ccall(
-            "ge_frombytes_vartime",
-            "number",
-            ["number", "number"],
-            [tmp3_A, ABuf]
-          );
-          const fromBytesResult_D = Module.ccall(
-            "ge_frombytes_vartime",
-            "number",
-            ["number", "number"],
-            [tmp3_D, DBuf]
-          );
+          const fromBytesResult_R = Module.ccall("ge_frombytes_vartime", "number", ["number", "number"], [tmp3_R, RBuf]);
+          const fromBytesResult_A = Module.ccall("ge_frombytes_vartime", "number", ["number", "number"], [tmp3_A, ABuf]);
+          const fromBytesResult_D = Module.ccall("ge_frombytes_vartime", "number", ["number", "number"], [tmp3_D, DBuf]);
 
-          if (
-            fromBytesResult_R !== 0 ||
-            fromBytesResult_A !== 0 ||
-            fromBytesResult_D !== 0
-          ) {
+          if (fromBytesResult_R !== 0 || fromBytesResult_A !== 0 || fromBytesResult_D !== 0) {
             console.error("Failed to convert public keys to points:", {
               R: fromBytesResult_R,
               A: fromBytesResult_A,
@@ -1531,9 +799,9 @@ export namespace CnNativeBride {
               );
 
               /*console.log('Point computation details:', {
-								 cR: CnUtils.bintohex(Module.HEAPU8.subarray(tmp2_cR, tmp2_cR + STRUCT_SIZES.GE_P2)),
-								 rA: CnUtils.bintohex(Module.HEAPU8.subarray(tmp2_rA, tmp2_rA + STRUCT_SIZES.GE_P2))
-							 }); */
+								cR: CnUtils.bintohex(Module.HEAPU8.subarray(tmp2_cR, tmp2_cR + STRUCT_SIZES.GE_P2)),
+								rA: CnUtils.bintohex(Module.HEAPU8.subarray(tmp2_rA, tmp2_rA + STRUCT_SIZES.GE_P2))
+							}); */
               // Allocate memory for X and Y
               const XBuf = Module._malloc(KEY_SIZE);
               const YBuf = Module._malloc(KEY_SIZE);
@@ -1544,32 +812,16 @@ export namespace CnNativeBride {
 
               try {
                 // Get X = c*R + r*G
-                Module.ccall(
-                  "ge_tobytes",
-                  "void",
-                  ["number", "number"],
-                  [XBuf, tmp2_cR]
-                );
+                Module.ccall("ge_tobytes", "void", ["number", "number"], [XBuf, tmp2_cR]);
                 // Get Y = c*D + r*A
-                Module.ccall(
-                  "ge_tobytes",
-                  "void",
-                  ["number", "number"],
-                  [YBuf, tmp2_rA]
-                );
+                Module.ccall("ge_tobytes", "void", ["number", "number"], [YBuf, tmp2_rA]);
 
-                const X = CnUtils.bintohex(
-                  Module.HEAPU8.subarray(XBuf, XBuf + KEY_SIZE)
-                );
-                const Y = CnUtils.bintohex(
-                  Module.HEAPU8.subarray(YBuf, YBuf + KEY_SIZE)
-                );
+                const X = CnUtils.bintohex(Module.HEAPU8.subarray(XBuf, XBuf + KEY_SIZE));
+                const Y = CnUtils.bintohex(Module.HEAPU8.subarray(YBuf, YBuf + KEY_SIZE));
                 //console.log('Computed points:', { X, Y });
 
                 // Create buffer for hash input
-                const buf = Module._malloc(
-                  HASH_SIZE + KEY_SIZE + KEY_SIZE + KEY_SIZE
-                );
+                const buf = Module._malloc(HASH_SIZE + KEY_SIZE + KEY_SIZE + KEY_SIZE);
                 if (!buf) {
                   console.error("Failed to allocate hash buffer");
                   return false;
@@ -1579,20 +831,11 @@ export namespace CnNativeBride {
                   // Copy data to buffer: prefixHash || D || X || Y
                   Module.HEAPU8.set(prefixHashBin, buf);
                   Module.HEAPU8.set(DBin, buf + HASH_SIZE);
-                  Module.HEAPU8.set(
-                    Module.HEAPU8.subarray(XBuf, XBuf + KEY_SIZE),
-                    buf + HASH_SIZE + KEY_SIZE
-                  );
-                  Module.HEAPU8.set(
-                    Module.HEAPU8.subarray(YBuf, YBuf + KEY_SIZE),
-                    buf + HASH_SIZE + KEY_SIZE + KEY_SIZE
-                  );
+                  Module.HEAPU8.set(Module.HEAPU8.subarray(XBuf, XBuf + KEY_SIZE), buf + HASH_SIZE + KEY_SIZE);
+                  Module.HEAPU8.set(Module.HEAPU8.subarray(YBuf, YBuf + KEY_SIZE), buf + HASH_SIZE + KEY_SIZE + KEY_SIZE);
 
                   // Hash to scalar
-                  const buf_bin = Module.HEAPU8.subarray(
-                    buf,
-                    buf + HASH_SIZE + KEY_SIZE + KEY_SIZE + KEY_SIZE
-                  );
+                  const buf_bin = Module.HEAPU8.subarray(buf, buf + HASH_SIZE + KEY_SIZE + KEY_SIZE + KEY_SIZE);
                   const buf_hex = CnUtils.bintohex(buf_bin);
 
                   const c2 = Cn.hash_to_scalar(buf_hex);
@@ -1636,7 +879,7 @@ export namespace CnNativeBride {
 export namespace Cn {
   export function hash_to_scalar(buf: string): string {
     let hash = CnUtils.cn_fast_hash(buf);
-    let scalar = CnNativeBride.sc_reduce32(hash);
+    let scalar = concealjs.crypto.sc_reduce32(hash);
     return scalar;
   }
 
@@ -1670,21 +913,14 @@ export namespace Cn {
    * @param out_index
    * @param pub
    */
-  export function derive_public_key(
-    derivation: string,
-    out_index: number,
-    pub: string
-  ) {
+  export function derive_public_key(derivation: string, out_index: number, pub: string) {
     if (derivation.length !== 64 || pub.length !== 64) {
       throw "Invalid input length!";
     }
-    let s = CnUtils.derivation_to_scalar(derivation, out_index);
-    return CnUtils.bintohex(
-      nacl.ll.ge_add(
-        CnUtils.hextobin(pub),
-        CnUtils.hextobin(CnUtils.ge_scalarmult_base(s))
-      )
-    );
+    // let s = CnUtils.derivation_to_scalar(derivation, out_index);
+    // return CnUtils.bintohex(nacl.ll.ge_add(CnUtils.hextobin(pub), CnUtils.hextobin(CnUtils.ge_scalarmult_base(s))));
+    return concealjs.crypto.derive_public_key(derivation, out_index, pub);
+
   }
 
   /**
@@ -1692,11 +928,7 @@ export namespace Cn {
    * @param out_index
    * @param pub
    */
-  export function underive_public_key(
-    derivation: string,
-    out_index: number,
-    pub: string
-  ) {
+  export function underive_public_key(derivation: string, out_index: number, pub: string) {
     if (derivation.length !== 64 || pub.length !== 64) {
       throw "Invalid input length!";
     }
@@ -1706,16 +938,12 @@ export namespace Cn {
 
   export function generate_keys(seed: string): { sec: string; pub: string } {
     if (seed.length !== 64) throw "Invalid input length!";
-    let sec = CnNativeBride.sc_reduce32(seed);
-    let pub = CnUtils.sec_key_to_pub(sec);
-    return {
-      sec: sec,
-      pub: pub,
-    };
+   
+    return concealjs.crypto.generate_keys(seed);
   }
 
   export function random_keypair() {
-    return Cn.generate_keys(CnRandom.rand_32());
+    return concealjs.cn.random_keypair();
   }
 
   export function pubkeys_to_string(spend: string, view: string) {
@@ -1755,10 +983,7 @@ export namespace Cn {
     }
 
     keys.spend = Cn.generate_keys(first);
-    let second =
-      seed.length !== 64
-        ? CnUtils.cn_fast_hash(first)
-        : CnUtils.cn_fast_hash(keys.spend.sec);
+    let second = seed.length !== 64 ? CnUtils.cn_fast_hash(first) : CnUtils.cn_fast_hash(keys.spend.sec);
     keys.view = Cn.generate_keys(second);
     keys.public_addr = Cn.pubkeys_to_string(keys.spend.pub, keys.view.pub);
     return keys;
@@ -1770,27 +995,13 @@ export namespace Cn {
     intPaymentId: string | null;
   } {
     let dec = cnBase58.decode(address);
-    logDebugMsg(
-      dec,
-      CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX,
-      CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX
-    );
-    let expectedPrefix = CnUtils.encode_varint(
-      CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX
-    );
-    let expectedPrefixInt = CnUtils.encode_varint(
-      CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX
-    );
-    let expectedPrefixSub = CnUtils.encode_varint(
-      CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX
-    );
+    logDebugMsg(dec, CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX, CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX);
+    let expectedPrefix = CnUtils.encode_varint(CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX);
+    let expectedPrefixInt = CnUtils.encode_varint(CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX);
+    let expectedPrefixSub = CnUtils.encode_varint(CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX);
     let prefix = dec.slice(0, expectedPrefix.length);
     logDebugMsg(prefix, expectedPrefixInt, expectedPrefix);
-    if (
-      prefix !== expectedPrefix &&
-      prefix !== expectedPrefixInt &&
-      prefix !== expectedPrefixSub
-    ) {
+    if (prefix !== expectedPrefix && prefix !== expectedPrefixInt && prefix !== expectedPrefixSub) {
       throw "Invalid address prefix";
     }
     dec = dec.slice(expectedPrefix.length);
@@ -1801,19 +1012,11 @@ export namespace Cn {
     let intPaymentId: string | null = null;
     if (prefix === expectedPrefixInt) {
       intPaymentId = dec.slice(128, 128 + INTEGRATED_ID_SIZE * 2);
-      checksum = dec.slice(
-        128 + INTEGRATED_ID_SIZE * 2,
-        128 + INTEGRATED_ID_SIZE * 2 + ADDRESS_CHECKSUM_SIZE * 2
-      );
-      expectedChecksum = CnUtils.cn_fast_hash(
-        prefix + spend + view + intPaymentId
-      ).slice(0, ADDRESS_CHECKSUM_SIZE * 2);
+      checksum = dec.slice(128 + INTEGRATED_ID_SIZE * 2, 128 + INTEGRATED_ID_SIZE * 2 + ADDRESS_CHECKSUM_SIZE * 2);
+      expectedChecksum = CnUtils.cn_fast_hash(prefix + spend + view + intPaymentId).slice(0, ADDRESS_CHECKSUM_SIZE * 2);
     } else {
       checksum = dec.slice(128, 128 + ADDRESS_CHECKSUM_SIZE * 2);
-      expectedChecksum = CnUtils.cn_fast_hash(prefix + spend + view).slice(
-        0,
-        ADDRESS_CHECKSUM_SIZE * 2
-      );
+      expectedChecksum = CnUtils.cn_fast_hash(prefix + spend + view).slice(0, ADDRESS_CHECKSUM_SIZE * 2);
     }
     if (checksum !== expectedChecksum) {
       throw "Invalid checksum";
@@ -1828,57 +1031,35 @@ export namespace Cn {
 
   export function is_subaddress(addr: string) {
     let decoded = cnBase58.decode(addr);
-    let subaddressPrefix = CnUtils.encode_varint(
-      CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX
-    );
+    let subaddressPrefix = CnUtils.encode_varint(CRYPTONOTE_PUBLIC_SUBADDRESS_BASE58_PREFIX);
     let prefix = decoded.slice(0, subaddressPrefix.length);
 
     return prefix === subaddressPrefix;
   }
 
-  export function valid_keys(
-    view_pub: string,
-    view_sec: string,
-    spend_pub: string,
-    spend_sec: string
-  ) {
+  export function valid_keys(view_pub: string, view_sec: string, spend_pub: string, spend_sec: string) {
     let expected_view_pub = CnUtils.sec_key_to_pub(view_sec);
     let expected_spend_pub = CnUtils.sec_key_to_pub(spend_sec);
     return expected_spend_pub === spend_pub && expected_view_pub === view_pub;
   }
 
-  export function decrypt_payment_id(
-    payment_id8: string,
-    tx_public_key: string,
-    acc_prv_view_key: string
-  ) {
+  export function decrypt_payment_id(payment_id8: string, tx_public_key: string, acc_prv_view_key: string) {
     if (payment_id8.length !== 16) throw "Invalid input length2!";
 
-    let key_derivation = Cn.generate_key_derivation(
-      tx_public_key,
-      acc_prv_view_key
-    );
+    let key_derivation = Cn.generate_key_derivation(tx_public_key, acc_prv_view_key);
 
-    let pid_key = CnUtils.cn_fast_hash(
-      key_derivation + ENCRYPTED_PAYMENT_ID_TAIL.toString(16)
-    ).slice(0, INTEGRATED_ID_SIZE * 2);
+    let pid_key = CnUtils.cn_fast_hash(key_derivation + ENCRYPTED_PAYMENT_ID_TAIL.toString(16)).slice(0, INTEGRATED_ID_SIZE * 2);
 
     let decrypted_payment_id = CnUtils.hex_xor(payment_id8, pid_key);
 
     return decrypted_payment_id;
   }
 
-  export function get_account_integrated_address(
-    address: string,
-    payment_id8: string
-  ) {
+  export function get_account_integrated_address(address: string, payment_id8: string) {
     let decoded_address = decode_address(address);
 
-    let prefix = CnUtils.encode_varint(
-      CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX
-    );
-    let data =
-      prefix + decoded_address.spend + decoded_address.view + payment_id8;
+    let prefix = CnUtils.encode_varint(CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX);
+    let data = prefix + decoded_address.spend + decoded_address.view + payment_id8;
 
     let checksum = CnUtils.cn_fast_hash(data);
 
@@ -1893,19 +1074,11 @@ export namespace Cn {
     }
     let decimal;
     if (unitsStr.length >= config.coinUnitPlaces) {
-      decimal = unitsStr.substr(
-        unitsStr.length - config.coinUnitPlaces,
-        config.coinUnitPlaces
-      );
+      decimal = unitsStr.substr(unitsStr.length - config.coinUnitPlaces, config.coinUnitPlaces);
     } else {
       decimal = CnUtils.padLeft(unitsStr, config.coinUnitPlaces, "0");
     }
-    return (
-      symbol +
-      (unitsStr.substr(0, unitsStr.length - config.coinUnitPlaces) || "0") +
-      "." +
-      decimal
-    );
+    return symbol + (unitsStr.substr(0, unitsStr.length - config.coinUnitPlaces) || "0") + "." + decimal;
   }
 
   export function formatMoneyFullSymbol(units: number | string) {
@@ -1926,37 +1099,21 @@ export namespace Cn {
 }
 export namespace CnTransactions {
   export function commit(amount: string, mask: string) {
-    if (
-      !CnUtils.valid_hex(mask) ||
-      mask.length !== 64 ||
-      !CnUtils.valid_hex(amount) ||
-      amount.length !== 64
-    ) {
+    if (!CnUtils.valid_hex(mask) || mask.length !== 64 || !CnUtils.valid_hex(amount) || amount.length !== 64) {
       throw "invalid amount or mask!";
     }
-    let C = CnUtils.ge_double_scalarmult_base_vartime(amount, CnVars.H, mask);
-    return C;
+
+    return concealjs.cnutils.ge_double_scalarmult_base_vartime(amount, CnVars.H, mask);
   }
 
   export function zeroCommit(amount: string) {
     if (!CnUtils.valid_hex(amount) || amount.length !== 64) {
       throw "invalid amount!";
     }
-    let C = CnUtils.ge_double_scalarmult_base_vartime(
-      amount,
-      CnVars.H,
-      CnVars.I
-    );
-    return C;
+    return concealjs.cnutils.ge_double_scalarmult_base_vartime(amount, CnVars.H, CnVars.I);
   }
 
-  export function decodeRctSimple(
-    rv: any,
-    sk: any,
-    i: number,
-    mask: any,
-    hwdev: any = null
-  ) {
+  export function decodeRctSimple(rv: any, sk: any, i: number, mask: any, hwdev: any = null) {
     // CHECK_AND_ASSERT_MES(rv.type == RCTTypeSimple || rv.type == RCTTypeSimpleBulletproof, false, "decodeRct called on non simple rctSig");
     // CHECK_AND_ASSERT_THROW_MES(i < rv.ecdhInfo.size(), "Bad index");
     // CHECK_AND_ASSERT_THROW_MES(rv.outPk.size() == rv.ecdhInfo.size(), "Mismatched sizes of rv.outPk and rv.ecdhInfo");
@@ -1986,17 +1143,8 @@ export namespace CnTransactions {
     return CnUtils.h2d(amount);
   }
 
-  export function decode_ringct(
-    rv: any,
-    pub: any,
-    sec: any,
-    i: number,
-    mask: any,
-    amount: any,
-    derivation: string | null
-  ): number | false {
-    if (derivation === null)
-      derivation = CnNativeBride.generate_key_derivation(pub, sec); //[10;11]ms
+  export function decode_ringct(rv: any, pub: any, sec: any, i: number, mask: any, amount: any, derivation: string | null): number | false {
+    if (derivation === null) derivation = concealjs.crypto.generate_key_derivation(pub, sec); //[10;11]ms
 
     let scalar1 = CnUtils.derivation_to_scalar(derivation, i); //[0.2ms;1ms]
 
@@ -2039,11 +1187,7 @@ export namespace CnTransactions {
     real_output_index: any,
     recv_derivation: string | null
   ) {
-    if (recv_derivation === null)
-      recv_derivation = CnNativeBride.generate_key_derivation(
-        tx_public_key,
-        ack.view_secret_key
-      );
+    if (recv_derivation === null) recv_derivation = concealjs.crypto.generate_key_derivation(tx_public_key, ack.view_secret_key);
     // recv_derivation = CnUtilNative.generate_key_derivation(tx_public_key, ack.view_secret_key);
     // logDebugMsg('recv_derivation', recv_derivation);
 
@@ -2052,29 +1196,18 @@ export namespace CnTransactions {
 
     // let start = Date.now();
 
-    let in_ephemeral_pub = CnNativeBride.derive_public_key(
-      recv_derivation,
-      real_output_index,
-      ack.public_spend_key
-    );
+    let in_ephemeral_pub = concealjs.crypto.derive_public_key(recv_derivation, real_output_index, ack.public_spend_key);
     // let in_ephemeral_pub = CnUtilNative.derive_public_key(recv_derivation, real_output_index, ack.public_spend_key);
     // logDebugMsg('in_ephemeral_pub',in_ephemeral_pub);
 
     // CHECK_AND_ASSERT_MES(r, false, "key image helper: failed to derive_public_key(" << recv_derivation << ", " << real_output_index <<  ", " << ack.m_account_address.m_spend_public_key << ")");
     //
-    let in_ephemeral_sec = CnNativeBride.derive_secret_key(
-      recv_derivation,
-      real_output_index,
-      ack.spend_secret_key
-    );
+    let in_ephemeral_sec = CnNativeBride.derive_secret_key(recv_derivation, real_output_index, ack.spend_secret_key);
     // let in_ephemeral_sec = CnNativeBride.derive_secret_key(recv_derivation, real_output_index, ack.spend_secret_key);
     // logDebugMsg('in_ephemeral_sec',in_ephemeral_sec);
 
     // let ki = CnNativeBride.generate_key_image_2(in_ephemeral_pub, in_ephemeral_sec);
-    let ki = CnNativeBride.generate_key_image_2(
-      in_ephemeral_pub,
-      in_ephemeral_sec
-    );
+    let ki = CnNativeBride.generate_key_image_2(in_ephemeral_pub, in_ephemeral_sec);
 
     // let end = Date.now();
     // logDebugMsg(end-start);
@@ -2093,10 +1226,7 @@ export namespace CnTransactions {
     out_index: number,
     enc_mask: string | null
   ) {
-    let recv_derivation = CnNativeBride.generate_key_derivation(
-      tx_pub_key,
-      keys.view.sec
-    );
+    let recv_derivation = concealjs.crypto.generate_key_derivation(tx_pub_key, keys.view.sec);
     if (!recv_derivation) throw "Failed to generate key image";
 
     let mask;
@@ -2112,21 +1242,10 @@ export namespace CnTransactions {
       mask = enc_mask ? CnNativeBride.sc_sub(enc_mask, temp1) : CnVars.I; //decode mask, or d2s(1) if no mask
     }
 
-    let ephemeral_pub = CnNativeBride.derive_public_key(
-      recv_derivation,
-      out_index,
-      keys.spend.pub
-    );
+    let ephemeral_pub = concealjs.crypto.derive_public_key(recv_derivation, out_index, keys.spend.pub);
     if (!ephemeral_pub) throw "Failed to generate key image";
-    let ephemeral_sec = CnNativeBride.derive_secret_key(
-      recv_derivation,
-      out_index,
-      keys.spend.sec
-    );
-    let image = CnNativeBride.generate_key_image_2(
-      ephemeral_pub,
-      ephemeral_sec
-    );
+    let ephemeral_sec = concealjs.crypto.derive_secret_key(recv_derivation, out_index, keys.spend.sec);
+    let image = CnNativeBride.generate_key_image_2(ephemeral_pub, ephemeral_sec);
     return {
       in_ephemeral: {
         pub: ephemeral_pub,
@@ -2137,11 +1256,7 @@ export namespace CnTransactions {
     };
   }
 
-  export function estimateRctSize(
-    inputs: number,
-    mixin: number,
-    outputs: number
-  ) {
+  export function estimateRctSize(inputs: number, mixin: number, outputs: number) {
     let size = 0;
     size += outputs * 6306;
     size += ((mixin + 1) * 4 + 32 + 8) * inputs; //key offsets + key image + amount
@@ -2175,13 +1290,12 @@ export namespace CnTransactions {
         }
       }
     }
-    return out.sort((a, b) => a["amount"] - b["amount"]);
+    return out.sort(function (a, b) {
+      return a["amount"] - b["amount"];
+    });
   }
 
-  export function get_payment_id_nonce(
-    payment_id: string,
-    pid_encrypt: boolean
-  ) {
+  export function get_payment_id_nonce(payment_id: string, pid_encrypt: boolean) {
     if (payment_id.length !== 64 && payment_id.length !== 16) {
       throw "Invalid payment id";
     }
@@ -2212,10 +1326,7 @@ export namespace CnTransactions {
   }
 
   //TODO merge
-  export function add_additionnal_pub_keys_to_extra(
-    extra: string,
-    keys: string[]
-  ) {
+  export function add_additionnal_pub_keys_to_extra(extra: string, keys: string[]) {
     //do not add if there is no additional keys
     logDebugMsg("Add additionnal keys to extra", keys);
     if (keys.length === 0) return extra;
@@ -2237,9 +1348,7 @@ export namespace CnTransactions {
       throw "Invalid extra nonce";
     }
     if (nonce.length / 2 > TX_EXTRA_NONCE_MAX_COUNT) {
-      throw (
-        "Extra nonce must be at most " + TX_EXTRA_NONCE_MAX_COUNT + " bytes"
-      );
+      throw "Extra nonce must be at most " + TX_EXTRA_NONCE_MAX_COUNT + " bytes";
     }
     // Add nonce tag
     extra += TX_EXTRA_TAGS.NONCE;
@@ -2365,10 +1474,7 @@ export namespace CnTransactions {
     signatures: any[];
   };
 
-  export function serialize_tx(
-    tx: CnTransactions.Transaction,
-    headeronly: boolean = false
-  ) {
+  export function serialize_tx(tx: CnTransactions.Transaction, headeronly: boolean = false) {
     //tx: {
     //  version: uint64,
     //  unlock_time: uint64,
@@ -2377,7 +1483,7 @@ export namespace CnTransactions {
     //  vout: [{amount: uint64, target: {key: hex}},...],
     //  signatures: [[s,s,...],...]
     //}
-    logDebugMsg("serialize tx ", JSON.parse(JSON.stringify(tx)));
+    // logDebugMsg("serialize tx ", JSON.parse(JSON.stringify(tx)));
     let buf = "";
     buf += CnUtils.encode_varint(tx.version);
     buf += CnUtils.encode_varint(tx.unlock_time);
@@ -2410,7 +1516,7 @@ export namespace CnTransactions {
       }
       logDebugMsg("end vin", vin);
     }
-    logDebugMsg("serialize tx ", tx);
+    // logDebugMsg("serialize tx ", tx);
     buf += CnUtils.encode_varint(tx.vout.length);
     for (i = 0; i < tx.vout.length; i++) {
       let vout = tx.vout[i];
@@ -2420,7 +1526,7 @@ export namespace CnTransactions {
           buf += "02";
           buf += vout.target.data.key;
           break;
-        case "txout_to_deposit_key": {
+        case "txout_to_deposit_key":
           buf += "03";
           const keys = vout.target.data.keys || [];
           buf += CnUtils.encode_varint(keys.length); // varint for number of keys, only one for deposit
@@ -2430,7 +1536,6 @@ export namespace CnTransactions {
           buf += CnUtils.encode_varint(1); // requiredSignatureCount is always 1 for deposits
           buf += CnUtils.encode_varint_term(vout.target.data.term || 0); // The term in block
           break;
-        }
         default:
           throw "Unhandled txout target type: " + vout.target.type;
       }
@@ -2530,13 +1635,7 @@ export namespace CnTransactions {
   //size: ring size
   //nrings: number of rings
   //extensible borromean signatures
-  export function genBorromean(
-    xv: string[],
-    pm: string[][],
-    iv: string,
-    size: number,
-    nrings: number
-  ) {
+  export function genBorromean(xv: string[], pm: string[][], iv: string, size: number, nrings: number) {
     if (xv.length !== nrings) {
       throw "wrong xv length " + xv.length;
     }
@@ -2576,16 +1675,12 @@ export namespace CnTransactions {
     let alpha = [];
     for (let i = 0; i < nrings; i++) {
       index = parseInt("" + iv[i]);
-      alpha[i] = CnRandom.random_scalar();
+      alpha[i] = concealjs.random.random_scalar();
       L[index][i] = CnUtils.ge_scalarmult_base(alpha[i]);
       for (let j = index + 1; j < size; j++) {
-        bb.s[j][i] = CnRandom.random_scalar();
+        bb.s[j][i] = concealjs.random.random_scalar();
         let c = Cn.hash_to_scalar(L[j - 1][i]);
-        L[j][i] = CnUtils.ge_double_scalarmult_base_vartime(
-          c,
-          pm[j][i],
-          bb.s[j][i]
-        );
+        L[j][i] = CnUtils.ge_double_scalarmult_base_vartime(c, pm[j][i], bb.s[j][i]);
       }
     }
     //hash last row to create ee
@@ -2599,12 +1694,8 @@ export namespace CnTransactions {
       let cc = bb.ee;
       let j = 0;
       for (j = 0; j < parseInt(iv[i]); j++) {
-        bb.s[j][i] = CnRandom.random_scalar();
-        let LL = CnUtils.ge_double_scalarmult_base_vartime(
-          cc,
-          pm[j][i],
-          bb.s[j][i]
-        );
+        bb.s[j][i] = concealjs.random.random_scalar();
+        let LL = CnUtils.ge_double_scalarmult_base_vartime(cc, pm[j][i], bb.s[j][i]);
         cc = Cn.hash_to_scalar(LL);
       }
       bb.s[j][i] = CnNativeBride.sc_mulsub(xv[i], cc, alpha[i]);
@@ -2638,12 +1729,12 @@ export namespace CnTransactions {
       //exp: exponent //doesn't exist for now
     };
     /*payload stuff - ignore for now
-		 seeds = new Array(3);
-		 for (let i = 0; i < seeds.length; i++){
-		   seeds[i] = new Array(1);
-		 }
-		 genSeeds(seeds, enc_seed);
-		 */
+		seeds = new Array(3);
+		for (let i = 0; i < seeds.length; i++){
+		  seeds[i] = new Array(1);
+		}
+		genSeeds(seeds, enc_seed);
+		*/
     let ai = [];
     let PM: string[][] = [];
     for (let i = 0; i < size; i++) {
@@ -2651,7 +1742,7 @@ export namespace CnTransactions {
     }
     //start at index and fill PM left and right -- PM[0] holds Ci
     for (let i = 0; i < nrings; i++) {
-      ai[i] = CnRandom.random_scalar();
+      ai[i] = concealjs.random.random_scalar();
       let j: number = parseInt(indices[i]);
       PM[j][i] = CnUtils.ge_scalarmult_base(ai[i]);
       while (j > 0) {
@@ -2675,12 +1766,12 @@ export namespace CnTransactions {
       C = CnUtils.ge_add(C, PM[0][i]);
     }
     /* exponent stuff - ignore for now
-		 if (exponent){
-		   n = JSBigInt(10);
-		   n = n.pow(exponent).toString();
-		   mask = sc_mul(mask, d2s(n)); //new sum
-		 }
-		 */
+		if (exponent){
+		  n = JSBigInt(10);
+		  n = n.pow(exponent).toString();
+		  mask = sc_mul(mask, d2s(n)); //new sum
+		}
+		*/
     sig.bsig = CnTransactions.genBorromean(ai, PM, indices, size, nrings);
     commitMaskObj.C = C;
     commitMaskObj.mask = mask;
@@ -2688,33 +1779,27 @@ export namespace CnTransactions {
   }
 
   /*export function proveRangeBulletproof(commitMaskObj : {C:string,mask:string}, amount : string, nrings : number, enc_seed : number, exponent : number) : CnTransactions.RangeProveBulletproofSignature{
-		 let mask = CnRandom.random_scalar();
- 
-		 let proof : CnTransactions.RangeProveBulletproofSignature = bulletproof_PROVE(amount, mask);
- 
-		 CHECK_AND_ASSERT_THROW_MES(proof.V.length == 1, "V has not exactly one element");
-		 commitMaskObj.C = proof.V[0];
-		 commitMaskObj.mask = mask;
-		 return proof;
-	 }
-	 export function verBulletproof(proof : CnTransactions.RangeProveBulletproofSignature) : boolean{
-		 try { return bulletproof_VERIFY(proof); }
-			 // we can get deep throws from ge_frombytes_vartime if input isn't valid
-		 catch (e) { return false; }
-	 }*/
+		let mask = CnRandom.random_scalar();
+
+		let proof : CnTransactions.RangeProveBulletproofSignature = bulletproof_PROVE(amount, mask);
+
+		CHECK_AND_ASSERT_THROW_MES(proof.V.length == 1, "V has not exactly one element");
+		commitMaskObj.C = proof.V[0];
+		commitMaskObj.mask = mask;
+		return proof;
+	}
+	export function verBulletproof(proof : CnTransactions.RangeProveBulletproofSignature) : boolean{
+		try { return bulletproof_VERIFY(proof); }
+			// we can get deep throws from ge_frombytes_vartime if input isn't valid
+		catch (e) { return false; }
+	}*/
 
   // Gen creates a signature which proves that for some column in the keymatrix "pk"
   //   the signer knows a secret key for each row in that column
   // we presently only support matrices of 2 rows (pubkey, commitment)
   // this is a simplied MLSAG_Gen function to reflect that
   // because we don't want to force same secret column for all inputs
-  export function MLSAG_Gen(
-    message: string,
-    pk: string[][],
-    xx: string[],
-    kimg: string,
-    index: number
-  ) {
+  export function MLSAG_Gen(message: string, pk: string[][], xx: string[], kimg: string, index: number) {
     let cols = pk.length; //ring size
     if (index >= cols) {
       throw "index out of range";
@@ -2746,12 +1831,12 @@ export namespace CnTransactions {
     toHash[0] = message;
 
     //secret index (pubkey section)
-    alpha[0] = CnRandom.random_scalar(); //need to save alphas for later
+    alpha[0] = concealjs.random.random_scalar(); //need to save alphas for later
     toHash[1] = pk[index][0]; //secret index pubkey
     toHash[2] = CnUtils.ge_scalarmult_base(alpha[0]); //dsRow L
     toHash[3] = CnNativeBride.generate_key_image_2(pk[index][0], alpha[0]); //dsRow R (key image check)
     //secret index (commitment section)
-    alpha[1] = CnRandom.random_scalar();
+    alpha[1] = concealjs.random.random_scalar();
     toHash[4] = pk[index][1]; //secret index commitment
     toHash[5] = CnUtils.ge_scalarmult_base(alpha[1]); //ndsRow L
 
@@ -2762,29 +1847,16 @@ export namespace CnTransactions {
       rv.cc = c_old;
     }
     while (i != index) {
-      rv.ss[i][0] = CnRandom.random_scalar(); //dsRow ss
-      rv.ss[i][1] = CnRandom.random_scalar(); //ndsRow ss
+      rv.ss[i][0] = concealjs.random.random_scalar(); //dsRow ss
+      rv.ss[i][1] = concealjs.random.random_scalar(); //ndsRow ss
 
       //!secret index (pubkey section)
       toHash[1] = pk[i][0];
-      toHash[2] = CnUtils.ge_double_scalarmult_base_vartime(
-        c_old,
-        pk[i][0],
-        rv.ss[i][0]
-      );
-      toHash[3] = CnUtils.ge_double_scalarmult_postcomp_vartime(
-        rv.ss[i][0],
-        pk[i][0],
-        c_old,
-        kimg
-      );
+      toHash[2] = CnUtils.ge_double_scalarmult_base_vartime(c_old, pk[i][0], rv.ss[i][0]);
+      toHash[3] = CnUtils.ge_double_scalarmult_postcomp_vartime(rv.ss[i][0], pk[i][0], c_old, kimg);
       //!secret index (commitment section)
       toHash[4] = pk[i][1];
-      toHash[5] = CnUtils.ge_double_scalarmult_base_vartime(
-        c_old,
-        pk[i][1],
-        rv.ss[i][1]
-      );
+      toHash[5] = CnUtils.ge_double_scalarmult_base_vartime(c_old, pk[i][1], rv.ss[i][1]);
       c_old = Cn.array_hash_to_scalar(toHash); //hash to get next column c
       i = (i + 1) % cols;
       if (i === 0) {
@@ -2850,10 +1922,8 @@ export namespace CnTransactions {
     let buf = "";
     let p = rv.p;
     if (p) {
-      if (p.rangeSigs.length)
-        return CnTransactions.serializeRangeProofsClassic(rv);
-      else if (p.bulletproofs.length)
-        return CnTransactions.serializeRangeProofsBulletproof(rv);
+      if (p.rangeSigs.length) return CnTransactions.serializeRangeProofsClassic(rv);
+      else if (p.bulletproofs.length) return CnTransactions.serializeRangeProofsBulletproof(rv);
       else throw new Error(" missing range proof or bulletproof range proof");
     } else throw new Error("invalid p signature");
     return buf;
@@ -2885,8 +1955,7 @@ export namespace CnTransactions {
       for (let i = 0; i < p.bulletproofs.length; i++) {
         throw new Error("bulletproof serialization not implemented");
       }
-    else
-      throw new Error("invalid p signature. missing bulletproof range proof");
+    else throw new Error("invalid p signature. missing bulletproof range proof");
 
     return buf;
   }
@@ -2971,14 +2040,7 @@ export namespace CnTransactions {
       //compute range proofs, etc
       for (let i = 0; i < outAmounts.length; i++) {
         let teststart = new Date().getTime();
-        if (!bulletproof)
-          p.rangeSigs[i] = CnTransactions.proveRange(
-            cmObj,
-            outAmounts[i],
-            nrings,
-            0,
-            0
-          );
+        if (!bulletproof) p.rangeSigs[i] = CnTransactions.proveRange(cmObj, outAmounts[i], nrings, 0, 0);
         // else
         // 	p.bulletproofs[i] = CnTransactions.proveRangeBulletproof(cmObj, outAmounts[i], nrings, 0, 0);
 
@@ -2986,10 +2048,7 @@ export namespace CnTransactions {
         logDebugMsg("Time take for range proof " + i + ": " + testfinish);
         rv.outPk[i] = cmObj.C;
         sumout = CnNativeBride.sc_add(sumout, cmObj.mask);
-        rv.ecdhInfo[i] = CnUtils.encode_rct_ecdh(
-          { mask: cmObj.mask, amount: CnUtils.d2s(outAmounts[i]) },
-          amountKeys[i]
-        );
+        rv.ecdhInfo[i] = CnUtils.encode_rct_ecdh({ mask: cmObj.mask, amount: CnUtils.d2s(outAmounts[i]) }, amountKeys[i]);
       }
       logDebugMsg("====a");
 
@@ -3001,7 +2060,7 @@ export namespace CnTransactions {
         //create pseudoOuts
         let i = 0;
         for (; i < inAmounts.length - 1; i++) {
-          ai[i] = CnRandom.random_scalar();
+          ai[i] = concealjs.random.random_scalar();
           sumpouts = CnNativeBride.sc_add(sumpouts, ai[i]);
           rv.pseudoOuts[i] = commit(CnUtils.d2s(inAmounts[i]), ai[i]);
         }
@@ -3009,17 +2068,7 @@ export namespace CnTransactions {
         rv.pseudoOuts[i] = commit(CnUtils.d2s(inAmounts[i]), ai[i]);
         let full_message = CnTransactions.get_pre_mlsag_hash(rv);
         for (let i = 0; i < inAmounts.length; i++) {
-          p.MGs.push(
-            CnTransactions.proveRctMG(
-              full_message,
-              mixRing[i],
-              inSk[i],
-              kimg[i],
-              ai[i],
-              rv.pseudoOuts[i],
-              indices[i]
-            )
-          );
+          p.MGs.push(CnTransactions.proveRctMG(full_message, mixRing[i], inSk[i], kimg[i], ai[i], rv.pseudoOuts[i], indices[i]));
         }
       } else {
         let sumC = CnVars.I;
@@ -3027,22 +2076,9 @@ export namespace CnTransactions {
         for (let i = 0; i < rv.outPk.length; i++) {
           sumC = CnUtils.ge_add(sumC, rv.outPk[i]);
         }
-        sumC = CnUtils.ge_add(
-          sumC,
-          CnUtils.ge_scalarmult(CnVars.H, CnUtils.d2s(rv.txnFee))
-        );
+        sumC = CnUtils.ge_add(sumC, CnUtils.ge_scalarmult(CnVars.H, CnUtils.d2s(rv.txnFee)));
         let full_message = CnTransactions.get_pre_mlsag_hash(rv);
-        p.MGs.push(
-          CnTransactions.proveRctMG(
-            full_message,
-            mixRing[0],
-            inSk[0],
-            kimg[0],
-            sumout,
-            sumC,
-            indices[0]
-          )
-        );
+        p.MGs.push(CnTransactions.proveRctMG(full_message, mixRing[0], inSk[0], kimg[0], sumout, sumC, indices[0]));
       }
     }
 
@@ -3070,6 +2106,7 @@ export namespace CnTransactions {
     unlock_time: number = 0,
     rct: boolean,
     message: string,
+    messageTo: string | undefined,
     ttl: number,
     transactionType: string,
     term: number
@@ -3077,31 +2114,23 @@ export namespace CnTransactions {
     try {
       console.log("Starting transaction construction...");
       //we move payment ID stuff here, because we need txkey to encrypt
-      let txkey = Cn.random_keypair();
+      let txkey = concealjs.cn.random_keypair();
       logDebugMsg(txkey);
       let extra = "";
       if (payment_id) {
         if (pid_encrypt && payment_id.length !== INTEGRATED_ID_SIZE * 2) {
-          throw (
-            "payment ID must be " +
-            INTEGRATED_ID_SIZE +
-            " bytes to be encrypted!"
-          );
+          throw "payment ID must be " + INTEGRATED_ID_SIZE + " bytes to be encrypted!";
         }
         logDebugMsg("Adding payment id: " + payment_id);
         if (pid_encrypt && realDestViewKey) {
           //get the derivation from our passed viewkey, then hash that + tail to get encryption key
-          let pid_key = CnUtils.cn_fast_hash(
-            Cn.generate_key_derivation(realDestViewKey, txkey.sec) +
-              ENCRYPTED_PAYMENT_ID_TAIL.toString(16)
+          let pid_key = concealjs.crypto.cn_fast_hash(
+            concealjs.crypto.generate_key_derivation(realDestViewKey, txkey.sec) + ENCRYPTED_PAYMENT_ID_TAIL.toString(16)
           ).slice(0, INTEGRATED_ID_SIZE * 2);
           logDebugMsg("Txkeys:", txkey, "Payment ID key:", pid_key);
           payment_id = CnUtils.hex_xor(payment_id, pid_key);
         }
-        let nonce = CnTransactions.get_payment_id_nonce(
-          payment_id,
-          pid_encrypt
-        );
+        let nonce = CnTransactions.get_payment_id_nonce(payment_id, pid_encrypt);
         logDebugMsg("Extra nonce: " + nonce);
         extra = CnTransactions.add_nonce_to_extra(extra, nonce);
       }
@@ -3171,28 +2200,17 @@ export namespace CnTransactions {
           // coinbaser ringct txs.
           //is_rct_coinbases.push((sources[i].mask ? sources[i].mask === I : 0));
 
-          logDebugMsg(
-            "res.in_ephemeral.pub",
-            res,
-            res.in_ephemeral.pub,
-            sources,
-            i
-          );
-          if (
-            res.in_ephemeral.pub !== sources[i].outputs[sources[i].real_out].key
-          ) {
+          logDebugMsg("res.in_ephemeral.pub", res, res.in_ephemeral.pub, sources, i);
+          if (res.in_ephemeral.pub !== sources[i].outputs[sources[i].real_out].key) {
             throw "in_ephemeral.pub != source.real_out.key";
           }
           sources[i].key_image = res.image;
           sources[i].in_ephemeral = res.in_ephemeral;
         }
         //sort ins
-        sources.sort(
-          (a, b) =>
-            JSBigInt.parse(a.key_image, 16).compare(
-              JSBigInt.parse(b.key_image, 16)
-            ) * -1
-        );
+        sources.sort(function (a, b) {
+          return JSBigInt.parse(a.key_image, 16).compare(JSBigInt.parse(b.key_image, 16)) * -1;
+        });
       }
       //copy the sorted sources data to tx
       for (i = 0; i < sources.length; i++) {
@@ -3219,18 +2237,11 @@ export namespace CnTransactions {
           };
 
           for (j = 0; j < sources[i].outputs.length; ++j) {
-            logDebugMsg(
-              "add to key offsets",
-              sources[i].outputs[j].index,
-              j,
-              sources[i].outputs
-            );
+            logDebugMsg("add to key offsets", sources[i].outputs[j].index, j, sources[i].outputs);
             input_to_key.key_offsets.push(sources[i].outputs[j].index);
           }
           logDebugMsg("key offsets before abs", input_to_key.key_offsets);
-          input_to_key.key_offsets = CnTransactions.abs_to_rel_offsets(
-            input_to_key.key_offsets
-          );
+          input_to_key.key_offsets = CnTransactions.abs_to_rel_offsets(input_to_key.key_offsets);
           logDebugMsg("key offsets after abs", input_to_key.key_offsets);
         }
         tx.vin.push(input_to_key);
@@ -3267,25 +2278,16 @@ export namespace CnTransactions {
         }
       }
 
-      logDebugMsg(
-        "Destinations resume:",
-        unique_dst_addresses,
-        num_stdaddresses,
-        num_subaddresses
-      );
+      logDebugMsg("Destinations resume:", unique_dst_addresses, num_stdaddresses, num_subaddresses);
 
       if (num_stdaddresses == 0 && num_subaddresses == 1) {
         let uniqueSubaddressDecoded = Cn.decode_address(single_dest_subaddress);
-        txkey.pub = CnUtils.ge_scalarmult(
-          uniqueSubaddressDecoded.spend,
-          txkey.sec
-        );
+        txkey.pub = CnUtils.ge_scalarmult(uniqueSubaddressDecoded.spend, txkey.sec);
       }
 
       let additional_tx_keys: string[] = [];
       let additional_tx_public_keys: string[] = [];
-      let need_additional_txkeys: boolean =
-        num_subaddresses > 0 && (num_stdaddresses > 0 || num_subaddresses > 1);
+      let need_additional_txkeys: boolean = num_subaddresses > 0 && (num_stdaddresses > 0 || num_subaddresses > 1);
 
       for (i = 0; i < dsts.length; ++i) {
         let destKeys = Cn.decode_address(dsts[i].address);
@@ -3295,32 +2297,19 @@ export namespace CnTransactions {
           pub: "",
         };
         if (need_additional_txkeys) {
-          additional_txkey = Cn.random_keypair();
+          additional_txkey = concealjs.cn.random_keypair();
           if (Cn.is_subaddress(dsts[i].address)) {
             // R = rD for subaddresses
-            additional_txkey.pub = CnUtils.ge_scalarmult(
-              destKeys.spend,
-              additional_txkey.sec
-            );
-          } else
-            additional_txkey.pub = CnUtils.ge_scalarmult_base(
-              additional_txkey.sec
-            );
+            additional_txkey.pub = CnUtils.ge_scalarmult(destKeys.spend, additional_txkey.sec);
+          } else additional_txkey.pub = CnUtils.ge_scalarmult_base(additional_txkey.sec);
         }
         let out_derivation;
         if (destKeys.view === keys.view.pub) {
-          out_derivation = Cn.generate_key_derivation(txkey.pub, keys.view.sec);
+          out_derivation = concealjs.crypto.generate_key_derivation(txkey.pub, keys.view.sec);
         } else {
           if (Cn.is_subaddress(dsts[i].address) && need_additional_txkeys)
-            out_derivation = Cn.generate_key_derivation(
-              destKeys.view,
-              additional_txkey.sec
-            );
-          else
-            out_derivation = Cn.generate_key_derivation(
-              destKeys.view,
-              txkey.sec
-            );
+            out_derivation = concealjs.crypto.generate_key_derivation(destKeys.view, additional_txkey.sec);
+          else out_derivation = concealjs.crypto.generate_key_derivation(destKeys.view, txkey.sec);
         }
 
         if (need_additional_txkeys) {
@@ -3329,15 +2318,9 @@ export namespace CnTransactions {
         }
 
         if (rct) {
-          amountKeys.push(
-            CnUtils.derivation_to_scalar(out_derivation, out_index)
-          );
+          amountKeys.push(CnUtils.derivation_to_scalar(out_derivation, out_index));
         }
-        let out_ephemeral_pub = Cn.derive_public_key(
-          out_derivation,
-          out_index,
-          destKeys.spend
-        );
+        let out_ephemeral_pub = concealjs.crypto.derive_public_key(out_derivation, out_index, destKeys.spend);
         let out: CnTransactions.Vout;
 
         if (transactionType === "deposit" && i === 0) {
@@ -3355,11 +2338,7 @@ export namespace CnTransactions {
           tx.vout.push(depositOut);
           ++out_index;
           ++i;
-          out_ephemeral_pub = Cn.derive_public_key(
-            out_derivation,
-            out_index,
-            destKeys.spend
-          );
+          out_ephemeral_pub = concealjs.crypto.derive_public_key(out_derivation, out_index, destKeys.spend);
         }
 
         out = {
@@ -3375,35 +2354,23 @@ export namespace CnTransactions {
         ++out_index;
 
         /*
-			 tx.vout.push(out);
-			 ++out_index;
-			 */
+			tx.vout.push(out);
+			++out_index;
+			*/
       }
 
       // add pub key to extra after we know whether to use R = rG or R = rD
       tx.extra = CnTransactions.add_pub_key_to_extra(tx.extra, txkey.pub);
-      tx.extra = CnTransactions.add_additionnal_pub_keys_to_extra(
-        tx.extra,
-        additional_tx_public_keys
-      );
+      tx.extra = CnTransactions.add_additionnal_pub_keys_to_extra(tx.extra, additional_tx_public_keys);
 
       // Encrypt message and add it to the extra
       // CCX has only 1 destination for messages anyways
       if (message) {
-        let messageAddress: string | null = null;
-        for (let i = 0; i < dsts.length; i++) {
-          if (dsts[i].address !== senderAddress) {
-            messageAddress = dsts[i].address;
-            break; // Break after finding the first non-sender destination
-          }
-        }
+        let messageAddress = messageTo;
 
         if (messageAddress) {
           let destKeys = Cn.decode_address(messageAddress);
-          let derivation: string = CnNativeBride.generate_key_derivation(
-            destKeys.spend,
-            txkey.sec
-          );
+          let derivation: string = concealjs.crypto.generate_key_derivation(destKeys.spend, txkey.sec);
           let magick1: string = "80";
           let magick2: string = "00";
           let keyData: string = derivation + magick1 + magick2;
@@ -3458,7 +2425,7 @@ export namespace CnTransactions {
             src_keys.push(sources[i].outputs[j].key);
           }
           if (transactionType !== "withdraw") {
-            let sigs = CnNativeBride.generate_ring_signature(
+            let sigs = concealjs.crypto.generate_ring_signature(
               CnTransactions.get_tx_prefix_hash(tx),
               tx.vin[i].k_image,
               src_keys,
@@ -3471,38 +2438,34 @@ export namespace CnTransactions {
             let txPrefixHash = CnTransactions.get_tx_prefix_hash(tx);
 
             // Step 1: Generate key derivation
-            let derivation = CnNativeBride.generate_key_derivation(
+            let derivation = concealjs.crypto.generate_key_derivation(
               sources[i].real_out_tx_key, // sourceTransactionKey
               keys.view.sec // accountKeys.viewSecretKey
             );
             //console.log('generate_key_derivation', sources[i].real_out_tx_key, keys.view.sec, 'true', derivation); // debug for crypto-test.cpp
             // Step 2: Derive ephemeral keys
-            let ephemeralPublicKey = CnNativeBride.derive_public_key(
+            let ephemeralPublicKey = concealjs.crypto.derive_public_key(
               derivation, // derivation
               parseInt(sources[i].outputs[i].index), // outputIndex
               keys.spend.pub // accountKeys.address.spendPublicKey
             );
             //console.log('derive_public_key', derivation, parseInt(sources[i].outputs[0].index), keys.spend.pub, 'true', ephemeralPublicKey); // debug for crypto-test.cpp
 
-            let ephemeralSecretKey = CnNativeBride.derive_secret_key(
+            let ephemeralSecretKey = concealjs.crypto.derive_secret_key(
               derivation, // derivation
               parseInt(sources[i].outputs[i].index), // outputIndex
               keys.spend.sec // accountKeys.spendSecretKey
             );
             //console.log('derive_secret_key', derivation, parseInt(sources[i].outputs[0].index), keys.spend.sec, ephemeralSecretKey); // debug for crypto-test.cpp
             // Step 3: Generate signature using ephemeral keys
-            let sig = CnNativeBride.generate_signature(
+            let sig = concealjs.crypto.generate_signature(
               txPrefixHash, // txPrefixHash
               ephemeralPublicKey, // ephemeralPublicKey
               ephemeralSecretKey // ephemeralSecretKey
             );
 
             // Verify the signature before adding it
-            const isValidSignature = CnNativeBride.verify_signature(
-              txPrefixHash,
-              ephemeralPublicKey,
-              sig
-            );
+            const isValidSignature = concealjs.crypto.check_signature(txPrefixHash, ephemeralPublicKey, sig);
             console.log("Signature verification result:", isValidSignature);
             if (!isValidSignature) {
               throw "Signature verification failed";
@@ -3510,19 +2473,19 @@ export namespace CnTransactions {
 
             // Verify signature from blockchain point of view
             /*
-					 const isValid_2 = CnNativeBride.checkTxProof(
-						 txPrefixHash,
-						 sources[i].real_out_tx_key,  				// R: transaction public key
-						 ephemeralPublicKey,  						// A: ephemeral public key
-						 derivation,          						// D: key derivation
-						 sig                  						// signature
-					 );
-					 console.log('Deposit Public key:', sources[i].keys[0]);
-					 console.log('Signature verification from Blockchain point of view:', isValid_2);
-					 if (!isValid_2) {
-						 throw "Signature verification with derived key failed";
-					 }
-					 */
+					const isValid_2 = CnNativeBride.checkTxProof(
+						txPrefixHash,
+						sources[i].real_out_tx_key,  				// R: transaction public key
+						ephemeralPublicKey,  						// A: ephemeral public key
+						derivation,          						// D: key derivation
+						sig                  						// signature
+					);
+					console.log('Deposit Public key:', sources[i].keys[0]);
+					console.log('Signature verification from Blockchain point of view:', isValid_2);
+					if (!isValid_2) {
+						throw "Signature verification with derived key failed";
+					}
+					*/
             // Add the signature to the transaction
             tx.signatures.push([sig]);
           }
@@ -3612,6 +2575,7 @@ export namespace CnTransactions {
     unlock_time: number = 0,
     rct: boolean,
     message: string,
+    messageTo: string | undefined,
     ttl: number,
     transactionType: string,
     term: number
@@ -3626,13 +2590,7 @@ export namespace CnTransactions {
       mix_outs = [];
     } else {
       if (mix_outs.length !== outputs.length && fake_outputs_count !== 0) {
-        throw (
-          "Wrong number of mix outs provided (" +
-          outputs.length +
-          " outputs, " +
-          mix_outs.length +
-          " mix outs)"
-        );
+        throw "Wrong number of mix outs provided (" + outputs.length + " outputs, " + mix_outs.length + " mix outs)";
       }
       for (i = 0; i < mix_outs.length; i++) {
         if ((mix_outs[i].outs || []).length < fake_outputs_count) {
@@ -3650,14 +2608,7 @@ export namespace CnTransactions {
         sec: sec_keys.spend,
       },
     };
-    if (
-      !Cn.valid_keys(
-        keys.view.pub,
-        keys.view.sec,
-        keys.spend.pub,
-        keys.spend.sec
-      )
-    ) {
+    if (!Cn.valid_keys(keys.view.pub, keys.view.sec, keys.spend.pub, keys.spend.sec)) {
       throw "Invalid secret keys!";
     }
     let needed_money = JSBigInt.ZERO;
@@ -3722,17 +2673,14 @@ export namespace CnTransactions {
           //if mixin
           // Sort fake outputs by global index
           logDebugMsg("mix outs before sort", mix_outs[i].outs);
-          mix_outs[i].outs.sort((a, b) =>
-            new JSBigInt(a.global_index).compare(b.global_index)
-          );
+          mix_outs[i].outs.sort(function (a, b) {
+            return new JSBigInt(a.global_index).compare(b.global_index);
+          });
           j = 0;
 
           logDebugMsg("mix outs sorted", mix_outs[i].outs);
 
-          while (
-            src.outputs.length < fake_outputs_count &&
-            j < mix_outs[i].outs.length
-          ) {
+          while (src.outputs.length < fake_outputs_count && j < mix_outs[i].outs.length) {
             let out = mix_outs[i].outs[j];
             logDebugMsg("chekcing mixin");
             logDebugMsg("out: ", out);
@@ -3748,16 +2696,16 @@ export namespace CnTransactions {
               commit: "",
             };
             /*
-					 if (rct){
-						 if (out.rct){
-							 oe.commit = out.rct.slice(0,64); //add commitment from rct mix outs
-						 } else {
-							 if (outputs[i]['rct']) {throw "mix rct outs missing commit";}
-							 oe.commit = zeroCommit(CnUtils.d2s(src.amount)); //create identity-masked commitment for non-rct mix input
-						 }
-					 }
- 
-					  */
+					if (rct){
+						if (out.rct){
+							oe.commit = out.rct.slice(0,64); //add commitment from rct mix outs
+						} else {
+							if (outputs[i]['rct']) {throw "mix rct outs missing commit";}
+							oe.commit = zeroCommit(CnUtils.d2s(src.amount)); //create identity-masked commitment for non-rct mix input
+						}
+					}
+
+					 */
             src.outputs.push(oe);
             j++;
           }
@@ -3769,16 +2717,16 @@ export namespace CnTransactions {
         };
         logDebugMsg("OUT FOR REAL:", outputs[i].global_index);
         /*
-			 if (rct){
-				 if (outputs[i].rct) {
-					 real_oe.commit = outputs[i].rct.slice(0,64); //add commitment for real input
-				 } else {
-					 logDebugMsg('ZERO COMMIT');
-					 real_oe.commit = zeroCommit(CnUtils.d2s(src.amount)); //create identity-masked commitment for non-rct input
-				 }
-			 }
- 
-			  */
+			if (rct){
+				if (outputs[i].rct) {
+					real_oe.commit = outputs[i].rct.slice(0,64); //add commitment for real input
+				} else {
+					logDebugMsg('ZERO COMMIT');
+					real_oe.commit = zeroCommit(CnUtils.d2s(src.amount)); //create identity-masked commitment for non-rct input
+				}
+			}
+
+			 */
         let real_index = src.outputs.length;
         for (j = 0; j < src.outputs.length; j++) {
           if (new JSBigInt(real_oe.index).compare(src.outputs[j].index) < 0) {
@@ -3787,13 +2735,7 @@ export namespace CnTransactions {
           }
         }
         // Add real_oe to outputs
-        logDebugMsg(
-          "inserting real ouput at index",
-          real_index,
-          real_oe,
-          outputs[i],
-          i
-        );
+        logDebugMsg("inserting real ouput at index", real_index, real_oe, outputs[i], i);
         src.outputs.splice(real_index, 0, real_oe);
         src.real_out_tx_key = outputs[i].tx_pub_key;
         // Real output entry index
@@ -3801,16 +2743,16 @@ export namespace CnTransactions {
         src.real_out_in_tx = outputs[i].index;
         logDebugMsg("check mask", outputs, rct, i);
         /*
-			 if (rct){
-				 if (outputs[i].rct) {
-					 src.mask = outputs[i].rct.slice(64,128); //encrypted or idenity mask for coinbase txs.
-				 } else {
-					 logDebugMsg('NULL MASK');
-					 src.mask = null; //will be set by generate_key_image_helper_rct
-				 }
-			 }
- 
-			  */
+			if (rct){
+				if (outputs[i].rct) {
+					src.mask = outputs[i].rct.slice(64,128); //encrypted or idenity mask for coinbase txs.
+				} else {
+					logDebugMsg('NULL MASK');
+					src.mask = null; //will be set by generate_key_image_helper_rct
+				}
+			}
+
+			 */
         sources.push(src);
       }
     }
@@ -3833,13 +2775,7 @@ export namespace CnTransactions {
         throw "early fee calculation != later";
       }
     } else if (cmp > 0) {
-      throw (
-        "Need more money than found! (have: " +
-        Cn.formatMoney(found_money) +
-        " need: " +
-        Cn.formatMoney(needed_money) +
-        ")"
-      );
+      throw "Need more money than found! (have: " + Cn.formatMoney(found_money) + " need: " + Cn.formatMoney(needed_money) + ")";
     }
     return CnTransactions.construct_tx(
       keys,
@@ -3853,6 +2789,7 @@ export namespace CnTransactions {
       unlock_time,
       rct,
       message,
+      messageTo,
       ttl,
       transactionType,
       term

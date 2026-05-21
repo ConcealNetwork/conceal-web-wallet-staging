@@ -13,22 +13,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v5
       with:
         node-version: 24
 
     - name: Install dependencies
-      run: npm install
+      run: npm ci
  
     - name: Install typescript
       run: npm install -g typescript
-
-    - name: Install types node
-      run: npm install --save-dev @types/node
-  
+   
     - name: Prebuild
       run: node ./node_modules/typescript/bin/tsc --project tsconfig.prod.json
 

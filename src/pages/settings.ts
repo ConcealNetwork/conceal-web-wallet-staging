@@ -26,24 +26,12 @@ import { AppState } from "../model/AppState";
 import { Storage } from "../model/Storage";
 import { Translations, tickerStore } from "../model/Translations";
 import { BlockchainExplorerProvider } from "../providers/BlockchainExplorerProvider";
-import type {
-  BlockchainExplorer,
-  RawDaemon_Out,
-} from "../model/blockchain/BlockchainExplorer";
+import { BlockchainExplorer, RawDaemon_Out } from "../model/blockchain/BlockchainExplorer";
 import { WalletWatchdog } from "../model/WalletWatchdog";
 
-let wallet: Wallet = DependencyInjectorInstance().getInstance(
-  Wallet.name,
-  "default",
-  false
-);
-let blockchainExplorer: BlockchainExplorer =
-  BlockchainExplorerProvider.getInstance();
-let walletWatchdog: WalletWatchdog = DependencyInjectorInstance().getInstance(
-  WalletWatchdog.name,
-  "default",
-  false
-);
+let wallet: Wallet = DependencyInjectorInstance().getInstance(Wallet.name, "default", false);
+let blockchainExplorer: BlockchainExplorer = BlockchainExplorerProvider.getInstance();
+let walletWatchdog: WalletWatchdog = DependencyInjectorInstance().getInstance(WalletWatchdog.name, "default", false);
 
 class SettingsView extends DestructableView {
   @VueVar(10) readSpeed!: number;
@@ -60,7 +48,6 @@ class SettingsView extends DestructableView {
 
   @VueVar(0) nativeVersionCode!: number;
   @VueVar("") nativeVersionNumber!: string;
-  @VueVar(false) isNativeEnvironment!: boolean;
 
   @VueVar(false) optimizeIsNeeded!: boolean;
   @VueVar(false) optimizeLoading!: boolean;
@@ -68,19 +55,12 @@ class SettingsView extends DestructableView {
   @VueVar(false) useShortTicker!: boolean;
   @VueVar("") currentTicker!: string;
   @VueVar(config) config!: any;
-  @VueVar(false) notificationsEnabled!: boolean;
 
   private unsubscribeTicker: (() => void) | null = null;
 
   constructor(container: string) {
     super(container);
-
-    // Set native environment detection using the same logic as index.ts
-    const isCordovaApp =
-      document.URL.indexOf("http://") === -1 &&
-      document.URL.indexOf("https://") === -1;
-    this.isNativeEnvironment = isCordovaApp;
-
+    let self = this;
     this.readSpeed = wallet.options.readSpeed;
     this.checkMinerTx = wallet.options.checkMinerTx;
 
@@ -122,8 +102,8 @@ class SettingsView extends DestructableView {
 
     blockchainExplorer
       .getHeight()
-      .then((height: number) => {
-        this.maxHeight = height;
+      .then(function (height: number) {
+        self.maxHeight = height;
       })
       .catch((err: any) => {
         // do nothing
@@ -136,31 +116,15 @@ class SettingsView extends DestructableView {
       .catch((err: any) => {
         console.error("Error trying to get user language", err);
       });
-    //if cordova.js has been loaded properly:
-    if (
-      typeof (<any>window).cordova !== "undefined" &&
-      typeof (<any>window).cordova.getAppVersion !== "undefined"
-    ) {
-      (<any>window).cordova.getAppVersion
-        .getVersionNumber()
-        .then((version: string) => {
-          this.nativeVersionNumber = version;
-        });
-      (<any>window).cordova.getAppVersion
-        .getVersionCode()
-        .then((version: number) => {
-          this.nativeVersionCode = version;
-        });
-    }
-
-    // Initialize notification setting
-    Storage.getItem("notificationsEnabled", false)
-      .then((enabled: boolean) => {
-        this.notificationsEnabled = enabled;
-      })
-      .catch(() => {
-        this.notificationsEnabled = false;
+    // in case cordova.js got loaded, and app-version-plugin was installed ... => that won't happen in a web view redirect scenario. Need to rethink that if we really want to display those infor in Native context.
+    if (typeof (<any>window).cordova !== "undefined" && typeof (<any>window).cordova.getAppVersion !== "undefined") {
+      (<any>window).cordova.getAppVersion.getVersionNumber().then((version: string) => {
+        this.nativeVersionNumber = version;
       });
+      (<any>window).cordova.getAppVersion.getVersionCode().then((version: number) => {
+        this.nativeVersionCode = version;
+      });
+    }
   }
 
   @VueWatched()
@@ -179,11 +143,7 @@ class SettingsView extends DestructableView {
     }).then((result: any) => {
       if (result.value) {
         AppState.disconnect();
-        DependencyInjectorInstance().register(
-          Wallet.name,
-          undefined,
-          "default"
-        );
+        DependencyInjectorInstance().register(Wallet.name, undefined, "default");
         WalletRepository.deleteLocalCopy();
         window.location.href = "#index";
       }
@@ -212,10 +172,7 @@ class SettingsView extends DestructableView {
     blockchainExplorer
       .getHeight()
       .then((blockchainHeight: number) => {
-        let optimizeInfo = wallet.optimizationNeeded(
-          blockchainHeight,
-          config.optimizeThreshold
-        );
+        let optimizeInfo = wallet.optimizationNeeded(blockchainHeight, config.optimizeThreshold);
         this.optimizeIsNeeded = optimizeInfo.isNeeded;
       })
       .catch((err: any) => {
@@ -228,10 +185,7 @@ class SettingsView extends DestructableView {
     blockchainExplorer
       .getHeight()
       .then((blockchainHeight: number) => {
-        let optimizeInfo = wallet.optimizationNeeded(
-          blockchainHeight,
-          config.optimizeThreshold
-        );
+        let optimizeInfo = wallet.optimizationNeeded(blockchainHeight, config.optimizeThreshold);
 
         if (optimizeInfo.isNeeded) {
           wallet
@@ -239,15 +193,12 @@ class SettingsView extends DestructableView {
               blockchainHeight,
               config.optimizeThreshold,
               blockchainExplorer,
-              (
-                amounts: number[],
-                numberOuts: number
-              ): Promise<RawDaemon_Out[]> =>
-                blockchainExplorer.getRandomOuts(amounts, numberOuts)
+              function (amounts: number[], numberOuts: number): Promise<RawDaemon_Out[]> {
+                return blockchainExplorer.getRandomOuts(amounts, numberOuts);
+              }
             )
             .then((processedOuts: number) => {
-              let watchdog: WalletWatchdog =
-                DependencyInjectorInstance().getInstance(WalletWatchdog.name);
+              let watchdog: WalletWatchdog = DependencyInjectorInstance().getInstance(WalletWatchdog.name);
               //force a mempool check so the user is up to date
               if (watchdog !== null) {
                 watchdog.checkMempool();
@@ -268,9 +219,7 @@ class SettingsView extends DestructableView {
           swal({
             title: i18n.t("settingsPage.optimizeWalletModal.title"),
             html: i18n.t("settingsPage.optimizeWalletModal.content"),
-            confirmButtonText: i18n.t(
-              "settingsPage.optimizeWalletModal.confirmText"
-            ),
+            confirmButtonText: i18n.t("settingsPage.optimizeWalletModal.confirmText"),
             showCancelButton: false,
           }).then((result: any) => {
             this.optimizeLoading = false;
@@ -293,23 +242,16 @@ class SettingsView extends DestructableView {
 
   @VueWatched() creationHeightWatch() {
     if (this.creationHeight < 0) this.creationHeight = 0;
-    if (this.creationHeight > this.maxHeight && this.maxHeight !== -1)
-      this.creationHeight = this.maxHeight;
+    if (this.creationHeight > this.maxHeight && this.maxHeight !== -1) this.creationHeight = this.maxHeight;
   }
   @VueWatched() scanHeightWatch() {
     if (this.scanHeight < 0) this.scanHeight = 0;
-    if (this.scanHeight > this.maxHeight && this.maxHeight !== -1)
-      this.scanHeight = this.maxHeight;
+    if (this.scanHeight > this.maxHeight && this.maxHeight !== -1) this.scanHeight = this.maxHeight;
   }
 
   @VueWatched()
   useShortTickerWatch() {
     tickerStore.setTickerPreference(this.useShortTicker);
-  }
-
-  @VueWatched()
-  notificationsEnabledWatch() {
-    Storage.setItem("notificationsEnabled", this.notificationsEnabled);
   }
 
   private updateWalletOptions() {
