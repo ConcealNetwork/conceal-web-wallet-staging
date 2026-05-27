@@ -2,7 +2,7 @@
  * Copyright (c) 2018 Gnock
  * Copyright (c) 2018-2019 The Masari Project
  * Copyright (c) 2018-2020 The Karbo developers
- * Copyright (c) 2018-2025 Conceal Community, Conceal.Network & Conceal Devs
+ * Copyright (c) 2018-2026 Conceal Network, Conceal Devs
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  *
@@ -271,6 +271,21 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
             this.makeRequest = function (method, path, body) {
                 if (body === void 0) { body = undefined; }
                 return _this.executeWithSessionFailover(function (node) { return node.makeRequest(method, path, body); });
+            };
+            /** Prefetch sync: fixed node by slot (no session failover). */
+            this.makeRequestForPrefetchSlot = function (slot, method, path, body) {
+                if (body === void 0) { body = undefined; }
+                var healthy = _this.nodes.filter(function (node) { return !node.hasToManyErrors(); });
+                var pool = healthy.length > 0 ? healthy : _this.nodes;
+                if (pool.length === 0) {
+                    return Promise.reject(new Error("No available nodes"));
+                }
+                var index = ((slot % pool.length) + pool.length) % pool.length;
+                return pool[index].makeRequest(method, path, body);
+            };
+            this.getHealthyNodeCount = function () {
+                var healthy = _this.nodes.filter(function (node) { return !node.hasToManyErrors(); });
+                return healthy.length > 0 ? healthy.length : _this.nodes.length;
             };
             this.executeWithSessionFailover = function (operation) { return __awaiter(_this, void 0, void 0, function () {
                 var lastError, attempts, sessionNode, error_3;
@@ -603,36 +618,7 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                 watchdog.start();
                 return watchdog;
             };
-            console.log("BlockchainExplorerRpcDaemon");
-            this.nodeWorkers = new NodeWorkersList();
-        }
-        /**
-         * Returns an array containing all numbers like [start;end]
-         * @param start
-         * @param end
-         */
-        BlockchainExplorerRpcDaemon.prototype.range = function (start, end) {
-            var numbers = [];
-            for (var i = start; i <= end; ++i) {
-                numbers.push(i);
-            }
-            return numbers;
-        };
-        BlockchainExplorerRpcDaemon.prototype.getTransactionsForBlocks = function (startBlock, endBlock, includeMinerTxs) {
-            var tempStartBlock;
-            if (startBlock === 0) {
-                tempStartBlock = 1;
-            }
-            else {
-                tempStartBlock = startBlock;
-            }
-            return this.nodeWorkers
-                .makeRequest("POST", "get_raw_transactions_by_heights", {
-                heights: [tempStartBlock, endBlock],
-                include_miner_txs: includeMinerTxs,
-                range: true,
-            })
-                .then(function (response) {
+            this.formatTransactionsByHeightsResponse = function (response) {
                 var formatted = [];
                 if (response.status !== "OK") {
                     throw "invalid_transaction_answer";
@@ -657,8 +643,50 @@ define(["require", "exports", "../Storage", "../WalletWatchdog"], function (requ
                     }
                 }
                 return formatted;
-            });
+            };
+            this.normalizeBlockRangeStart = function (startBlock) {
+                return startBlock === 0 ? 1 : startBlock;
+            };
+            this.getPrefetchNodePoolSize = function () {
+                return _this.nodeWorkers.getHealthyNodeCount();
+            };
+            this.getTransactionsForBlocksPrefetchSlot = function (prefetchSlot, startBlock, endBlock, includeMinerTxs) {
+                var tempStartBlock = _this.normalizeBlockRangeStart(startBlock);
+                return _this.nodeWorkers
+                    .makeRequestForPrefetchSlot(prefetchSlot, "POST", "get_raw_transactions_by_heights", {
+                    heights: [tempStartBlock, endBlock],
+                    include_miner_txs: includeMinerTxs,
+                    range: true,
+                })
+                    .then(function (response) { return _this.formatTransactionsByHeightsResponse(response); });
+            };
+            console.log("BlockchainExplorerRpcDaemon");
+            this.nodeWorkers = new NodeWorkersList();
+        }
+        /**
+         * Returns an array containing all numbers like [start;end]
+         * @param start
+         * @param end
+         */
+        BlockchainExplorerRpcDaemon.prototype.range = function (start, end) {
+            var numbers = [];
+            for (var i = start; i <= end; ++i) {
+                numbers.push(i);
+            }
+            return numbers;
         };
+        BlockchainExplorerRpcDaemon.prototype.getTransactionsForBlocks = function (startBlock, endBlock, includeMinerTxs) {
+            var _this = this;
+            var tempStartBlock = this.normalizeBlockRangeStart(startBlock);
+            return this.nodeWorkers
+                .makeRequest("POST", "get_raw_transactions_by_heights", {
+                heights: [tempStartBlock, endBlock],
+                include_miner_txs: includeMinerTxs,
+                range: true,
+            })
+                .then(function (response) { return _this.formatTransactionsByHeightsResponse(response); });
+        };
+        ;
         BlockchainExplorerRpcDaemon.prototype.getTransactionPool = function () {
             return this.nodeWorkers.makeRequest("GET", "getrawtransactionspool").then(function (response) {
                 var formatted = [];

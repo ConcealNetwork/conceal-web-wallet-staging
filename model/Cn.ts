@@ -5,8 +5,7 @@
  *     Copyright (c) 2018-2020, The Qwertycoin Project
  *     Copyright (c) 2018-2020, The Masari Project
  *     Copyright (c) 2022, The Karbo Developers
- *     Copyright (c) 2022 - 2025, Conceal Devs
- *     Copyright (c) 2022 - 2025, Conceal Network
+ *     Copyright (c) 2022 - 2026, Conceal Network, Conceal Devs
  *
  *     All rights reserved.
  *     Redistribution and use in source and binary forms, with or without modification,
@@ -154,7 +153,7 @@ export namespace CnRandom{
 	export function random_scalar() {
 		//let rand = this.sc_reduce(mn_random(64 * 8));
 		//return rand.slice(0, STRUCT_SIZES.EC_SCALAR * 2);
-		return CnNativeBride.sc_reduce32(CnRandom.rand_32());
+		return concealjs.crypto.sc_reduce32(CnRandom.rand_32());
 	}
 }
 
@@ -1252,7 +1251,7 @@ export namespace Cn{
 
 	export function hash_to_scalar(buf : string) : string{
 		let hash = CnUtils.cn_fast_hash(buf);
-		let scalar = CnNativeBride.sc_reduce32(hash);
+		let scalar = concealjs.crypto.sc_reduce32(hash);
 		return scalar;
 	}
 
@@ -1306,11 +1305,15 @@ export namespace Cn{
 		let s = CnUtils.derivation_to_scalar(derivation, out_index);
 		return CnUtils.ge_sub(pub, CnUtils.ge_scalarmult_base(s));
 	}
-
+    /**
+	 * 
+	 * @param seed 64-char hex seed
+	 * @returns {sec:string, pub:string}
+	 */
 	export function generate_keys(seed : string) : {sec:string, pub:string}{
 		if (seed.length !== 64) throw "Invalid input length!";
-		let sec = CnNativeBride.sc_reduce32(seed);
-		let pub = CnUtils.sec_key_to_pub(sec);
+		let sec = concealjs.crypto.sc_reduce32(seed);
+		let pub = concealjs.cnutils.sec_key_to_pub(sec);
 		return {
 			sec: sec,
 			pub: pub
@@ -1413,19 +1416,19 @@ export namespace Cn{
   }
 
 	export function valid_keys(view_pub : string, view_sec : string, spend_pub : string, spend_sec : string) {
-		let expected_view_pub = CnUtils.sec_key_to_pub(view_sec);
-		let expected_spend_pub = CnUtils.sec_key_to_pub(spend_sec);
+		let expected_view_pub = concealjs.cnutils.sec_key_to_pub(view_sec);
+		let expected_spend_pub = concealjs.cnutils.sec_key_to_pub(spend_sec);
 		return (expected_spend_pub === spend_pub) && (expected_view_pub === view_pub);
 	}
 
 	export function decrypt_payment_id(payment_id8 : string, tx_public_key : string, acc_prv_view_key : string) {
 		if (payment_id8.length !== 16) throw "Invalid input length2!";
 
-		let key_derivation = Cn.generate_key_derivation(tx_public_key, acc_prv_view_key);
+		let key_derivation = concealjs.crypto.generate_key_derivation(tx_public_key, acc_prv_view_key);
 
-		let pid_key = CnUtils.cn_fast_hash(key_derivation + ENCRYPTED_PAYMENT_ID_TAIL.toString(16)).slice(0, INTEGRATED_ID_SIZE * 2);
+		let pid_key = concealjs.crypto.cn_fast_hash(key_derivation + ENCRYPTED_PAYMENT_ID_TAIL.toString(16)).slice(0, INTEGRATED_ID_SIZE * 2);
 
-    let decrypted_payment_id = CnUtils.hex_xor(payment_id8, pid_key);
+    let decrypted_payment_id = concealjs.cnutils.hex_xor(payment_id8, pid_key);
 
     return decrypted_payment_id;
   }
@@ -1433,10 +1436,10 @@ export namespace Cn{
 	export function get_account_integrated_address(address : string, payment_id8 : string) {
 		let decoded_address = decode_address(address);
 
-		let prefix = CnUtils.encode_varint(CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX);
+		let prefix = concealjs.cnutils.encode_varint(CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX);
 		let data = prefix + decoded_address.spend  + decoded_address.view + payment_id8;
 
-    let checksum = CnUtils.cn_fast_hash(data);
+    let checksum = concealjs.cnutils.cn_fast_hash(data);
 
     return cnBase58.encode(data + checksum.slice(0, ADDRESS_CHECKSUM_SIZE * 2));
   }
@@ -1565,7 +1568,7 @@ export namespace CnTransactions{
 	export function generate_key_image_helper(ack:{view_secret_key:any,spend_secret_key:string, public_spend_key:string}, tx_public_key:any, real_output_index:any,recv_derivation:string|null)
 	{
 		if(recv_derivation === null)
-			recv_derivation = CnNativeBride.generate_key_derivation(tx_public_key, ack.view_secret_key);
+			recv_derivation = concealjs.crypto.generate_key_derivation(tx_public_key, ack.view_secret_key);
 		// recv_derivation = CnUtilNative.generate_key_derivation(tx_public_key, ack.view_secret_key);
 		// logDebugMsg('recv_derivation', recv_derivation);
 
@@ -1574,21 +1577,21 @@ export namespace CnTransactions{
 
     // let start = Date.now();
 
-		let in_ephemeral_pub = CnNativeBride.derive_public_key(recv_derivation, real_output_index, ack.public_spend_key);
+		let in_ephemeral_pub = concealjs.crypto.derive_public_key(recv_derivation, real_output_index, ack.public_spend_key);
 		// let in_ephemeral_pub = CnUtilNative.derive_public_key(recv_derivation, real_output_index, ack.public_spend_key);
 		// logDebugMsg('in_ephemeral_pub',in_ephemeral_pub);
 
 
 		// CHECK_AND_ASSERT_MES(r, false, "key image helper: failed to derive_public_key(" << recv_derivation << ", " << real_output_index <<  ", " << ack.m_account_address.m_spend_public_key << ")");
 		//
-		let in_ephemeral_sec = CnNativeBride.derive_secret_key(recv_derivation, real_output_index, ack.spend_secret_key);
+		let in_ephemeral_sec = concealjs.crypto.derive_secret_key(recv_derivation, real_output_index, ack.spend_secret_key);
 		// let in_ephemeral_sec = CnNativeBride.derive_secret_key(recv_derivation, real_output_index, ack.spend_secret_key);
 		// logDebugMsg('in_ephemeral_sec',in_ephemeral_sec);
 
 
 
-		// let ki = CnNativeBride.generate_key_image_2(in_ephemeral_pub, in_ephemeral_sec);
-		let ki = CnNativeBride.generate_key_image_2(in_ephemeral_pub, in_ephemeral_sec);
+		// use to be CnNativeBride.generate_key_image_2(in_ephemeral_pub, in_ephemeral_sec);
+		let ki = concealjs.crypto.generate_key_image(in_ephemeral_pub, in_ephemeral_sec);
 
     // let end = Date.now();
     // logDebugMsg(end-start);
@@ -1621,7 +1624,7 @@ export namespace CnTransactions{
 		let ephemeral_pub = CnNativeBride.derive_public_key(recv_derivation, out_index, keys.spend.pub);
 		if (!ephemeral_pub) throw "Failed to generate key image";
 		let ephemeral_sec = CnNativeBride.derive_secret_key(recv_derivation, out_index, keys.spend.sec);
-		let image = CnNativeBride.generate_key_image_2(ephemeral_pub, ephemeral_sec);
+		let image = concealjs.crypto.generate_key_image(ephemeral_pub, ephemeral_sec);
 		return {
 			in_ephemeral: {
 				pub: ephemeral_pub,

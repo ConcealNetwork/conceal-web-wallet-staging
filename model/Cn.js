@@ -5,8 +5,7 @@
  *     Copyright (c) 2018-2020, The Qwertycoin Project
  *     Copyright (c) 2018-2020, The Masari Project
  *     Copyright (c) 2022, The Karbo Developers
- *     Copyright (c) 2022 - 2025, Conceal Devs
- *     Copyright (c) 2022 - 2025, Conceal Network
+ *     Copyright (c) 2022 - 2026, Conceal Network, Conceal Devs
  *
  *     All rights reserved.
  *     Redistribution and use in source and binary forms, with or without modification,
@@ -149,7 +148,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         function random_scalar() {
             //let rand = this.sc_reduce(mn_random(64 * 8));
             //return rand.slice(0, STRUCT_SIZES.EC_SCALAR * 2);
-            return CnNativeBride.sc_reduce32(CnRandom.rand_32());
+            return concealjs.crypto.sc_reduce32(CnRandom.rand_32());
         }
         CnRandom.random_scalar = random_scalar;
     })(CnRandom || (exports.CnRandom = CnRandom = {}));
@@ -1188,7 +1187,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
     (function (Cn) {
         function hash_to_scalar(buf) {
             var hash = CnUtils.cn_fast_hash(buf);
-            var scalar = CnNativeBride.sc_reduce32(hash);
+            var scalar = concealjs.crypto.sc_reduce32(hash);
             return scalar;
         }
         Cn.hash_to_scalar = hash_to_scalar;
@@ -1243,11 +1242,16 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             return CnUtils.ge_sub(pub, CnUtils.ge_scalarmult_base(s));
         }
         Cn.underive_public_key = underive_public_key;
+        /**
+         *
+         * @param seed 64-char hex seed
+         * @returns {sec:string, pub:string}
+         */
         function generate_keys(seed) {
             if (seed.length !== 64)
                 throw "Invalid input length!";
-            var sec = CnNativeBride.sc_reduce32(seed);
-            var pub = CnUtils.sec_key_to_pub(sec);
+            var sec = concealjs.crypto.sc_reduce32(seed);
+            var pub = concealjs.cnutils.sec_key_to_pub(sec);
             return {
                 sec: sec,
                 pub: pub
@@ -1335,25 +1339,25 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         }
         Cn.is_subaddress = is_subaddress;
         function valid_keys(view_pub, view_sec, spend_pub, spend_sec) {
-            var expected_view_pub = CnUtils.sec_key_to_pub(view_sec);
-            var expected_spend_pub = CnUtils.sec_key_to_pub(spend_sec);
+            var expected_view_pub = concealjs.cnutils.sec_key_to_pub(view_sec);
+            var expected_spend_pub = concealjs.cnutils.sec_key_to_pub(spend_sec);
             return (expected_spend_pub === spend_pub) && (expected_view_pub === view_pub);
         }
         Cn.valid_keys = valid_keys;
         function decrypt_payment_id(payment_id8, tx_public_key, acc_prv_view_key) {
             if (payment_id8.length !== 16)
                 throw "Invalid input length2!";
-            var key_derivation = Cn.generate_key_derivation(tx_public_key, acc_prv_view_key);
-            var pid_key = CnUtils.cn_fast_hash(key_derivation + ENCRYPTED_PAYMENT_ID_TAIL.toString(16)).slice(0, INTEGRATED_ID_SIZE * 2);
-            var decrypted_payment_id = CnUtils.hex_xor(payment_id8, pid_key);
+            var key_derivation = concealjs.crypto.generate_key_derivation(tx_public_key, acc_prv_view_key);
+            var pid_key = concealjs.crypto.cn_fast_hash(key_derivation + ENCRYPTED_PAYMENT_ID_TAIL.toString(16)).slice(0, INTEGRATED_ID_SIZE * 2);
+            var decrypted_payment_id = concealjs.cnutils.hex_xor(payment_id8, pid_key);
             return decrypted_payment_id;
         }
         Cn.decrypt_payment_id = decrypt_payment_id;
         function get_account_integrated_address(address, payment_id8) {
             var decoded_address = decode_address(address);
-            var prefix = CnUtils.encode_varint(CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX);
+            var prefix = concealjs.cnutils.encode_varint(CRYPTONOTE_PUBLIC_INTEGRATED_ADDRESS_BASE58_PREFIX);
             var data = prefix + decoded_address.spend + decoded_address.view + payment_id8;
-            var checksum = CnUtils.cn_fast_hash(data);
+            var checksum = concealjs.cnutils.cn_fast_hash(data);
             return cnBase58.encode(data + checksum.slice(0, ADDRESS_CHECKSUM_SIZE * 2));
         }
         Cn.get_account_integrated_address = get_account_integrated_address;
@@ -1471,22 +1475,22 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
         CnTransactions.decode_ringct = decode_ringct;
         function generate_key_image_helper(ack, tx_public_key, real_output_index, recv_derivation) {
             if (recv_derivation === null)
-                recv_derivation = CnNativeBride.generate_key_derivation(tx_public_key, ack.view_secret_key);
+                recv_derivation = concealjs.crypto.generate_key_derivation(tx_public_key, ack.view_secret_key);
             // recv_derivation = CnUtilNative.generate_key_derivation(tx_public_key, ack.view_secret_key);
             // logDebugMsg('recv_derivation', recv_derivation);
             // CHECK_AND_ASSERT_MES(r, false, "key image helper: failed to generate_key_derivation(" << tx_public_key << ", " << ack.m_view_secret_key << ")");
             //
             // let start = Date.now();
-            var in_ephemeral_pub = CnNativeBride.derive_public_key(recv_derivation, real_output_index, ack.public_spend_key);
+            var in_ephemeral_pub = concealjs.crypto.derive_public_key(recv_derivation, real_output_index, ack.public_spend_key);
             // let in_ephemeral_pub = CnUtilNative.derive_public_key(recv_derivation, real_output_index, ack.public_spend_key);
             // logDebugMsg('in_ephemeral_pub',in_ephemeral_pub);
             // CHECK_AND_ASSERT_MES(r, false, "key image helper: failed to derive_public_key(" << recv_derivation << ", " << real_output_index <<  ", " << ack.m_account_address.m_spend_public_key << ")");
             //
-            var in_ephemeral_sec = CnNativeBride.derive_secret_key(recv_derivation, real_output_index, ack.spend_secret_key);
+            var in_ephemeral_sec = concealjs.crypto.derive_secret_key(recv_derivation, real_output_index, ack.spend_secret_key);
             // let in_ephemeral_sec = CnNativeBride.derive_secret_key(recv_derivation, real_output_index, ack.spend_secret_key);
             // logDebugMsg('in_ephemeral_sec',in_ephemeral_sec);
-            // let ki = CnNativeBride.generate_key_image_2(in_ephemeral_pub, in_ephemeral_sec);
-            var ki = CnNativeBride.generate_key_image_2(in_ephemeral_pub, in_ephemeral_sec);
+            // use to be CnNativeBride.generate_key_image_2(in_ephemeral_pub, in_ephemeral_sec);
+            var ki = concealjs.crypto.generate_key_image(in_ephemeral_pub, in_ephemeral_sec);
             // let end = Date.now();
             // logDebugMsg(end-start);
             return {
@@ -1516,7 +1520,7 @@ define(["require", "exports", "./Mnemonic", "./ChaCha8"], function (require, exp
             if (!ephemeral_pub)
                 throw "Failed to generate key image";
             var ephemeral_sec = CnNativeBride.derive_secret_key(recv_derivation, out_index, keys.spend.sec);
-            var image = CnNativeBride.generate_key_image_2(ephemeral_pub, ephemeral_sec);
+            var image = concealjs.crypto.generate_key_image(ephemeral_pub, ephemeral_sec);
             return {
                 in_ephemeral: {
                     pub: ephemeral_pub,

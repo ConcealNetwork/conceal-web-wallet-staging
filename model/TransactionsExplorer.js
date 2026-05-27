@@ -5,8 +5,7 @@
  *     Copyright (c) 2018-2020, The Qwertycoin Project
  *     Copyright (c) 2018-2020, The Masari Project
  *     Copyright (c) 2022, The Karbo Developers
- *     Copyright (c) 2022 - 2025, Conceal Devs
- *     Copyright (c) 2022 - 2025, Conceal Network
+ *     Copyright (c) 2022 - 2026, Conceal Network, Conceal Devs
  *
  *     All rights reserved.
  *     Redistribution and use in source and binary forms, with or without modification,
