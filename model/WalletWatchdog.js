@@ -496,6 +496,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                     range.screenNextShardIndex = range.screenNextShardIndex + 1;
                     filterWorker.setIsWorking(true);
                     filterWorker.incProcessed(shard.length);
+                    // Worker screens shard with transactions.ownsTxBatch (one WASM receive batch per shard).
                     filterWorker.getWorker().postMessage({
                         type: "screen",
                         transactions: shard,
@@ -524,6 +525,7 @@ define(["require", "exports", "./Transaction", "./TransactionsExplorer"], functi
                 filterWorker.getWorker().postMessage({
                     type: "process",
                     transactions: ownedTransactions,
+                    screenedOwned: true,
                     readMinersTx: _this.wallet.options.checkMinerTx,
                     startBlock: range.startBlock,
                     maxBlock: range.endBlock,
